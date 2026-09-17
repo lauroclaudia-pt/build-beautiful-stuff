@@ -45,9 +45,14 @@ const emptyForm = {
   email: "",
   phone: "",
   nif: "",
+  birthDate: "",
   education: EDUCATION_LEVELS[1]!,
   professionalSituation: SITUACOES[0]!,
   motivation: "",
+  deficiencia: false,
+  rjep: false,
+  specialConditions: "",
+  truthDeclaration: false,
 };
 
 function VagaDetalhe() {
@@ -56,6 +61,8 @@ function VagaDetalhe() {
   const { vagas, applicants, addApplicant, hydrated } = useStore();
   const vaga = vagas.find((v) => v.id === vagaId);
   const [form, setForm] = useState(emptyForm);
+  const [anexos, setAnexos] = useState<string[]>([]);
+  const [declaracaoIncap, setDeclaracaoIncap] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState<string | null>(null);
 
@@ -82,7 +89,7 @@ function VagaDetalhe() {
   const encerrado = dias <= 0 || vaga.state === "FINISHED" || vaga.state === "CANCELLED";
   const total = applicants.filter((a) => a.vagaId === vaga.id).length;
 
-  function set(k: keyof typeof emptyForm, v: string) {
+  function set<K extends keyof typeof emptyForm>(k: K, v: (typeof emptyForm)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
     setErrors((e) => ({ ...e, [k]: "" }));
   }
@@ -90,12 +97,23 @@ function VagaDetalhe() {
   function submeter(e: React.FormEvent) {
     e.preventDefault();
     const err: Record<string, string> = {};
+    const nif = form.nif.replace(/\s/g, "");
     if (!form.name.trim() || form.name.trim().length > 120) err["name"] = "Indique o nome completo.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) err["email"] = "Email inválido.";
     if (form.phone.replace(/\D/g, "").length < 9) err["phone"] = "Telefone inválido.";
-    if (!/^\d{9}$/.test(form.nif.replace(/\s/g, ""))) err["nif"] = "O NIF tem 9 dígitos.";
+    if (!validateNif(nif)) err["nif"] = "NIF inválido (verificação do dígito de controlo).";
+    else if (
+      applicants.some((a) => a.vagaId === vaga!.id && a.nif.replace(/\s/g, "") === nif)
+    )
+      err["nif"] = "Já existe uma candidatura com este NIF neste procedimento.";
+    if (!form.birthDate) err["birthDate"] = "Indique a data de nascimento.";
+    else if (ageFrom(form.birthDate) < 18) err["birthDate"] = "É necessário ter 18 anos ou mais.";
     if (form.motivation.trim().length < 20) err["motivation"] = "Escreva pelo menos 20 caracteres.";
     if (form.motivation.length > 1500) err["motivation"] = "Máximo de 1500 caracteres.";
+    if (form.deficiencia && !declaracaoIncap)
+      err["deficiencia"] = "Anexe a declaração de incapacidade.";
+    if (!form.truthDeclaration)
+      err["truthDeclaration"] = "Tem de declarar a veracidade das informações.";
     setErrors(err);
     if (Object.keys(err).length) {
       toast.error("Verifique os campos assinalados.");
@@ -106,13 +124,21 @@ function VagaDetalhe() {
       name: form.name.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
-      nif: form.nif.replace(/\s/g, ""),
+      nif,
+      birthDate: form.birthDate,
       education: form.education,
       professionalSituation: form.professionalSituation,
       motivation: form.motivation.trim(),
+      deficiencia: form.deficiencia,
+      rjep: form.rjep,
+      specialConditions: form.specialConditions.trim(),
+      truthDeclaration: true,
+      attachments: [...anexos, ...(declaracaoIncap ? [declaracaoIncap] : [])],
     });
     setDone(a.id);
     setForm(emptyForm);
+    setAnexos([]);
+    setDeclaracaoIncap(null);
     toast.success("Candidatura submetida e registada.");
   }
 
