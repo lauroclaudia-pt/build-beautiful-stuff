@@ -94,6 +94,12 @@ function Admin() {
             accao="Gerir notificações"
           />
           <Cartao
+            to="/backoffice/email"
+            titulo="Correio eletrónico"
+            desc="Configurar a caixa de correio remetente e o envio de emails da aplicação, com estado do serviço de envio."
+            accao="Configurar email"
+          />
+          <Cartao
             to="/backoffice/documentos"
             titulo="Documentos e atas"
             desc="Editar os modelos das atas e grelhas geradas em cada fase do procedimento, com nome do ficheiro e conteúdo."
@@ -134,6 +140,7 @@ function Cartao({
     | "/backoffice/dados"
     | "/backoffice/faq"
     | "/backoffice/notificacoes"
+    | "/backoffice/email"
     | "/backoffice/documentos"
     | "/backoffice/contactos";
   titulo: string;

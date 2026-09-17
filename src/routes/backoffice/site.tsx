@@ -5,6 +5,7 @@ import { PageShell, RequireRole } from "@/components/shell";
 import logo from "@/assets/logo-ipma.png.asset.json";
 import { useStore } from "@/lib/store";
 import { COLOR_FIELDS } from "@/lib/site";
+import { DEFAULT_JAVA_API_URL } from "@/lib/java-api";
 import type { Role } from "@/lib/pessoas";
 
 const ADMIN_ROLES: Role[] = ["ADMIN", "GESTOR_RH", "GESTAO"];
@@ -235,6 +236,14 @@ function GestaoSite() {
                 rows={4}
                 onChange={(e) => updateSite({ heroLead: e.target.value })}
                 className="input-ipma resize-y"
+              />
+            </Campo>
+            <Campo label="Servidor de recrutamento (endereço da API)">
+              <input
+                value={site.apiUrl}
+                placeholder={DEFAULT_JAVA_API_URL}
+                onChange={(e) => updateSite({ apiUrl: e.target.value })}
+                className="input-ipma font-mono text-[12px]"
               />
             </Campo>
           </div>

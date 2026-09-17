@@ -11,6 +11,7 @@ import {
   formatDate,
   validateNif,
 } from "@/lib/recrutamento";
+import { applyJava, javaBase } from "@/lib/java-api";
 
 export const Route = createFileRoute("/vagas/$vagaId")({
   head: () => ({
@@ -51,13 +52,13 @@ const emptyForm = {
 function VagaDetalhe() {
   const { vagaId } = Route.useParams();
   const navigate = useNavigate();
-  const { vagas, applicants, addApplicant, hydrated, opcoesDe } = useStore();
+  const { vagas, applicants, addApplicant, hydrated, opcoesDe, site } = useStore();
   const habilitacoes = opcoesDe("HABILITACAO");
   const situacoes = opcoesDe("SITUACAO_PROFISSIONAL");
   const vaga = vagas.find((v) => v.id === vagaId);
   const [form, setForm] = useState(emptyForm);
-  const [anexos, setAnexos] = useState<string[]>([]);
-  const [declaracaoIncap, setDeclaracaoIncap] = useState<string | null>(null);
+  const [anexos, setAnexos] = useState<File[]>([]);
+  const [declaracaoIncap, setDeclaracaoIncap] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState<string | null>(null);
 
@@ -89,7 +90,7 @@ function VagaDetalhe() {
     setErrors((e) => ({ ...e, [k]: "" }));
   }
 
-  function submeter(e: React.FormEvent) {
+  async function submeter(e: React.FormEvent) {
     e.preventDefault();
     const err: Record<string, string> = {};
     const nif = form.nif.replace(/\s/g, "");
@@ -114,6 +115,38 @@ function VagaDetalhe() {
       toast.error("Verifique os campos assinalados.");
       return;
     }
+
+    // Procedimentos sincronizados do servidor: submeter também ao backend Java.
+    if (vaga!.javaId != null) {
+      const fd = new FormData();
+      fd.append("partnerName", form.name.trim());
+      fd.append("birthDate", form.birthDate);
+      fd.append("nationality", "Não indicada");
+      fd.append("idNumber", nif);
+      fd.append("idNif", nif);
+      fd.append("emailFrom", form.email.trim());
+      fd.append("partnerPhone", form.phone.trim());
+      fd.append("partnerMobile", form.phone.trim());
+      if (form.education) fd.append("educationCourse", form.education);
+      if (form.professionalSituation) fd.append("employmentSituation", form.professionalSituation);
+      fd.append("relevantExperience", form.motivation.trim());
+      fd.append("hasDisability", String(form.deficiencia));
+      if (form.specialConditions.trim())
+        fd.append("specialNeedsDesc", form.specialConditions.trim());
+      fd.append("publicEmployment", String(form.rjep));
+      fd.append("declarationTrue", "true");
+      if (anexos[0]) fd.append("cv", anexos[0], anexos[0].name);
+      if (anexos[1]) fd.append("attachment_habilit", anexos[1], anexos[1].name);
+      if (anexos[2]) fd.append("attachment_decservico", anexos[2], anexos[2].name);
+      if (declaracaoIncap) fd.append("attachment_disability", declaracaoIncap, declaracaoIncap.name);
+      const java = await applyJava(javaBase(site.apiUrl), vaga!.javaId, fd);
+      if (!java.ok) {
+        toast.error(java.message);
+        return;
+      }
+      toast.success("Candidatura registada no servidor de recrutamento.");
+    }
+
     const a = addApplicant({
       vagaId: vaga!.id,
       name: form.name.trim(),
@@ -128,7 +161,7 @@ function VagaDetalhe() {
       rjep: form.rjep,
       specialConditions: form.specialConditions.trim(),
       truthDeclaration: true,
-      attachments: [...anexos, ...(declaracaoIncap ? [declaracaoIncap] : [])],
+      attachments: [...anexos.map((f) => f.name), ...(declaracaoIncap ? [declaracaoIncap.name] : [])],
     });
     setDone(a.id);
     setForm(emptyForm);
@@ -338,14 +371,12 @@ function VagaDetalhe() {
                         <input
                           type="file"
                           accept=".pdf,image/*"
-                          onChange={(e) =>
-                            setDeclaracaoIncap(e.target.files?.[0]?.name ?? null)
-                          }
+                          onChange={(e) => setDeclaracaoIncap(e.target.files?.[0] ?? null)}
                           className="mt-2 text-[12px]"
                         />
                         {declaracaoIncap && (
                           <p className="mt-1 font-mono text-[11px] text-success">
-                            {declaracaoIncap}
+                            {declaracaoIncap.name}
                           </p>
                         )}
                         {errors["deficiencia"] && (
@@ -377,15 +408,13 @@ function VagaDetalhe() {
                       type="file"
                       multiple
                       accept=".pdf,.doc,.docx,image/*"
-                      onChange={(e) =>
-                        setAnexos(Array.from(e.target.files ?? []).map((f) => f.name))
-                      }
+                      onChange={(e) => setAnexos(Array.from(e.target.files ?? []))}
                       className="mt-2 text-[12px]"
                     />
                     {anexos.length > 0 && (
                       <ul className="mt-2 list-inside list-disc font-mono text-[11px] text-muted-foreground">
-                        {anexos.map((n) => (
-                          <li key={n}>{n}</li>
+                        {anexos.map((f) => (
+                          <li key={f.name}>{f.name}</li>
                         ))}
                       </ul>
                     )}

@@ -1,4 +1,5 @@
 import type { StageCode } from "./recrutamento";
+import { DEFAULT_JAVA_API_URL } from "./java-api";
 
 /** Configuração editável do site, gerida no painel de administração. */
 export interface SiteConfig {
@@ -16,6 +17,8 @@ export interface SiteConfig {
   accentColor: string;
   heroTitle: string;
   heroLead: string;
+  /** Endereço do servidor de recrutamento (backend Java). */
+  apiUrl: string;
   showTypeFilter: boolean;
   showDepartmentFilter: boolean;
   showCareerFilter: boolean;
@@ -28,6 +31,34 @@ export interface SiteConfig {
   emailTemplates: EmailTemplate[];
   /** Documentos (atas) a gerar em cada fase. */
   docTemplates: DocTemplate[];
+  /** Configuração da caixa de correio remetente dos emails da aplicação. */
+  emailConfig: EmailConfig;
+}
+
+/** Configuração do remetente e do servidor de saída (SMTP) dos emails da aplicação. */
+export interface EmailConfig {
+  /** Nome a apresentar na caixa de entrada do destinatário. */
+  fromName: string;
+  /** Endereço de correio do remetente (caixa de correio). */
+  fromEmail: string;
+  /** Servidor de saída (SMTP), por exemplo smtp.ipma.pt. */
+  smtpHost?: string;
+  /** Porta do servidor de saída (25, 465 ou 587). */
+  smtpPort?: string;
+  /** Utilizador da caixa de correio. */
+  smtpUser?: string;
+  /** Palavra-passe da caixa de correio. */
+  smtpPassword?: string;
+}
+
+/** Estado de um documento/valor com janela de validade por datas. */
+export function docEstado(
+  startDate?: string | null,
+  endDate?: string | null,
+): "ATIVO" | "INATIVO" {
+  const hoje = new Date().toISOString().slice(0, 10);
+  if (!startDate || startDate > hoje) return "INATIVO";
+  return !endDate || endDate > hoje ? "ATIVO" : "INATIVO";
 }
 
 /** Modelo de email associado a uma fase do procedimento. */
@@ -48,6 +79,10 @@ export interface DocTemplate {
   fileName: string;
   body: string;
   enabled: boolean;
+  /** Data de início de validade (estado ativo quando início ≤ hoje e fim nula ou futura). */
+  startDate?: string;
+  /** Data de fim de validade; nula enquanto o documento estiver em vigor. */
+  endDate?: string | null;
 }
 
 /** Campos substituíveis nos modelos. */
@@ -279,6 +314,7 @@ export const DEFAULT_SITE: SiteConfig = {
   heroTitle: "Recrutamento de pessoal",
   heroLead:
     "Procedimentos concursais, mobilidades e bolsas de investigação do Instituto Português do Mar e da Atmosfera. Consulte o estado de cada processo e candidate-se dentro do prazo fixado.",
+  apiUrl: DEFAULT_JAVA_API_URL,
   showTypeFilter: true,
   showDepartmentFilter: true,
   showCareerFilter: true,
@@ -287,6 +323,7 @@ export const DEFAULT_SITE: SiteConfig = {
   contacts: DEFAULT_CONTACTS.map((c) => ({ ...c })),
   emailTemplates: DEFAULT_EMAIL_TEMPLATES.map((t) => ({ ...t })),
   docTemplates: DEFAULT_DOC_TEMPLATES.map((t) => ({ ...t })),
+  emailConfig: { fromName: "Recrutamento IPMA", fromEmail: "recrutamento@ipma.pt" },
 };
 
 export const COLOR_FIELDS: {

@@ -37,10 +37,28 @@ export type StageState = "draft" | "active" | "completed" | "skipped" | "cancell
 export interface JobStage {
   code: StageCode;
   state: StageState;
+  /** Data de início da fase (registada automaticamente). */
+  startedAt?: string;
+  /** Data de conclusão da fase (registada automaticamente). */
+  endedAt?: string;
+}
+
+export type RegistroTipo = "FASE" | "NOTIFICACAO" | "OBSERVACAO";
+
+export interface VagaRegistro {
+  id: string;
+  tipo: RegistroTipo;
+  /** Fase do pipeline a que o registo se refere, quando aplicável. */
+  stage?: StageCode;
+  texto: string;
+  /** Data/hora ISO do registo. */
+  createdAt: string;
 }
 
 export interface Vaga {
   id: string;
+  /** Identificador no servidor de recrutamento (backend Java), quando sincronizado. */
+  javaId?: number;
   ref: string;
   title: string;
   offerType: OfferType;
@@ -72,6 +90,8 @@ export interface Vaga {
   hasEac?: boolean;
   /** Suplemento remuneratório / informação adicional. */
   salaryPlus?: string;
+  /** Registos e observações do procedimento (fases, notificações, notas manuais). */
+  registros?: VagaRegistro[];
 }
 
 export type DocState = "PENDING" | "RECEIVED" | "VALIDATED" | "MISSING";

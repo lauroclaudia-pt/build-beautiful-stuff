@@ -31,3 +31,17 @@
 ## Novos pedidos (2026-09-17)
 - [ ] Administração: editar os contactos da página inicial (designação + valor)
 - [ ] Página de cada vaga (backoffice): lista de candidaturas com nome, data, estado e botão para atualizar o estado
+
+## Novo pedido (em curso)
+- [ ] Menu da landing: "Vagas" → "Home"
+- [ ] Painel da vaga: botão para enviar a notificação de cada fase por email (estado atualizado ao clicar)
+- [ ] Painel da vaga: lista de registos — datas de início/fim das fases (automático), envios de notificações e observações manuais
+- [ ] (pendente) Integração com backend Java: corrigir erros de tipos e testar proxy
+
+### Novo pedido — Documentos e atas (22:39 UTC, 2026-09-17)
+- Em /backoffice/documentos: cada documento corresponde a uma fase; campos nome, estado, data início e data fim.
+- Estado automático: ATIVO se data início ≤ hoje e data fim NULL ou > hoje; senão INATIVO.
+- Botão GUARDAR para guardar alterações; botão REMOVER põe data fim = agora e estado INATIVO.
+- Painel de Administração: componentes para configurar caixa de correio / envio de emails pela aplicação (requer domínio de envio próprio — apresentar dialog de configuração).
+- [x] Correio eletrónico: campos SMTP (servidor de saída, porta, username, password) — FEITO e verificado.
+- [x] Documentos e atas com estado ATIVO/INATIVO, Guardar e Remover — verificado com Playwright.

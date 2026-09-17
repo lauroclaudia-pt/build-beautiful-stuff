@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/components/shell";
 import { finalGrade, useStore } from "@/lib/store";
@@ -10,6 +10,7 @@ import {
   formatDate,
   type Applicant,
   type ApplicantState,
+  type StageCode,
 } from "@/lib/recrutamento";
 
 export const Route = createFileRoute("/backoffice/$vagaId")({
@@ -37,6 +38,26 @@ export const Route = createFileRoute("/backoffice/$vagaId")({
   ),
 });
 
+type LinhaRegisto = {
+  id: string;
+  tipo: "FASE" | "NOTIFICACAO" | "OBSERVACAO";
+  texto: string;
+  when: string;
+};
+
+function formatDataHora(iso: string) {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleString("pt-PT", { dateStyle: "short", timeStyle: "short" });
+}
+
+const REGISTO_TIPO_LABEL: Record<LinhaRegisto["tipo"], string> = {
+  FASE: "Fase",
+  NOTIFICACAO: "Notificação",
+  OBSERVACAO: "Observação",
+};
+
 const TRIAGEM: ApplicantState[] = [
   "SUBMITTED",
   "UNDER_REVIEW",
@@ -59,12 +80,14 @@ function GestaoVaga() {
     concludeScreening,
     setApplicantState,
     setGrades,
+    addVagaRegistro,
   } = useStore();
   const vaga = vagas.find((v) => v.id === vagaId);
   const [filtro, setFiltro] = useState<ApplicantState | "">("");
   const [aberto, setAberto] = useState<string | null>(null);
   const [ata, setAta] = useState<string | null>(null);
   const [edit, setEdit] = useState(false);
+  const [obs, setObs] = useState("");
 
   const cands = useMemo(
     () =>
@@ -73,6 +96,34 @@ function GestaoVaga() {
         .sort((a, b) => (finalGrade(b) ?? -1) - (finalGrade(a) ?? -1)),
     [applicants, vagaId, filtro],
   );
+
+  const timeline = useMemo(() => {
+    const fases = (vaga?.stages ?? []).flatMap((s) => {
+      const linhas: LinhaRegisto[] = [];
+      if (s.startedAt)
+        linhas.push({
+          id: `${s.code}-inicio`,
+          tipo: "FASE",
+          texto: `${STAGE_LABEL[s.code]} — fase iniciada`,
+          when: s.startedAt,
+        });
+      if (s.endedAt)
+        linhas.push({
+          id: `${s.code}-fim`,
+          tipo: "FASE",
+          texto: `${STAGE_LABEL[s.code]} — fase concluída`,
+          when: s.endedAt,
+        });
+      return linhas;
+    });
+    const registos: LinhaRegisto[] = (vaga?.registros ?? []).map((r) => ({
+      id: r.id,
+      tipo: r.tipo,
+      texto: r.texto,
+      when: r.createdAt,
+    }));
+    return [...registos, ...fases].sort((a, b) => (a.when < b.when ? 1 : -1));
+  }, [vaga]);
 
   if (!vaga) {
     return (
@@ -89,6 +140,30 @@ function GestaoVaga() {
 
   const todos = applicants.filter((a) => a.vagaId === vaga.id);
   const etapaAtiva = vaga.stages.find((s) => s.state === "active");
+
+  function notificarFase(code: StageCode) {
+    const n = todos.length;
+    const v = vaga!;
+    addVagaRegistro(v.id, {
+      tipo: "NOTIFICACAO",
+      stage: code,
+      texto: `Notificação da fase “${STAGE_LABEL[code]}” agendada para ${n} ${n === 1 ? "candidato" : "candidatos"} por email.`,
+    });
+    toast.success(
+      n > 0
+        ? `Notificação da fase “${STAGE_LABEL[code]}” registada para ${n} candidato(s). O envio por email arranca assim que o domínio de envio estiver configurado.`
+        : `Notificação da fase “${STAGE_LABEL[code]}” registada (sem candidatos para notificar).`,
+    );
+  }
+
+  function adicionarObservacao(e: FormEvent) {
+    e.preventDefault();
+    const texto = obs.trim();
+    if (!texto) return;
+    addVagaRegistro(vaga!.id, { tipo: "OBSERVACAO", texto });
+    setObs("");
+    toast.success("Observação registada.");
+  }
 
   function gerarAta() {
     const v = vaga!;
@@ -301,6 +376,19 @@ function GestaoVaga() {
                 <p className="mt-1 font-mono text-[10px] text-muted-foreground">
                   {s.state === "completed" ? "concluída" : s.state === "active" ? "em curso" : "por iniciar"}
                 </p>
+                {(s.startedAt || s.endedAt) && (
+                  <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                    {s.startedAt ? `início ${formatDate(s.startedAt)}` : ""}
+                    {s.startedAt && s.endedAt ? " · " : ""}
+                    {s.endedAt ? `fim ${formatDate(s.endedAt)}` : ""}
+                  </p>
+                )}
+                <button
+                  onClick={() => notificarFase(s.code)}
+                  className="mt-2 w-full rounded-md border border-border bg-white/60 px-2 py-1 text-[11px] font-medium text-muted-foreground transition hover:border-atmosfera hover:text-foreground"
+                >
+                  Notificar
+                </button>
               </li>
             ))}
           </ol>
@@ -308,6 +396,46 @@ function GestaoVaga() {
             <p className="mt-4 font-mono text-[11px] text-muted-foreground">
               Etapa atual: {STAGE_LABEL[etapaAtiva.code]}
             </p>
+          )}
+        </section>
+
+        {/* Registos e observações */}
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:120ms]">
+          <h2 className="text-lg font-semibold tracking-tight">Registos e observações</h2>
+          <form onSubmit={adicionarObservacao} className="mt-4 flex flex-wrap items-center gap-2">
+            <input
+              value={obs}
+              onChange={(e) => setObs(e.target.value)}
+              placeholder="Observação ao procedimento (ex.: reunião do júri, pedido de esclarecimento)"
+              className="input-ipma min-w-[260px] flex-1"
+            />
+            <button className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90">
+              Adicionar registo
+            </button>
+          </form>
+          {timeline.length === 0 ? (
+            <p className="mt-3 text-[13px] text-muted-foreground">
+              Ainda não existem registos neste procedimento.
+            </p>
+          ) : (
+            <ul className="mt-5 space-y-2">
+              {timeline.map((r) => (
+                <li
+                  key={r.id}
+                  className="flex items-start gap-3 rounded-lg border border-border bg-white/40 p-3"
+                >
+                  <span className="mt-0.5 whitespace-nowrap rounded border border-border bg-white/60 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    {REGISTO_TIPO_LABEL[r.tipo]}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[13px]">{r.texto}</p>
+                    <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+                      {formatDataHora(r.when)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 

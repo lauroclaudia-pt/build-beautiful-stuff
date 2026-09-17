@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { listJavaVagas, javaBase } from "@/lib/java-api";
 import { PageShell, JobStateBadge } from "@/components/shell";
 import { useStore } from "@/lib/store";
 import {
@@ -29,7 +30,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Portal() {
-  const { vagas, applicants, site, opcoesDe } = useStore();
+  const { vagas, applicants, site, opcoesDe, hydrated, syncJavaVagas } = useStore();
+  const [servidor, setServidor] = useState<"ok" | "indisponivel" | null>(null);
   const departamentos = opcoesDe("DEPARTAMENTO");
   const locaisDisponiveis = opcoesDe("LOCAL");
   const carreirasAtivas = opcoesDe("CARREIRA");
@@ -39,6 +41,25 @@ function Portal() {
   const [locais, setLocais] = useState<string[]>([]);
   const [prazo, setPrazo] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+
+  // Sincroniza as vagas publicadas no servidor de recrutamento (backend Java).
+  useEffect(() => {
+    if (!hydrated) return;
+    let ativo = true;
+    listJavaVagas(javaBase(site.apiUrl)).then((lista) => {
+      if (!ativo) return;
+      if (!lista) {
+        setServidor("indisponivel");
+        return;
+      }
+      setServidor("ok");
+      if (lista.length) syncJavaVagas(lista);
+    });
+    return () => {
+      ativo = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   const publicas = useMemo(
     () => vagas.filter((v) => v.state === "PUBLISHED" || v.state === "RUNNING"),
@@ -103,6 +124,11 @@ function Portal() {
               <p className="mt-3 max-w-[52ch] text-[15px] text-muted-foreground text-pretty">
                 {site.heroLead}
               </p>
+              {servidor === "indisponivel" && (
+                <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.12em] text-warn">
+                  Servidor de recrutamento indisponível — a mostrar os dados locais
+                </p>
+              )}
             </div>
             <div className="flex gap-3">
               <div className="glass min-w-[120px] rounded-lg px-5 py-3">
