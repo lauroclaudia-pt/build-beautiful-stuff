@@ -1,3 +1,5 @@
+import type { StageCode } from "./recrutamento";
+
 /** Configuração editável do site, gerida no painel de administração. */
 export interface SiteConfig {
   /** Logótipo apresentado no cabeçalho (URL ou data URL de um ficheiro carregado). */
