@@ -311,6 +311,39 @@ function GestaoVaga() {
           )}
         </section>
 
+        {/* Candidaturas recebidas */}
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:100ms]">
+          <h2 className="text-lg font-semibold tracking-tight">
+            Candidaturas recebidas{" "}
+            <span className="font-mono text-[12px] font-normal text-muted-foreground">
+              ({todos.length})
+            </span>
+          </h2>
+          {todos.length === 0 ? (
+            <p className="mt-3 text-[13px] text-muted-foreground">
+              Ainda não foram recebidas candidaturas neste procedimento.
+            </p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-left text-[13px]">
+                <thead>
+                  <tr className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    <th className="pb-2 pr-3">Nome</th>
+                    <th className="pb-2 pr-3">Data</th>
+                    <th className="pb-2 pr-3">Estado</th>
+                    <th className="pb-2">Atualizar estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {todos.map((a) => (
+                    <LinhaCandidatura key={a.id} a={a} onState={setApplicantState} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
         {/* Triagem */}
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:120ms]">
           <div className="flex flex-wrap items-center justify-between gap-3">
