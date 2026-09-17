@@ -67,6 +67,14 @@ function Portal() {
 
   const detalhe = lista.find((v) => v.id === selected) ?? lista[0];
   const aEncerrar = publicas.filter((v) => daysUntil(v.deadline) <= 7).length;
+  const concluidos = vagas.filter((v) => v.state === "FINISHED").length;
+  const emAnalise = vagas.filter(
+    (v) =>
+      v.state !== "PUBLISHED" &&
+      v.state !== "RUNNING" &&
+      v.state !== "FINISHED" &&
+      v.state !== "CANCELLED",
+  ).length;
 
   function toggleLocal(local: string) {
     setLocais((l) => (l.includes(local) ? l.filter((x) => x !== local) : [...l, local]));
@@ -102,6 +110,18 @@ function Portal() {
                   Abertas
                 </p>
                 <p className="mt-1 text-2xl font-bold tracking-tight">{publicas.length}</p>
+              </div>
+              <div className="glass min-w-[120px] rounded-lg px-5 py-3">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Em análise
+                </p>
+                <p className="mt-1 text-2xl font-bold tracking-tight text-warn">{emAnalise}</p>
+              </div>
+              <div className="glass min-w-[120px] rounded-lg px-5 py-3">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Concluídos
+                </p>
+                <p className="mt-1 text-2xl font-bold tracking-tight">{concluidos}</p>
               </div>
               <div className="glass min-w-[120px] rounded-lg px-5 py-3">
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
