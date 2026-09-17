@@ -467,7 +467,12 @@ function GestaoVaga() {
                 </thead>
                 <tbody>
                   {todos.map((a) => (
-                    <LinhaCandidatura key={a.id} a={a} onState={setApplicantState} />
+                    <LinhaCandidatura
+                      key={a.id}
+                      a={a}
+                      onState={setApplicantState}
+                      onTriagem={setTriagem}
+                    />
                   ))}
                 </tbody>
               </table>
