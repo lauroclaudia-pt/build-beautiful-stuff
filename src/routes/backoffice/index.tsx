@@ -4,14 +4,8 @@ import { toast } from "sonner";
 import { PageShell, JobStateBadge, RequireRole } from "@/components/shell";
 import { useStore } from "@/lib/store";
 import {
-  BONDS,
-  DEPARTMENTS,
-  EDUCATION_LEVELS,
   JOB_STATE_LABEL,
-  LOCATIONS,
   OFFER_TYPE_LABEL,
-  REGIMES,
-  SELECTION_METHODS,
   daysUntil,
   formatDate,
   type JobState,
