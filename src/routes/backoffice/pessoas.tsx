@@ -39,7 +39,7 @@ export const Route = createFileRoute("/backoffice/pessoas")({
   ),
 });
 
-const hoje = () => new Date().toISOString().slice(0, 10);
+const hoje = hojeISO;
 
 function Pessoas() {
   const { pessoas, addPessoa, updatePessoa, addResponsabilidade, removeResponsabilidade } =
