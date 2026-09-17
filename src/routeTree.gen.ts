@@ -17,6 +17,7 @@ import { Route as BackofficeIndexRouteImport } from './routes/backoffice/index'
 import { Route as BackofficeVagaIdRouteImport } from './routes/backoffice/$vagaId'
 import { Route as BackofficeAdminRouteImport } from './routes/backoffice/admin'
 import { Route as BackofficeDadosRouteImport } from './routes/backoffice/dados'
+import { Route as BackofficeDocumentosRouteImport } from './routes/backoffice/documentos'
 import { Route as BackofficeFaqRouteImport } from './routes/backoffice/faq'
 import { Route as BackofficeNotificacoesRouteImport } from './routes/backoffice/notificacoes'
 import { Route as BackofficePessoasRouteImport } from './routes/backoffice/pessoas'
@@ -63,6 +64,11 @@ const BackofficeDadosRoute = BackofficeDadosRouteImport.update({
   path: '/backoffice/dados',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BackofficeDocumentosRoute = BackofficeDocumentosRouteImport.update({
+  id: '/backoffice/documentos',
+  path: '/backoffice/documentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BackofficeFaqRoute = BackofficeFaqRouteImport.update({
   id: '/backoffice/faq',
   path: '/backoffice/faq',
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
+  '/backoffice/documentos': typeof BackofficeDocumentosRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
   '/backoffice/notificacoes': typeof BackofficeNotificacoesRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
+  '/backoffice/documentos': typeof BackofficeDocumentosRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
   '/backoffice/notificacoes': typeof BackofficeNotificacoesRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
+  '/backoffice/documentos': typeof BackofficeDocumentosRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
   '/backoffice/notificacoes': typeof BackofficeNotificacoesRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
     | '/backoffice/dados'
+    | '/backoffice/documentos'
     | '/backoffice/faq'
     | '/backoffice/notificacoes'
     | '/backoffice/pessoas'
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
     | '/backoffice/dados'
+    | '/backoffice/documentos'
     | '/backoffice/faq'
     | '/backoffice/notificacoes'
     | '/backoffice/pessoas'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
     | '/backoffice/dados'
+    | '/backoffice/documentos'
     | '/backoffice/faq'
     | '/backoffice/notificacoes'
     | '/backoffice/pessoas'
@@ -191,6 +203,7 @@ export interface RootRouteChildren {
   BackofficeVagaIdRoute: typeof BackofficeVagaIdRoute
   BackofficeAdminRoute: typeof BackofficeAdminRoute
   BackofficeDadosRoute: typeof BackofficeDadosRoute
+  BackofficeDocumentosRoute: typeof BackofficeDocumentosRoute
   BackofficeFaqRoute: typeof BackofficeFaqRoute
   BackofficeNotificacoesRoute: typeof BackofficeNotificacoesRoute
   BackofficePessoasRoute: typeof BackofficePessoasRoute
@@ -257,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BackofficeDadosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/backoffice/documentos': {
+      id: '/backoffice/documentos'
+      path: '/backoffice/documentos'
+      fullPath: '/backoffice/documentos'
+      preLoaderRoute: typeof BackofficeDocumentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/backoffice/faq': {
       id: '/backoffice/faq'
       path: '/backoffice/faq'
@@ -303,6 +323,7 @@ const rootRouteChildren: RootRouteChildren = {
   BackofficeVagaIdRoute: BackofficeVagaIdRoute,
   BackofficeAdminRoute: BackofficeAdminRoute,
   BackofficeDadosRoute: BackofficeDadosRoute,
+  BackofficeDocumentosRoute: BackofficeDocumentosRoute,
   BackofficeFaqRoute: BackofficeFaqRoute,
   BackofficeNotificacoesRoute: BackofficeNotificacoesRoute,
   BackofficePessoasRoute: BackofficePessoasRoute,
