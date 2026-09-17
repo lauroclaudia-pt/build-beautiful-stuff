@@ -11,7 +11,7 @@ import {
   DEFAULT_DOCUMENTS,
   SEED_APPLICANTS,
   SEED_VAGAS,
-  newStages,
+  newStagesFor,
   type Applicant,
   type ApplicantState,
   type CandidateDocument,
@@ -19,14 +19,16 @@ import {
   type Vaga,
 } from "./recrutamento";
 import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
+import { DEFAULT_SITE, type SiteConfig } from "./site";
 
-const STORAGE_KEY = "ipma-recrutamento-v2";
+const STORAGE_KEY = "ipma-recrutamento-v3";
 
 interface Data {
   vagas: Vaga[];
   applicants: Applicant[];
   pessoas: Pessoa[];
   sessionId: string | null;
+  site: SiteConfig;
 }
 
 interface StoreValue extends Data {
@@ -47,6 +49,9 @@ interface StoreValue extends Data {
   updatePessoa: (id: string, patch: Partial<Pessoa>) => void;
   addResponsabilidade: (pessoaId: string, r: Omit<Responsabilidade, "id">) => void;
   removeResponsabilidade: (pessoaId: string, respId: string) => void;
+  updateSite: (patch: Partial<SiteConfig>) => void;
+  resetSite: () => void;
+  concludeScreening: (vagaId: string) => { ok: boolean; message: string };
   reset: () => void;
 }
 
@@ -61,6 +66,7 @@ function seed(): Data {
     })),
     pessoas: SEED_PESSOAS,
     sessionId: null,
+    site: { ...DEFAULT_SITE },
   };
 }
 
@@ -79,6 +85,7 @@ function load(): Data {
         })),
         pessoas: parsed.pessoas ?? base.pessoas,
         sessionId: parsed.sessionId ?? null,
+        site: { ...DEFAULT_SITE, ...(parsed.site ?? {}) },
       };
     }
   } catch {
@@ -109,7 +116,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       id: crypto.randomUUID(),
       state: "DRAFT",
       publishedAt: null,
-      stages: newStages(0),
+      stages: newStagesFor(input.offerType, { hasEac: input.hasEac ?? true, activeIndex: 0 }),
     };
     setData((d) => ({ ...d, vagas: [vaga, ...d.vagas] }));
     return vaga;
@@ -135,11 +142,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           };
           return v;
         }
+        const stages = newStagesFor(v.offerType, { hasEac: v.hasEac ?? true, activeIndex: 1 });
         return {
           ...v,
-          state: "PUBLISHED",
+          state: "PUBLISHED" as const,
           publishedAt: new Date().toISOString().slice(0, 10),
-          stages: newStages(1),
+          stages,
         };
       }),
     }));
@@ -316,6 +324,59 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const updateSite: StoreValue["updateSite"] = useCallback((patch) => {
+    setData((d) => ({ ...d, site: { ...d.site, ...patch } }));
+  }, []);
+
+  const resetSite = useCallback(() => {
+    setData((d) => ({ ...d, site: { ...DEFAULT_SITE } }));
+  }, []);
+
+  /**
+   * Conclui a triagem provisória: se existirem candidatos excluídos segue para a
+   * recolha de requisitos em falta, caso contrário avança diretamente para a avaliação.
+   */
+  const concludeScreening: StoreValue["concludeScreening"] = useCallback((vagaId) => {
+    let result = { ok: true, message: "Triagem provisória concluída." };
+    setData((d) => {
+      const excluidos = d.applicants.some((a) => a.vagaId === vagaId && a.state === "EXCLUDED");
+      return {
+        ...d,
+        vagas: d.vagas.map((v) => {
+          if (v.id !== vagaId) return v;
+          const idx = v.stages.findIndex((s) => s.code === "ADMISSION");
+          if (idx === -1) {
+            result = { ok: false, message: "Esta vaga não tem etapa de triagem." };
+            return v;
+          }
+          const proximo = excluidos ? "MISSING_REQUIREMENTS" : "EVALUATION";
+          const alvo = v.stages.findIndex((s) => s.code === proximo);
+          const destino = alvo === -1 ? Math.min(idx + 1, v.stages.length - 1) : alvo;
+          result = {
+            ok: true,
+            message: excluidos
+              ? "Triagem concluída — segue para recolha de requisitos em falta."
+              : "Triagem concluída — segue para avaliação.",
+          };
+          return {
+            ...v,
+            state: "RUNNING" as const,
+            stages: v.stages.map((s, i) => ({
+              ...s,
+              state:
+                i < destino
+                  ? ("completed" as const)
+                  : i === destino
+                    ? ("active" as const)
+                    : ("draft" as const),
+            })),
+          };
+        }),
+      };
+    });
+    return result;
+  }, []);
+
   const reset = useCallback(() => {
     setData(seed());
   }, []);
@@ -345,6 +406,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updatePessoa,
       addResponsabilidade,
       removeResponsabilidade,
+      updateSite,
+      resetSite,
+      concludeScreening,
       reset,
     }),
     [
@@ -366,6 +430,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updatePessoa,
       addResponsabilidade,
       removeResponsabilidade,
+      updateSite,
+      resetSite,
+      concludeScreening,
       reset,
     ],
   );

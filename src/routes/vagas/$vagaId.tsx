@@ -7,8 +7,10 @@ import {
   EDUCATION_LEVELS,
   OFFER_TYPE_LABEL,
   STAGE_LABEL,
+  ageFrom,
   daysUntil,
   formatDate,
+  validateNif,
 } from "@/lib/recrutamento";
 
 export const Route = createFileRoute("/vagas/$vagaId")({
@@ -45,9 +47,14 @@ const emptyForm = {
   email: "",
   phone: "",
   nif: "",
+  birthDate: "",
   education: EDUCATION_LEVELS[1]!,
   professionalSituation: SITUACOES[0]!,
   motivation: "",
+  deficiencia: false,
+  rjep: false,
+  specialConditions: "",
+  truthDeclaration: false,
 };
 
 function VagaDetalhe() {
@@ -56,6 +63,8 @@ function VagaDetalhe() {
   const { vagas, applicants, addApplicant, hydrated } = useStore();
   const vaga = vagas.find((v) => v.id === vagaId);
   const [form, setForm] = useState(emptyForm);
+  const [anexos, setAnexos] = useState<string[]>([]);
+  const [declaracaoIncap, setDeclaracaoIncap] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState<string | null>(null);
 
@@ -82,7 +91,7 @@ function VagaDetalhe() {
   const encerrado = dias <= 0 || vaga.state === "FINISHED" || vaga.state === "CANCELLED";
   const total = applicants.filter((a) => a.vagaId === vaga.id).length;
 
-  function set(k: keyof typeof emptyForm, v: string) {
+  function set<K extends keyof typeof emptyForm>(k: K, v: (typeof emptyForm)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
     setErrors((e) => ({ ...e, [k]: "" }));
   }
@@ -90,12 +99,23 @@ function VagaDetalhe() {
   function submeter(e: React.FormEvent) {
     e.preventDefault();
     const err: Record<string, string> = {};
+    const nif = form.nif.replace(/\s/g, "");
     if (!form.name.trim() || form.name.trim().length > 120) err["name"] = "Indique o nome completo.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) err["email"] = "Email inválido.";
     if (form.phone.replace(/\D/g, "").length < 9) err["phone"] = "Telefone inválido.";
-    if (!/^\d{9}$/.test(form.nif.replace(/\s/g, ""))) err["nif"] = "O NIF tem 9 dígitos.";
+    if (!validateNif(nif)) err["nif"] = "NIF inválido (verificação do dígito de controlo).";
+    else if (
+      applicants.some((a) => a.vagaId === vaga!.id && a.nif.replace(/\s/g, "") === nif)
+    )
+      err["nif"] = "Já existe uma candidatura com este NIF neste procedimento.";
+    if (!form.birthDate) err["birthDate"] = "Indique a data de nascimento.";
+    else if (ageFrom(form.birthDate) < 18) err["birthDate"] = "É necessário ter 18 anos ou mais.";
     if (form.motivation.trim().length < 20) err["motivation"] = "Escreva pelo menos 20 caracteres.";
     if (form.motivation.length > 1500) err["motivation"] = "Máximo de 1500 caracteres.";
+    if (form.deficiencia && !declaracaoIncap)
+      err["deficiencia"] = "Anexe a declaração de incapacidade.";
+    if (!form.truthDeclaration)
+      err["truthDeclaration"] = "Tem de declarar a veracidade das informações.";
     setErrors(err);
     if (Object.keys(err).length) {
       toast.error("Verifique os campos assinalados.");
@@ -106,13 +126,21 @@ function VagaDetalhe() {
       name: form.name.trim(),
       email: form.email.trim(),
       phone: form.phone.trim(),
-      nif: form.nif.replace(/\s/g, ""),
+      nif,
+      birthDate: form.birthDate,
       education: form.education,
       professionalSituation: form.professionalSituation,
       motivation: form.motivation.trim(),
+      deficiencia: form.deficiencia,
+      rjep: form.rjep,
+      specialConditions: form.specialConditions.trim(),
+      truthDeclaration: true,
+      attachments: [...anexos, ...(declaracaoIncap ? [declaracaoIncap] : [])],
     });
     setDone(a.id);
     setForm(emptyForm);
+    setAnexos([]);
+    setDeclaracaoIncap(null);
     toast.success("Candidatura submetida e registada.");
   }
 
@@ -240,6 +268,14 @@ function VagaDetalhe() {
                       className="input-ipma"
                     />
                   </Field>
+                  <Field label="Data de nascimento" error={errors["birthDate"]}>
+                    <input
+                      type="date"
+                      value={form.birthDate}
+                      onChange={(e) => set("birthDate", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
                   <Field label="Habilitações">
                     <select
                       value={form.education}
@@ -273,6 +309,113 @@ function VagaDetalhe() {
                       />
                     </Field>
                   </div>
+
+                  <div className="sm:col-span-2">
+                    <Field label="Condições especiais para a realização dos métodos de seleção">
+                      <input
+                        value={form.specialConditions}
+                        maxLength={200}
+                        placeholder="Opcional — ex.: apoio à mobilidade, tempo adicional"
+                        onChange={(e) => set("specialConditions", e.target.value)}
+                        className="input-ipma"
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="space-y-3 sm:col-span-2">
+                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                      <input
+                        type="checkbox"
+                        checked={form.deficiencia}
+                        onChange={(e) => set("deficiencia", e.target.checked)}
+                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                      />
+                      <span>
+                        Candidato(a) com grau de incapacidade igual ou superior a 60% (quota de
+                        emprego)
+                      </span>
+                    </label>
+                    {form.deficiencia && (
+                      <div className="rounded-lg border border-border bg-white/40 p-3">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                          Declaração de incapacidade (obrigatória)
+                        </p>
+                        <input
+                          type="file"
+                          accept=".pdf,image/*"
+                          onChange={(e) =>
+                            setDeclaracaoIncap(e.target.files?.[0]?.name ?? null)
+                          }
+                          className="mt-2 text-[12px]"
+                        />
+                        {declaracaoIncap && (
+                          <p className="mt-1 font-mono text-[11px] text-success">
+                            {declaracaoIncap}
+                          </p>
+                        )}
+                        {errors["deficiencia"] && (
+                          <p className="mt-1 text-[11px] text-destructive">
+                            {errors["deficiencia"]}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                      <input
+                        type="checkbox"
+                        checked={form.rjep}
+                        onChange={(e) => set("rjep", e.target.checked)}
+                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                      />
+                      <span>
+                        Detenho vínculo de emprego público (RJEP) — junto declaração da entidade
+                        empregadora
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="sm:col-span-2 rounded-lg border border-border bg-white/40 p-3">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      Documentos a anexar (CV, certificado de habilitações, identificação)
+                    </p>
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,image/*"
+                      onChange={(e) =>
+                        setAnexos(Array.from(e.target.files ?? []).map((f) => f.name))
+                      }
+                      className="mt-2 text-[12px]"
+                    />
+                    {anexos.length > 0 && (
+                      <ul className="mt-2 list-inside list-disc font-mono text-[11px] text-muted-foreground">
+                        {anexos.map((n) => (
+                          <li key={n}>{n}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                      <input
+                        type="checkbox"
+                        checked={form.truthDeclaration}
+                        onChange={(e) => set("truthDeclaration", e.target.checked)}
+                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                      />
+                      <span>
+                        Declaro, sob compromisso de honra, que as informações prestadas são
+                        verdadeiras e que reúno os requisitos de admissão.
+                      </span>
+                    </label>
+                    {errors["truthDeclaration"] && (
+                      <p className="mt-1 text-[11px] text-destructive">
+                        {errors["truthDeclaration"]}
+                      </p>
+                    )}
+                  </div>
+
                   <div className="flex items-center gap-4 sm:col-span-2">
                     <button
                       type="submit"

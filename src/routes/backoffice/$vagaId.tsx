@@ -50,8 +50,16 @@ const TRIAGEM: ApplicantState[] = [
 
 function GestaoVaga() {
   const { vagaId } = Route.useParams();
-  const { vagas, applicants, updateVaga, publishVaga, advanceStage, setApplicantState, setGrades } =
-    useStore();
+  const {
+    vagas,
+    applicants,
+    updateVaga,
+    publishVaga,
+    advanceStage,
+    concludeScreening,
+    setApplicantState,
+    setGrades,
+  } = useStore();
   const vaga = vagas.find((v) => v.id === vagaId);
   const [filtro, setFiltro] = useState<ApplicantState | "">("");
   const [aberto, setAberto] = useState<string | null>(null);
@@ -251,15 +259,28 @@ function GestaoVaga() {
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:80ms]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold tracking-tight">Pipeline de etapas</h2>
-            <button
-              onClick={() => {
-                advanceStage(vaga.id);
-                toast.success("Etapa avançada.");
-              }}
-              className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Avançar etapa
-            </button>
+            <div className="flex flex-wrap gap-2">
+              {etapaAtiva?.code === "ADMISSION" && (
+                <button
+                  onClick={() => {
+                    const r = concludeScreening(vaga.id);
+                    r.ok ? toast.success(r.message) : toast.error(r.message);
+                  }}
+                  className="rounded-md border border-border bg-white/60 px-4 py-2 text-[13px] font-medium"
+                >
+                  Concluir triagem provisória
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  advanceStage(vaga.id);
+                  toast.success("Etapa avançada.");
+                }}
+                className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Avançar etapa
+              </button>
+            </div>
           </div>
           <ol className="mt-5 grid gap-2 md:grid-cols-6">
             {vaga.stages.map((s, i) => (

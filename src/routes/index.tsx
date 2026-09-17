@@ -31,9 +31,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Portal() {
-  const { vagas, applicants } = useStore();
+  const { vagas, applicants, site } = useStore();
   const [tipo, setTipo] = useState<string>("");
   const [unidade, setUnidade] = useState<string>("");
+  const [carreira, setCarreira] = useState<string>("");
   const [locais, setLocais] = useState<string[]>([]);
   const [prazo, setPrazo] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -43,17 +44,22 @@ function Portal() {
     [vagas],
   );
 
-  const lista = useMemo(
-    () =>
-      publicas.filter((v) => {
-        if (tipo && v.offerType !== tipo) return false;
-        if (unidade && v.department !== unidade) return false;
-        if (locais.length && !locais.includes(v.location)) return false;
-        if (prazo && daysUntil(v.deadline) > prazo) return false;
-        return true;
-      }),
-    [publicas, tipo, unidade, locais, prazo],
+  const carreiras = useMemo(
+    () => Array.from(new Set(publicas.map((v) => v.career))).sort((a, b) => a.localeCompare(b, "pt")),
+    [publicas],
   );
+
+  const lista = useMemo(() => {
+    if (!site.showFilters) return publicas;
+    return publicas.filter((v) => {
+      if (tipo && v.offerType !== tipo) return false;
+      if (unidade && v.department !== unidade) return false;
+      if (site.showCareerFilter && carreira && v.career !== carreira) return false;
+      if (locais.length && !locais.includes(v.location)) return false;
+      if (prazo && daysUntil(v.deadline) > prazo) return false;
+      return true;
+    });
+  }, [publicas, tipo, unidade, carreira, locais, prazo, site.showFilters, site.showCareerFilter]);
 
   const detalhe = lista.find((v) => v.id === selected) ?? lista[0];
   const aEncerrar = publicas.filter((v) => daysUntil(v.deadline) <= 7).length;
@@ -65,6 +71,7 @@ function Portal() {
   function limpar() {
     setTipo("");
     setUnidade("");
+    setCarreira("");
     setLocais([]);
     setPrazo(null);
   }
@@ -79,12 +86,10 @@ function Portal() {
                 Portal público · {new Date().getFullYear()}
               </p>
               <h1 className="mt-3 text-4xl font-bold tracking-tight text-balance md:text-5xl">
-                Recrutamento de pessoal
+                {site.heroTitle}
               </h1>
               <p className="mt-3 max-w-[52ch] text-[15px] text-muted-foreground text-pretty">
-                Procedimentos concursais, mobilidades e bolsas de investigação do Instituto
-                Português do Mar e da Atmosfera. Consulte o estado de cada processo e candidate-se
-                dentro do prazo fixado.
+                {site.heroLead}
               </p>
             </div>
             <div className="flex gap-3">
@@ -105,6 +110,7 @@ function Portal() {
         </section>
 
         <div className="mt-10 grid grid-cols-12 gap-6">
+          {site.showFilters && (
           <aside className="col-span-12 animate-rise [animation-delay:80ms] lg:col-span-3">
             <div className="glass rounded-xl p-5">
               <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -153,6 +159,29 @@ function Portal() {
                     ))}
                   </select>
                 </div>
+                {site.showCareerFilter && (
+                  <div>
+                    <label
+                      htmlFor="carreira"
+                      className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground"
+                    >
+                      Cargo / carreira
+                    </label>
+                    <select
+                      id="carreira"
+                      value={carreira}
+                      onChange={(e) => setCarreira(e.target.value)}
+                      className="mt-2 w-full rounded-md border border-border bg-white/50 px-3 py-2 text-[13px]"
+                    >
+                      <option value="">Todas</option>
+                      {carreiras.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                     Local
@@ -202,8 +231,11 @@ function Portal() {
               </button>
             </div>
           </aside>
+          )}
 
-          <div className="col-span-12 space-y-4 lg:col-span-6">
+          <div
+            className={`col-span-12 space-y-4 ${site.showFilters ? "lg:col-span-6" : "lg:col-span-9"}`}
+          >
             <div className="flex animate-rise items-center justify-between [animation-delay:120ms]">
               <p className="font-mono text-[11px] text-muted-foreground">
                 {lista.length} {lista.length === 1 ? "vaga encontrada" : "vagas encontradas"}

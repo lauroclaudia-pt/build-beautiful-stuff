@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
 import logo from "@/assets/logo-ipma.png.asset.json";
 import { useStore } from "@/lib/store";
@@ -10,6 +10,33 @@ import {
   type ApplicantState,
   type JobState,
 } from "@/lib/recrutamento";
+
+const ADMIN_ROLES: Role[] = ["ADMIN", "GESTOR_RH", "GESTAO"];
+
+/** Aplica as cores e o ícone definidos no painel de administração. */
+function SiteTheme() {
+  const { site, hydrated } = useStore();
+  useEffect(() => {
+    if (!hydrated || typeof document === "undefined") return;
+    const root = document.documentElement;
+    root.style.setProperty("--primary", site.buttonColor);
+    root.style.setProperty("--primary-foreground", site.buttonTextColor);
+    root.style.setProperty("--ring", site.buttonColor);
+    root.style.setProperty("--accent", site.accentColor);
+    root.style.setProperty("--atmosfera", site.accentColor);
+    root.style.setProperty("--heading", site.titleColor);
+    if (site.faviconUrl) {
+      let link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      link.href = site.faviconUrl;
+    }
+  }, [site, hydrated]);
+  return null;
+}
 
 export function Backdrop() {
   return (
@@ -22,11 +49,17 @@ export function Backdrop() {
 }
 
 export function SiteHeader() {
+  const { site, currentUser } = useStore();
+  const podeAdministrar = hasActiveRole(currentUser, ...ADMIN_ROLES);
   return (
     <header className="glass-2 sticky top-0 z-40 border-x-0 border-t-0">
       <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-6 px-6">
         <Link to="/" className="flex items-center gap-3">
-          <img src={logo.url} alt="IPMA — Instituto Português do Mar e da Atmosfera" className="h-9 w-auto" />
+          <img
+            src={site.logoUrl ?? logo.url}
+            alt="IPMA — Instituto Português do Mar e da Atmosfera"
+            className="h-9 w-auto"
+          />
           <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:block">
             Recrutamento
           </span>
@@ -54,6 +87,15 @@ export function SiteHeader() {
           >
             Candidato
           </Link>
+          {podeAdministrar && (
+            <Link
+              to="/backoffice/admin"
+              activeProps={{ className: "bg-foreground/5 text-foreground" }}
+              className="rounded-md px-3 py-2 hover:bg-foreground/5"
+            >
+              Administração
+            </Link>
+          )}
           <Link
             to="/apoio"
             activeProps={{ className: "bg-foreground/5 text-foreground" }}
@@ -169,6 +211,7 @@ export function SiteFooter() {
 export function PageShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SiteTheme />
       <Backdrop />
       <SiteHeader />
       {children}
@@ -205,6 +248,7 @@ const applicantTone: Record<ApplicantState, string> = {
   APPROVED: "bg-success/10 text-success",
   HIRED: "bg-success/15 text-success",
   REJECTED: "bg-destructive/10 text-destructive",
+  CANCELLED: "bg-neutral/15 text-neutral",
 };
 
 export function ApplicantStateBadge({ state }: { state: ApplicantState }) {
