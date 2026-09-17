@@ -78,6 +78,14 @@ function Dados() {
       toast.error("Indique a designação do valor.");
       return;
     }
+    if (!novo.startDate) {
+      toast.error("A data de início é obrigatória.");
+      return;
+    }
+    if (novo.endDate && novo.endDate < novo.startDate) {
+      toast.error("A data de fim não pode ser anterior à data de início.");
+      return;
+    }
     if (isConcelho && !novo.distritoId) {
       toast.error("Escolha o distrito do concelho.");
       return;
