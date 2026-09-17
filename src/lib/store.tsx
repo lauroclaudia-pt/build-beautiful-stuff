@@ -324,6 +324,59 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const updateSite: StoreValue["updateSite"] = useCallback((patch) => {
+    setData((d) => ({ ...d, site: { ...d.site, ...patch } }));
+  }, []);
+
+  const resetSite = useCallback(() => {
+    setData((d) => ({ ...d, site: { ...DEFAULT_SITE } }));
+  }, []);
+
+  /**
+   * Conclui a triagem provisória: se existirem candidatos excluídos segue para a
+   * recolha de requisitos em falta, caso contrário avança diretamente para a avaliação.
+   */
+  const concludeScreening: StoreValue["concludeScreening"] = useCallback((vagaId) => {
+    let result = { ok: true, message: "Triagem provisória concluída." };
+    setData((d) => {
+      const excluidos = d.applicants.some((a) => a.vagaId === vagaId && a.state === "EXCLUDED");
+      return {
+        ...d,
+        vagas: d.vagas.map((v) => {
+          if (v.id !== vagaId) return v;
+          const idx = v.stages.findIndex((s) => s.code === "ADMISSION");
+          if (idx === -1) {
+            result = { ok: false, message: "Esta vaga não tem etapa de triagem." };
+            return v;
+          }
+          const proximo = excluidos ? "MISSING_REQUIREMENTS" : "EVALUATION";
+          const alvo = v.stages.findIndex((s) => s.code === proximo);
+          const destino = alvo === -1 ? Math.min(idx + 1, v.stages.length - 1) : alvo;
+          result = {
+            ok: true,
+            message: excluidos
+              ? "Triagem concluída — segue para recolha de requisitos em falta."
+              : "Triagem concluída — segue para avaliação.",
+          };
+          return {
+            ...v,
+            state: "RUNNING" as const,
+            stages: v.stages.map((s, i) => ({
+              ...s,
+              state:
+                i < destino
+                  ? ("completed" as const)
+                  : i === destino
+                    ? ("active" as const)
+                    : ("draft" as const),
+            })),
+          };
+        }),
+      };
+    });
+    return result;
+  }, []);
+
   const reset = useCallback(() => {
     setData(seed());
   }, []);
