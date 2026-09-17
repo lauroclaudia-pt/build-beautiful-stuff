@@ -25,6 +25,7 @@ export const Route = createFileRoute("/apoio")({
 function Apoio() {
   const { site } = useStore();
   const faq = site.faq ?? [];
+  const contactos = site.contacts ?? [];
 
   return (
     <PageShell>
