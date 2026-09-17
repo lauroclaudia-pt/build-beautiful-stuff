@@ -5,12 +5,15 @@ import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/co
 import { finalGrade, useStore } from "@/lib/store";
 import {
   APPLICANT_STATE_LABEL,
+  EMPTY_TRIAGEM,
   OFFER_TYPE_LABEL,
   STAGE_LABEL,
+  TRIAGEM_CRITERIOS,
   formatDate,
   type Applicant,
   type ApplicantState,
   type StageCode,
+  type TriagemCriterios,
 } from "@/lib/recrutamento";
 
 export const Route = createFileRoute("/backoffice/$vagaId")({
