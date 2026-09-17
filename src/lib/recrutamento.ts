@@ -198,7 +198,6 @@ export const SEED_VAGAS: Vaga[] = [
     career: "Técnico Superior",
     bond: "Contrato de trabalho em funções públicas",
     regime: "Tempo inteiro",
-    remuneração: undefined as never,
     remuneration: "1 333,35 € — 2.ª posição remuneratória",
     educationLevel: "Licenciatura",
     requirements:
