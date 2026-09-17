@@ -58,6 +58,10 @@ interface StoreValue extends Data {
   removeResponsabilidade: (pessoaId: string, respId: string) => void;
   updateSite: (patch: Partial<SiteConfig>) => void;
   resetSite: () => void;
+  addOpcao: (o: Omit<OptionValue, "id">) => void;
+  updateOpcao: (id: string, patch: Partial<Omit<OptionValue, "id">>) => void;
+  removeOpcao: (id: string) => void;
+  opcoesDe: (category: OptionCategory) => string[];
   concludeScreening: (vagaId: string) => { ok: boolean; message: string };
   reset: () => void;
 }
@@ -74,6 +78,7 @@ function seed(): Data {
     pessoas: SEED_PESSOAS,
     sessionId: null,
     site: { ...DEFAULT_SITE },
+    opcoes: SEED_OPCOES.map((o) => ({ ...o })),
   };
 }
 
@@ -93,6 +98,7 @@ function load(): Data {
         pessoas: parsed.pessoas ?? base.pessoas,
         sessionId: parsed.sessionId ?? null,
         site: { ...DEFAULT_SITE, ...(parsed.site ?? {}) },
+        opcoes: parsed.opcoes?.length ? parsed.opcoes : base.opcoes,
       };
     }
   } catch {
