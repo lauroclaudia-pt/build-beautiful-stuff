@@ -43,4 +43,5 @@
 - Estado automático: ATIVO se data início ≤ hoje e data fim NULL ou > hoje; senão INATIVO.
 - Botão GUARDAR para guardar alterações; botão REMOVER põe data fim = agora e estado INATIVO.
 - Painel de Administração: componentes para configurar caixa de correio / envio de emails pela aplicação (requer domínio de envio próprio — apresentar dialog de configuração).
-- Correio eletrónico: acrescentar campos SMTP — servidor de saída, porta, username e password.
+- [x] Correio eletrónico: campos SMTP (servidor de saída, porta, username, password) — FEITO e verificado.
+- [x] Documentos e atas com estado ATIVO/INATIVO, Guardar e Remover — verificado com Playwright.
