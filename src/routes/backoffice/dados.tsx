@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Check, Pencil, Trash2 } from "lucide-react";
 import { PageShell, RequireRole } from "@/components/shell";
+import { Req, hojeISO } from "@/components/req";
 import { useStore } from "@/lib/store";
 import type { Role } from "@/lib/pessoas";
 import {
@@ -40,11 +42,12 @@ export const Route = createFileRoute("/backoffice/dados")({
   ),
 });
 
-const hoje = () => new Date().toISOString().slice(0, 10);
+const hoje = hojeISO;
 
 function Dados() {
   const { opcoes, addOpcao, updateOpcao, removeOpcao } = useStore();
   const [categoria, setCategoria] = useState<OptionCategory>("DEPARTAMENTO");
+  const [editando, setEditando] = useState<string | null>(null);
   const [novo, setNovo] = useState({
     label: "",
     startDate: hoje(),
@@ -75,6 +78,14 @@ function Dados() {
     e.preventDefault();
     if (!novo.label.trim()) {
       toast.error("Indique a designação do valor.");
+      return;
+    }
+    if (!novo.startDate) {
+      toast.error("A data de início é obrigatória.");
+      return;
+    }
+    if (novo.endDate && novo.endDate < novo.startDate) {
+      toast.error("A data de fim não pode ser anterior à data de início.");
       return;
     }
     if (isConcelho && !novo.distritoId) {
@@ -144,22 +155,26 @@ function Dados() {
           <label className="block sm:col-span-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Novo valor
+              <Req />
             </span>
             <input
               value={novo.label}
               onChange={(e) => setNovo({ ...novo, label: e.target.value })}
               placeholder={`Designação (${OPTION_CATEGORY_LABEL[categoria]})`}
+              required
               className="input-ipma mt-1.5"
             />
           </label>
           <label className="block">
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Data de início
+              <Req />
             </span>
             <input
               type="date"
               value={novo.startDate}
-              onChange={(e) => setNovo({ ...novo, startDate: e.target.value })}
+              onChange={(e) => setNovo({ ...novo, startDate: e.target.value || hoje() })}
+              required
               className="input-ipma mt-1.5"
             />
           </label>
@@ -260,7 +275,8 @@ function Dados() {
                       <input
                         value={o.label}
                         onChange={(e) => updateOpcao(o.id, { label: e.target.value })}
-                        className="input-ipma"
+                        disabled={editando !== o.id}
+                        className="input-ipma disabled:border-transparent disabled:bg-transparent disabled:opacity-100"
                       />
                     </td>
                     {isLocal && (
@@ -269,7 +285,8 @@ function Dados() {
                           value={o.address ?? ""}
                           onChange={(e) => updateOpcao(o.id, { address: e.target.value || null })}
                           placeholder="Morada completa"
-                          className="input-ipma min-w-[220px]"
+                          disabled={editando !== o.id}
+                          className="input-ipma min-w-[220px] disabled:border-transparent disabled:bg-transparent disabled:opacity-100"
                         />
                       </td>
                     )}
@@ -283,7 +300,8 @@ function Dados() {
                               ...(isLocal ? { concelhoId: null } : {}),
                             })
                           }
-                          className="input-ipma"
+                          disabled={editando !== o.id}
+                          className="input-ipma disabled:border-transparent disabled:bg-transparent disabled:opacity-100"
                         >
                           <option value="">—</option>
                           {distritos.map((d) => (
@@ -299,7 +317,8 @@ function Dados() {
                         <select
                           value={o.concelhoId ?? ""}
                           onChange={(e) => updateOpcao(o.id, { concelhoId: e.target.value || null })}
-                          className="input-ipma"
+                          disabled={editando !== o.id}
+                          className="input-ipma disabled:border-transparent disabled:bg-transparent disabled:opacity-100"
                         >
                           <option value="">—</option>
                           {concelhos
@@ -316,8 +335,11 @@ function Dados() {
                       <input
                         type="date"
                         value={o.startDate}
-                        onChange={(e) => updateOpcao(o.id, { startDate: e.target.value })}
-                        className="input-ipma"
+                        onChange={(e) =>
+                          updateOpcao(o.id, { startDate: e.target.value || hoje() })
+                        }
+                        disabled={editando !== o.id}
+                        className="input-ipma disabled:border-transparent disabled:bg-transparent disabled:opacity-100"
                       />
                     </td>
                     <td className="px-4 py-2.5">
@@ -325,7 +347,8 @@ function Dados() {
                         type="date"
                         value={o.endDate ?? ""}
                         onChange={(e) => updateOpcao(o.id, { endDate: e.target.value || null })}
-                        className="input-ipma"
+                        disabled={editando !== o.id}
+                        className="input-ipma disabled:border-transparent disabled:bg-transparent disabled:opacity-100"
                       />
                     </td>
                     <td className="px-4 py-2.5">
@@ -337,18 +360,43 @@ function Dados() {
                         {ativo ? "Ativo" : "Inativo"}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          removeOpcao(o.id);
-                          toast.success("Valor desativado com data e hora de agora.");
-                        }}
-                        disabled={!ativo}
-                        className="rounded-md border border-border px-3 py-1.5 text-[12px] hover:bg-foreground/5 disabled:opacity-40"
-                      >
-                        Remover
-                      </button>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          title={editando === o.id ? "Guardar alterações" : "Editar"}
+                          aria-label={editando === o.id ? "Guardar alterações" : "Editar"}
+                          onClick={() => {
+                            if (editando === o.id) {
+                              setEditando(null);
+                              toast.success("Alterações guardadas.");
+                            } else {
+                              setEditando(o.id);
+                            }
+                          }}
+                          className={`rounded-md border p-2 transition ${
+                            editando === o.id
+                              ? "border-success/40 bg-success/10 text-success"
+                              : "border-border hover:bg-foreground/5"
+                          }`}
+                        >
+                          {editando === o.id ? <Check size={15} /> : <Pencil size={15} />}
+                        </button>
+                        <button
+                          type="button"
+                          title="Remover"
+                          aria-label="Remover"
+                          onClick={() => {
+                            removeOpcao(o.id);
+                            setEditando(null);
+                            toast.success("Valor desativado com data e hora de agora.");
+                          }}
+                          disabled={!ativo}
+                          className="rounded-md border border-border p-2 text-destructive transition hover:bg-destructive/10 disabled:opacity-40"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

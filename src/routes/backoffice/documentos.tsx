@@ -144,7 +144,8 @@ function GestaoDocumentos() {
             <input
               value={novo.name}
               onChange={(e) => setNovo({ ...novo, name: e.target.value })}
-              placeholder="Nome do documento (ex.: Ata de abertura)"
+              placeholder="Nome do documento (ex.: Ata de abertura) *"
+              required
               className="input-ipma w-full"
             />
             <button

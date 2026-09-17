@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PageShell, RequireRole } from "@/components/shell";
+import { Req, hojeISO } from "@/components/req";
 import { useStore } from "@/lib/store";
 import {
   ROLES,
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/backoffice/pessoas")({
   ),
 });
 
-const hoje = () => new Date().toISOString().slice(0, 10);
+const hoje = hojeISO;
 
 function Pessoas() {
   const { pessoas, addPessoa, updatePessoa, addResponsabilidade, removeResponsabilidade } =
@@ -68,31 +69,58 @@ function Pessoas() {
         <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
           Nova pessoa
         </h2>
+        <p className="mt-1 text-[12px] text-muted-foreground">
+          Os campos assinalados com <Req /> são de preenchimento obrigatório.
+        </p>
         <div className="mt-4 grid gap-3 md:grid-cols-5">
-          <input
-            className="input-ipma"
-            placeholder="Nome"
-            value={nova.name}
-            onChange={(e) => setNova({ ...nova, name: e.target.value })}
-          />
-          <input
-            className="input-ipma"
-            placeholder="Email"
-            value={nova.email}
-            onChange={(e) => setNova({ ...nova, email: e.target.value })}
-          />
-          <input
-            className="input-ipma"
-            placeholder="Telefone"
-            value={nova.phone}
-            onChange={(e) => setNova({ ...nova, phone: e.target.value })}
-          />
-          <input
-            className="input-ipma"
-            placeholder="NIF"
-            value={nova.nif}
-            onChange={(e) => setNova({ ...nova, nif: e.target.value })}
-          />
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Nome
+              <Req />
+            </span>
+            <input
+              className="input-ipma mt-1"
+              placeholder="Nome"
+              required
+              value={nova.name}
+              onChange={(e) => setNova({ ...nova, name: e.target.value })}
+            />
+          </label>
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Email
+              <Req />
+            </span>
+            <input
+              className="input-ipma mt-1"
+              placeholder="Email"
+              required
+              value={nova.email}
+              onChange={(e) => setNova({ ...nova, email: e.target.value })}
+            />
+          </label>
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Telefone
+            </span>
+            <input
+              className="input-ipma mt-1"
+              placeholder="Telefone"
+              value={nova.phone}
+              onChange={(e) => setNova({ ...nova, phone: e.target.value })}
+            />
+          </label>
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              NIF
+            </span>
+            <input
+              className="input-ipma mt-1"
+              placeholder="NIF"
+              value={nova.nif}
+              onChange={(e) => setNova({ ...nova, nif: e.target.value })}
+            />
+          </label>
           <button
             type="button"
             onClick={() => {
@@ -201,30 +229,52 @@ function Pessoas() {
                 </tbody>
               </table>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-4">
-                <select
-                  className="input-ipma"
-                  value={c.role}
-                  onChange={(e) => setResp({ ...resp, [p.id]: { ...c, role: e.target.value as Role } })}
-                >
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {ROLE_LABEL[r]}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="date"
-                  className="input-ipma"
-                  value={c.start}
-                  onChange={(e) => setResp({ ...resp, [p.id]: { ...c, start: e.target.value } })}
-                />
-                <input
-                  type="date"
-                  className="input-ipma"
-                  value={c.end}
-                  onChange={(e) => setResp({ ...resp, [p.id]: { ...c, end: e.target.value } })}
-                />
+              <div className="mt-4 grid items-end gap-3 md:grid-cols-4">
+                <label className="block">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    Responsabilidade
+                    <Req />
+                  </span>
+                  <select
+                    className="input-ipma mt-1"
+                    value={c.role}
+                    onChange={(e) =>
+                      setResp({ ...resp, [p.id]: { ...c, role: e.target.value as Role } })
+                    }
+                  >
+                    {ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {ROLE_LABEL[r]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    Data de início
+                    <Req />
+                  </span>
+                  <input
+                    type="date"
+                    required
+                    className="input-ipma mt-1"
+                    value={c.start}
+                    onChange={(e) =>
+                      setResp({ ...resp, [p.id]: { ...c, start: e.target.value || hoje() } })
+                    }
+                  />
+                </label>
+                <label className="block">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    Data de fim (opcional)
+                  </span>
+                  <input
+                    type="date"
+                    className="input-ipma mt-1"
+                    value={c.end}
+                    onChange={(e) => setResp({ ...resp, [p.id]: { ...c, end: e.target.value } })}
+                  />
+                </label>
                 <button
                   type="button"
                   onClick={() => {
