@@ -20,3 +20,10 @@
 ## Em aberto
 - [x] Código publicado no GitHub: lauroclaudia-pt/RECRUTAMENTO, branch `lovable/ipma-recrutamento`
 - [ ] Backend Java (Railway): falta a URL pública da API para ligar o frontend
+
+## Painel de administração (concluído)
+- [x] /backoffice/admin — menu para Pessoas e responsabilidades, Gestão do site e Procedimentos
+- [x] /backoffice/site — upload do ícone das páginas e do favicon, cores dos botões/títulos/realce, título e lead da página inicial, mostrar/esconder filtros
+- [x] Filtro por cargo/carreira na página inicial
+- [x] Formulário de candidatura atualizado (NIF módulo 11, maioridade, duplicados por NIF+vaga, quota de deficiência com declaração, RJEP, condições especiais, anexos, declaração de veracidade)
+- [x] Pipeline por tipo de oferta (modelos de fluxo), entrevista só com EAC, "Concluir triagem provisória" decide entre requisitos em falta e avaliação
