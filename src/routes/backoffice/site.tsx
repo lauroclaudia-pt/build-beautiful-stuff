@@ -251,6 +251,12 @@ function GestaoSite() {
               desc="Quando desligado, a página inicial apresenta apenas a lista de vagas."
             />
             <Interruptor
+              checked={site.showTypeFilter}
+              onChange={(v) => updateSite({ showTypeFilter: v })}
+              label="Mostrar o filtro por tipo de procedimento"
+              desc="Permite filtrar as vagas por tipo de procedimento (concurso, mobilidade, bolsa, etc.)."
+            />
+            <Interruptor
               checked={site.showCareerFilter}
               onChange={(v) => updateSite({ showCareerFilter: v })}
               label="Mostrar o filtro por cargo/carreira"
