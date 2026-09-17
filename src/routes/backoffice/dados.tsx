@@ -10,6 +10,7 @@ import {
   OPTION_CATEGORY_LABEL,
   isOpcaoAtiva,
   type OptionCategory,
+  type OptionValue,
 } from "@/lib/opcoes";
 
 const ADMIN_ROLES: Role[] = ["ADMIN", "GESTOR_RH", "GESTAO"];
@@ -44,7 +45,26 @@ const hoje = () => new Date().toISOString().slice(0, 10);
 function Dados() {
   const { opcoes, addOpcao, updateOpcao, removeOpcao } = useStore();
   const [categoria, setCategoria] = useState<OptionCategory>("DEPARTAMENTO");
-  const [novo, setNovo] = useState({ label: "", startDate: hoje(), endDate: "" });
+  const [novo, setNovo] = useState({
+    label: "",
+    startDate: hoje(),
+    endDate: "",
+    address: "",
+    distritoId: "",
+    concelhoId: "",
+  });
+
+  const distritos = useMemo(
+    () => opcoes.filter((o) => o.category === "DISTRITO" && isOpcaoAtiva(o)),
+    [opcoes],
+  );
+  const concelhos = useMemo(
+    () => opcoes.filter((o) => o.category === "CONCELHO" && isOpcaoAtiva(o)),
+    [opcoes],
+  );
+  const nomeDe = (id?: string | null) => opcoes.find((o) => o.id === id)?.label ?? "—";
+  const isLocal = categoria === "LOCAL";
+  const isConcelho = categoria === "CONCELHO";
 
   const lista = useMemo(
     () => opcoes.filter((o) => o.category === categoria),
@@ -57,13 +77,21 @@ function Dados() {
       toast.error("Indique a designação do valor.");
       return;
     }
+    if (isConcelho && !novo.distritoId) {
+      toast.error("Escolha o distrito do concelho.");
+      return;
+    }
     addOpcao({
       category: categoria,
       label: novo.label.trim(),
       startDate: novo.startDate || hoje(),
       endDate: novo.endDate || null,
+      endedAt: null,
+      address: isLocal ? novo.address.trim() || null : null,
+      distritoId: isLocal || isConcelho ? novo.distritoId || null : null,
+      concelhoId: isLocal ? novo.concelhoId || null : null,
     });
-    setNovo({ label: "", startDate: hoje(), endDate: "" });
+    setNovo({ label: "", startDate: hoje(), endDate: "", address: "", distritoId: "", concelhoId: "" });
     toast.success("Valor acrescentado à lista.");
   }
 
@@ -78,7 +106,9 @@ function Dados() {
           <p className="mt-3 max-w-[68ch] text-[15px] text-muted-foreground text-pretty">
             Valores das listas de escolha de todos os formulários. Cada valor tem data de início,
             data de fim e estado: fica ativo quando a data de início já passou e a data de fim está
-            vazia ou ainda não chegou. Só os valores ativos aparecem nas listas dos formulários.
+            vazia ou ainda não chegou. Só os valores ativos aparecem nas listas dos formulários. O
+            botão Remover não apaga o registo: fixa a data e a hora de fim no momento atual e o
+            valor passa a inativo.
           </p>
         </section>
 
@@ -144,6 +174,59 @@ function Dados() {
               className="input-ipma mt-1.5"
             />
           </label>
+          {isLocal && (
+            <label className="block sm:col-span-4">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Morada completa
+              </span>
+              <input
+                value={novo.address}
+                onChange={(e) => setNovo({ ...novo, address: e.target.value })}
+                placeholder="Rua C do Aeroporto, 1749-077 Lisboa"
+                className="input-ipma mt-1.5"
+              />
+            </label>
+          )}
+          {(isLocal || isConcelho) && (
+            <label className="block sm:col-span-2">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Distrito
+              </span>
+              <select
+                value={novo.distritoId}
+                onChange={(e) => setNovo({ ...novo, distritoId: e.target.value, concelhoId: "" })}
+                className="input-ipma mt-1.5"
+              >
+                <option value="">Selecione…</option>
+                {distritos.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {isLocal && (
+            <label className="block sm:col-span-2">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Concelho
+              </span>
+              <select
+                value={novo.concelhoId}
+                onChange={(e) => setNovo({ ...novo, concelhoId: e.target.value })}
+                className="input-ipma mt-1.5"
+              >
+                <option value="">Selecione…</option>
+                {concelhos
+                  .filter((c) => !novo.distritoId || c.distritoId === novo.distritoId)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          )}
           <div className="sm:col-span-4">
             <button
               type="submit"
@@ -159,6 +242,9 @@ function Dados() {
             <thead>
               <tr className="border-b border-border font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 <th className="px-4 py-3">Valor</th>
+                {isLocal && <th className="px-4 py-3">Morada completa</th>}
+                {(isLocal || isConcelho) && <th className="px-4 py-3">Distrito</th>}
+                {isLocal && <th className="px-4 py-3">Concelho</th>}
                 <th className="px-4 py-3">Data de início</th>
                 <th className="px-4 py-3">Data de fim</th>
                 <th className="px-4 py-3">Estado</th>
@@ -177,6 +263,55 @@ function Dados() {
                         className="input-ipma"
                       />
                     </td>
+                    {isLocal && (
+                      <td className="px-4 py-2.5">
+                        <input
+                          value={o.address ?? ""}
+                          onChange={(e) => updateOpcao(o.id, { address: e.target.value || null })}
+                          placeholder="Morada completa"
+                          className="input-ipma min-w-[220px]"
+                        />
+                      </td>
+                    )}
+                    {(isLocal || isConcelho) && (
+                      <td className="px-4 py-2.5">
+                        <select
+                          value={o.distritoId ?? ""}
+                          onChange={(e) =>
+                            updateOpcao(o.id, {
+                              distritoId: e.target.value || null,
+                              ...(isLocal ? { concelhoId: null } : {}),
+                            })
+                          }
+                          className="input-ipma"
+                        >
+                          <option value="">—</option>
+                          {distritos.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.label}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    )}
+                    {isLocal && (
+                      <td className="px-4 py-2.5">
+                        <select
+                          value={o.concelhoId ?? ""}
+                          onChange={(e) => updateOpcao(o.id, { concelhoId: e.target.value || null })}
+                          className="input-ipma"
+                        >
+                          <option value="">—</option>
+                          {concelhos
+                            .filter((c) => !o.distritoId || c.distritoId === o.distritoId)
+                            .map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.label}
+                              </option>
+                            ))}
+                        </select>
+                      </td>
+                    )}
                     <td className="px-4 py-2.5">
                       <input
                         type="date"
@@ -207,9 +342,10 @@ function Dados() {
                         type="button"
                         onClick={() => {
                           removeOpcao(o.id);
-                          toast.success("Valor removido.");
+                          toast.success("Valor desativado com data e hora de agora.");
                         }}
-                        className="rounded-md border border-border px-3 py-1.5 text-[12px] hover:bg-foreground/5"
+                        disabled={!ativo}
+                        className="rounded-md border border-border px-3 py-1.5 text-[12px] hover:bg-foreground/5 disabled:opacity-40"
                       >
                         Remover
                       </button>
@@ -219,7 +355,7 @@ function Dados() {
               })}
               {lista.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">
                     Ainda não há valores nesta lista.
                   </td>
                 </tr>

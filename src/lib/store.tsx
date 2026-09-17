@@ -27,7 +27,7 @@ import {
   type OptionValue,
 } from "./opcoes";
 
-const STORAGE_KEY = "ipma-recrutamento-v4";
+const STORAGE_KEY = "ipma-recrutamento-v5";
 
 interface Data {
   vagas: Vaga[];
@@ -357,7 +357,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const removeOpcao: StoreValue["removeOpcao"] = useCallback((id) => {
-    setData((d) => ({ ...d, opcoes: d.opcoes.filter((o) => o.id !== id) }));
+    // Remover não elimina: fixa a data e hora de fim, passando o valor a inativo.
+    const agora = new Date();
+    setData((d) => ({
+      ...d,
+      opcoes: d.opcoes.map((o) =>
+        o.id === id
+          ? { ...o, endedAt: agora.toISOString(), endDate: agora.toISOString().slice(0, 10) }
+          : o,
+      ),
+    }));
   }, []);
 
   const opcoesDe: StoreValue["opcoesDe"] = useCallback(
