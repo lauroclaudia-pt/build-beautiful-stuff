@@ -275,6 +275,7 @@ function VagaDetalhe() {
                       onChange={(e) => set("education", e.target.value)}
                       className="input-ipma"
                     >
+                      <option value="">Selecione…</option>
                       {habilitacoes.map((l) => (
                         <option key={l}>{l}</option>
                       ))}
@@ -286,6 +287,7 @@ function VagaDetalhe() {
                       onChange={(e) => set("professionalSituation", e.target.value)}
                       className="input-ipma"
                     >
+                      <option value="">Selecione…</option>
                       {situacoes.map((l) => (
                         <option key={l}>{l}</option>
                       ))}
