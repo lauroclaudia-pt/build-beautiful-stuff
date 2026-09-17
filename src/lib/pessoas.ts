@@ -47,7 +47,7 @@ export function responsabilidadeEstado(r: Responsabilidade): "ATIVO" | "INATIVO"
 }
 
 export function activeRoles(p: Pessoa): Role[] {
-  return p.responsabilidades.filter(isResponsabilidadeAtiva).map((r) => r.role);
+  return p.responsabilidades.filter((r) => isResponsabilidadeAtiva(r)).map((r) => r.role);
 }
 
 export function hasActiveRole(p: Pessoa | null, ...roles: Role[]): boolean {

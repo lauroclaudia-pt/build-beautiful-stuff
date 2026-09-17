@@ -193,16 +193,16 @@ function PortalCandidato() {
                   <ol className="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
                     {vaga.stages.map((s) => (
                       <li
-                        key={s.key}
+                        key={s.code}
                         className={`rounded-lg border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.1em] ${
-                          s.status === "completed"
+                          s.state === "completed"
                             ? "border-success/40 bg-success/10 text-success"
-                            : s.status === "active"
+                            : s.state === "active"
                               ? "border-primary/40 bg-primary/10 text-primary"
                               : "border-border bg-white/40 text-muted-foreground"
                         }`}
                       >
-                        {STAGE_LABEL[s.key]}
+                        {STAGE_LABEL[s.code]}
                       </li>
                     ))}
                   </ol>
