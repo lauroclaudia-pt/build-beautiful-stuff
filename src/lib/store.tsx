@@ -241,14 +241,95 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const reset = useCallback(() => {
-    setData({ vagas: SEED_VAGAS, applicants: SEED_APPLICANTS });
+  const setDocumentState: StoreValue["setDocumentState"] = useCallback(
+    (applicantId, docId, state) => {
+      setData((d) => ({
+        ...d,
+        applicants: d.applicants.map((a) =>
+          a.id === applicantId
+            ? {
+                ...a,
+                documents: (a.documents ?? DEFAULT_DOCUMENTS).map((doc) =>
+                  doc.id === docId ? { ...doc, state } : doc,
+                ),
+              }
+            : a,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const login: StoreValue["login"] = useCallback(
+    (email, password) => {
+      const pessoa = data.pessoas.find(
+        (p) => p.email.trim().toLowerCase() === email.trim().toLowerCase(),
+      );
+      if (!pessoa) return { ok: false, message: "Não existe nenhum utilizador com esse email." };
+      if (!pessoa.hasLogin || !pessoa.password)
+        return { ok: false, message: "Esta pessoa não tem login ativo." };
+      if (pessoa.password !== password)
+        return { ok: false, message: "Palavra-passe incorreta." };
+      setData((d) => ({ ...d, sessionId: pessoa.id }));
+      return { ok: true, message: `Bem-vindo(a), ${pessoa.name}.`, pessoa };
+    },
+    [data.pessoas],
+  );
+
+  const logout = useCallback(() => setData((d) => ({ ...d, sessionId: null })), []);
+
+  const addPessoa: StoreValue["addPessoa"] = useCallback((input) => {
+    const pessoa: Pessoa = { ...input, id: crypto.randomUUID() };
+    setData((d) => ({ ...d, pessoas: [...d.pessoas, pessoa] }));
+    return pessoa;
   }, []);
+
+  const updatePessoa: StoreValue["updatePessoa"] = useCallback((id, patch) => {
+    setData((d) => ({
+      ...d,
+      pessoas: d.pessoas.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+    }));
+  }, []);
+
+  const addResponsabilidade: StoreValue["addResponsabilidade"] = useCallback((pessoaId, r) => {
+    setData((d) => ({
+      ...d,
+      pessoas: d.pessoas.map((p) =>
+        p.id === pessoaId
+          ? { ...p, responsabilidades: [...p.responsabilidades, { ...r, id: crypto.randomUUID() }] }
+          : p,
+      ),
+    }));
+  }, []);
+
+  const removeResponsabilidade: StoreValue["removeResponsabilidade"] = useCallback(
+    (pessoaId, respId) => {
+      setData((d) => ({
+        ...d,
+        pessoas: d.pessoas.map((p) =>
+          p.id === pessoaId
+            ? { ...p, responsabilidades: p.responsabilidades.filter((r) => r.id !== respId) }
+            : p,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const reset = useCallback(() => {
+    setData(seed());
+  }, []);
+
+  const currentUser = useMemo(
+    () => data.pessoas.find((p) => p.id === data.sessionId) ?? null,
+    [data.pessoas, data.sessionId],
+  );
 
   const value = useMemo<StoreValue>(
     () => ({
       ...data,
       hydrated,
+      currentUser,
       addVaga,
       updateVaga,
       publishVaga,
@@ -257,11 +338,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setApplicantState,
       setGrades,
       addAppeal,
+      setDocumentState,
+      login,
+      logout,
+      addPessoa,
+      updatePessoa,
+      addResponsabilidade,
+      removeResponsabilidade,
       reset,
     }),
     [
       data,
       hydrated,
+      currentUser,
       addVaga,
       updateVaga,
       publishVaga,
@@ -270,6 +359,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setApplicantState,
       setGrades,
       addAppeal,
+      setDocumentState,
+      login,
+      logout,
+      addPessoa,
+      updatePessoa,
+      addResponsabilidade,
+      removeResponsabilidade,
       reset,
     ],
   );
