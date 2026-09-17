@@ -31,9 +31,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Portal() {
-  const { vagas, applicants } = useStore();
+  const { vagas, applicants, site } = useStore();
   const [tipo, setTipo] = useState<string>("");
   const [unidade, setUnidade] = useState<string>("");
+  const [carreira, setCarreira] = useState<string>("");
   const [locais, setLocais] = useState<string[]>([]);
   const [prazo, setPrazo] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -43,17 +44,22 @@ function Portal() {
     [vagas],
   );
 
-  const lista = useMemo(
-    () =>
-      publicas.filter((v) => {
-        if (tipo && v.offerType !== tipo) return false;
-        if (unidade && v.department !== unidade) return false;
-        if (locais.length && !locais.includes(v.location)) return false;
-        if (prazo && daysUntil(v.deadline) > prazo) return false;
-        return true;
-      }),
-    [publicas, tipo, unidade, locais, prazo],
+  const carreiras = useMemo(
+    () => Array.from(new Set(publicas.map((v) => v.career))).sort((a, b) => a.localeCompare(b, "pt")),
+    [publicas],
   );
+
+  const lista = useMemo(() => {
+    if (!site.showFilters) return publicas;
+    return publicas.filter((v) => {
+      if (tipo && v.offerType !== tipo) return false;
+      if (unidade && v.department !== unidade) return false;
+      if (site.showCareerFilter && carreira && v.career !== carreira) return false;
+      if (locais.length && !locais.includes(v.location)) return false;
+      if (prazo && daysUntil(v.deadline) > prazo) return false;
+      return true;
+    });
+  }, [publicas, tipo, unidade, carreira, locais, prazo, site.showFilters, site.showCareerFilter]);
 
   const detalhe = lista.find((v) => v.id === selected) ?? lista[0];
   const aEncerrar = publicas.filter((v) => daysUntil(v.deadline) <= 7).length;
@@ -65,6 +71,7 @@ function Portal() {
   function limpar() {
     setTipo("");
     setUnidade("");
+    setCarreira("");
     setLocais([]);
     setPrazo(null);
   }
@@ -79,12 +86,10 @@ function Portal() {
                 Portal público · {new Date().getFullYear()}
               </p>
               <h1 className="mt-3 text-4xl font-bold tracking-tight text-balance md:text-5xl">
-                Recrutamento de pessoal
+                {site.heroTitle}
               </h1>
               <p className="mt-3 max-w-[52ch] text-[15px] text-muted-foreground text-pretty">
-                Procedimentos concursais, mobilidades e bolsas de investigação do Instituto
-                Português do Mar e da Atmosfera. Consulte o estado de cada processo e candidate-se
-                dentro do prazo fixado.
+                {site.heroLead}
               </p>
             </div>
             <div className="flex gap-3">
