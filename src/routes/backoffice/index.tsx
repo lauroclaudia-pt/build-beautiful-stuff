@@ -4,14 +4,8 @@ import { toast } from "sonner";
 import { PageShell, JobStateBadge, RequireRole } from "@/components/shell";
 import { useStore } from "@/lib/store";
 import {
-  BONDS,
-  DEPARTMENTS,
-  EDUCATION_LEVELS,
   JOB_STATE_LABEL,
-  LOCATIONS,
   OFFER_TYPE_LABEL,
-  REGIMES,
-  SELECTION_METHODS,
   daysUntil,
   formatDate,
   type JobState,
@@ -84,26 +78,6 @@ function Backoffice() {
               Backoffice · Divisão de Recursos Humanos
             </p>
             <h1 className="mt-3 text-4xl font-bold tracking-tight">Painel de vagas</h1>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link
-                to="/backoffice/admin"
-                className="inline-block rounded-md border border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] hover:bg-foreground/5"
-              >
-                Painel de administração
-              </Link>
-              <Link
-                to="/backoffice/pessoas"
-                className="inline-block rounded-md border border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] hover:bg-foreground/5"
-              >
-                Pessoas e responsabilidades
-              </Link>
-              <Link
-                to="/backoffice/site"
-                className="inline-block rounded-md border border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] hover:bg-foreground/5"
-              >
-                Gestão do site
-              </Link>
-            </div>
           </div>
           <button
             onClick={() => setNovo((n) => !n)}
@@ -254,21 +228,30 @@ function NovaVaga({
   onCreate: ReturnType<typeof useStore>["addVaga"];
   onDone: () => void;
 }) {
+  const { opcoesDe } = useStore();
+  const departamentos = opcoesDe("DEPARTAMENTO");
+  const locais = opcoesDe("LOCAL");
+  const carreiras = opcoesDe("CARREIRA");
+  const habilitacoes = opcoesDe("HABILITACAO");
+  const vinculos = opcoesDe("VINCULO");
+  const regimes = opcoesDe("REGIME");
+  const metodos = opcoesDe("METODO_SELECAO");
+
   const [f, setF] = useState({
     ref: "",
     title: "",
     offerType: "PROCEDIMENTO_CONCURSAL_COMUM" as OfferType,
-    department: DEPARTMENTS[0]!,
-    location: LOCATIONS[0]!,
+    department: departamentos[0] ?? "",
+    location: locais[0] ?? "",
     positions: 1,
-    career: "Técnico Superior",
-    bond: BONDS[0]!,
-    regime: REGIMES[0]!,
+    career: carreiras[0] ?? "",
+    bond: vinculos[0] ?? "",
+    regime: regimes[0] ?? "",
     remuneration: "",
-    educationLevel: EDUCATION_LEVELS[1]!,
+    educationLevel: habilitacoes[1] ?? habilitacoes[0] ?? "",
     requirements: "",
     description: "",
-    selectionMethods: [SELECTION_METHODS[1]!],
+    selectionMethods: metodos[1] ? [metodos[1]] : metodos.slice(0, 1),
     juryPresident: "",
     juryMembers: "",
     bepCode: "",
@@ -324,14 +307,47 @@ function NovaVaga({
           onChange={(e) => setF({ ...f, department: e.target.value })}
           className="input-ipma"
         >
-          {DEPARTMENTS.map((d) => (
+          {departamentos.map((d) => (
             <option key={d}>{d}</option>
+          ))}
+        </select>
+      </L>
+      <L label="Cargo / carreira">
+        <select
+          value={f.career}
+          onChange={(e) => setF({ ...f, career: e.target.value })}
+          className="input-ipma"
+        >
+          {carreiras.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+      </L>
+      <L label="Vínculo">
+        <select
+          value={f.bond}
+          onChange={(e) => setF({ ...f, bond: e.target.value })}
+          className="input-ipma"
+        >
+          {vinculos.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+      </L>
+      <L label="Regime">
+        <select
+          value={f.regime}
+          onChange={(e) => setF({ ...f, regime: e.target.value })}
+          className="input-ipma"
+        >
+          {regimes.map((c) => (
+            <option key={c}>{c}</option>
           ))}
         </select>
       </L>
       <L label="Local">
         <select value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} className="input-ipma">
-          {LOCATIONS.map((d) => (
+          {locais.map((d) => (
             <option key={d}>{d}</option>
           ))}
         </select>
@@ -351,7 +367,7 @@ function NovaVaga({
           onChange={(e) => setF({ ...f, educationLevel: e.target.value })}
           className="input-ipma"
         >
-          {EDUCATION_LEVELS.map((d) => (
+          {habilitacoes.map((d) => (
             <option key={d}>{d}</option>
           ))}
         </select>
@@ -391,7 +407,7 @@ function NovaVaga({
       <div className="sm:col-span-3">
         <L label="Métodos de seleção">
           <div className="flex flex-wrap gap-2">
-            {SELECTION_METHODS.map((m) => {
+            {metodos.map((m) => {
               const on = f.selectionMethods.includes(m);
               return (
                 <button

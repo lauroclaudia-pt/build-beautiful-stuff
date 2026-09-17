@@ -3,8 +3,6 @@ import { useMemo, useState } from "react";
 import { PageShell, JobStateBadge } from "@/components/shell";
 import { useStore } from "@/lib/store";
 import {
-  DEPARTMENTS,
-  LOCATIONS,
   OFFER_TYPE_LABEL,
   daysUntil,
   formatDate,
@@ -31,7 +29,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Portal() {
-  const { vagas, applicants, site } = useStore();
+  const { vagas, applicants, site, opcoesDe } = useStore();
+  const departamentos = opcoesDe("DEPARTAMENTO");
+  const locaisDisponiveis = opcoesDe("LOCAL");
+  const carreirasAtivas = opcoesDe("CARREIRA");
   const [tipo, setTipo] = useState<string>("");
   const [unidade, setUnidade] = useState<string>("");
   const [carreira, setCarreira] = useState<string>("");
@@ -48,8 +49,9 @@ function Portal() {
     site.showTypeFilter || site.showDepartmentFilter || site.showCareerFilter || site.showLocationFilter;
 
   const carreiras = useMemo(
-    () => Array.from(new Set(publicas.map((v) => v.career))).sort((a, b) => a.localeCompare(b, "pt")),
-    [publicas],
+    () =>
+      carreirasAtivas.filter((c) => publicas.some((v) => v.career === c)),
+    [publicas, carreirasAtivas],
   );
 
   const lista = useMemo(() => {
@@ -157,7 +159,7 @@ function Portal() {
                     className="mt-2 w-full rounded-md border border-border bg-white/50 px-3 py-2 text-[13px]"
                   >
                     <option value="">Todas</option>
-                    {DEPARTMENTS.map((d) => (
+                    {departamentos.map((d) => (
                       <option key={d} value={d}>
                         {d}
                       </option>
@@ -194,7 +196,7 @@ function Portal() {
                     Local
                   </p>
                   <div className="mt-2 space-y-2 text-[13px]">
-                    {LOCATIONS.map((l) => (
+                    {locaisDisponiveis.map((l) => (
                       <label key={l} className="flex items-center gap-2">
                         <input
                           type="checkbox"

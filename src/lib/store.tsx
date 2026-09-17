@@ -20,8 +20,14 @@ import {
 } from "./recrutamento";
 import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
 import { DEFAULT_SITE, type SiteConfig } from "./site";
+import {
+  SEED_OPCOES,
+  opcoesAtivas,
+  type OptionCategory,
+  type OptionValue,
+} from "./opcoes";
 
-const STORAGE_KEY = "ipma-recrutamento-v3";
+const STORAGE_KEY = "ipma-recrutamento-v4";
 
 interface Data {
   vagas: Vaga[];
@@ -29,6 +35,7 @@ interface Data {
   pessoas: Pessoa[];
   sessionId: string | null;
   site: SiteConfig;
+  opcoes: OptionValue[];
 }
 
 interface StoreValue extends Data {
@@ -51,6 +58,10 @@ interface StoreValue extends Data {
   removeResponsabilidade: (pessoaId: string, respId: string) => void;
   updateSite: (patch: Partial<SiteConfig>) => void;
   resetSite: () => void;
+  addOpcao: (o: Omit<OptionValue, "id">) => void;
+  updateOpcao: (id: string, patch: Partial<Omit<OptionValue, "id">>) => void;
+  removeOpcao: (id: string) => void;
+  opcoesDe: (category: OptionCategory) => string[];
   concludeScreening: (vagaId: string) => { ok: boolean; message: string };
   reset: () => void;
 }
@@ -67,6 +78,7 @@ function seed(): Data {
     pessoas: SEED_PESSOAS,
     sessionId: null,
     site: { ...DEFAULT_SITE },
+    opcoes: SEED_OPCOES.map((o) => ({ ...o })),
   };
 }
 
@@ -86,6 +98,7 @@ function load(): Data {
         pessoas: parsed.pessoas ?? base.pessoas,
         sessionId: parsed.sessionId ?? null,
         site: { ...DEFAULT_SITE, ...(parsed.site ?? {}) },
+        opcoes: parsed.opcoes?.length ? parsed.opcoes : base.opcoes,
       };
     }
   } catch {
@@ -332,6 +345,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((d) => ({ ...d, site: { ...DEFAULT_SITE } }));
   }, []);
 
+  const addOpcao: StoreValue["addOpcao"] = useCallback((o) => {
+    setData((d) => ({ ...d, opcoes: [...d.opcoes, { ...o, id: crypto.randomUUID() }] }));
+  }, []);
+
+  const updateOpcao: StoreValue["updateOpcao"] = useCallback((id, patch) => {
+    setData((d) => ({
+      ...d,
+      opcoes: d.opcoes.map((o) => (o.id === id ? { ...o, ...patch } : o)),
+    }));
+  }, []);
+
+  const removeOpcao: StoreValue["removeOpcao"] = useCallback((id) => {
+    setData((d) => ({ ...d, opcoes: d.opcoes.filter((o) => o.id !== id) }));
+  }, []);
+
+  const opcoesDe: StoreValue["opcoesDe"] = useCallback(
+    (category) => opcoesAtivas(data.opcoes, category),
+    [data.opcoes],
+  );
+
   /**
    * Conclui a triagem provisória: se existirem candidatos excluídos segue para a
    * recolha de requisitos em falta, caso contrário avança diretamente para a avaliação.
@@ -408,6 +441,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeResponsabilidade,
       updateSite,
       resetSite,
+      addOpcao,
+      updateOpcao,
+      removeOpcao,
+      opcoesDe,
       concludeScreening,
       reset,
     }),
@@ -432,6 +469,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeResponsabilidade,
       updateSite,
       resetSite,
+      addOpcao,
+      updateOpcao,
+      removeOpcao,
+      opcoesDe,
       concludeScreening,
       reset,
     ],

@@ -76,10 +76,10 @@ function Admin() {
             accao="Gerir site"
           />
           <Cartao
-            to="/backoffice"
-            titulo="Procedimentos concursais"
-            desc="Criar, publicar e acompanhar vagas, etapas do processo, triagem de candidaturas, notas e atas do júri."
-            accao="Abrir painel"
+            to="/backoffice/dados"
+            titulo="Gestão de dados"
+            desc="Listar e gerir os valores de todas as listas de escolha dos formulários, com data de início, data de fim e estado ativo ou inativo."
+            accao="Gerir dados"
           />
         </div>
       </main>
@@ -104,7 +104,7 @@ function Cartao({
   desc,
   accao,
 }: {
-  to: "/backoffice/pessoas" | "/backoffice/site" | "/backoffice";
+  to: "/backoffice/pessoas" | "/backoffice/site" | "/backoffice/dados";
   titulo: string;
   desc: string;
   accao: string;
