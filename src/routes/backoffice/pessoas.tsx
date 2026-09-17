@@ -69,19 +69,36 @@ function Pessoas() {
         <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
           Nova pessoa
         </h2>
+        <p className="mt-1 text-[12px] text-muted-foreground">
+          Os campos assinalados com <Req /> são de preenchimento obrigatório.
+        </p>
         <div className="mt-4 grid gap-3 md:grid-cols-5">
-          <input
-            className="input-ipma"
-            placeholder="Nome"
-            value={nova.name}
-            onChange={(e) => setNova({ ...nova, name: e.target.value })}
-          />
-          <input
-            className="input-ipma"
-            placeholder="Email"
-            value={nova.email}
-            onChange={(e) => setNova({ ...nova, email: e.target.value })}
-          />
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Nome
+              <Req />
+            </span>
+            <input
+              className="input-ipma mt-1"
+              placeholder="Nome"
+              required
+              value={nova.name}
+              onChange={(e) => setNova({ ...nova, name: e.target.value })}
+            />
+          </label>
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Email
+              <Req />
+            </span>
+            <input
+              className="input-ipma mt-1"
+              placeholder="Email"
+              required
+              value={nova.email}
+              onChange={(e) => setNova({ ...nova, email: e.target.value })}
+            />
+          </label>
           <input
             className="input-ipma"
             placeholder="Telefone"
