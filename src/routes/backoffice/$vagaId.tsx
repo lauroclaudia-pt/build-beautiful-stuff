@@ -85,6 +85,9 @@ function GestaoVaga() {
     setTriagem,
     setGrades,
     addVagaRegistro,
+    addNotificacoes,
+    notificacoes,
+    site,
   } = useStore();
   const vaga = vagas.find((v) => v.id === vagaId);
   const [filtro, setFiltro] = useState<ApplicantState | "">("");
@@ -92,6 +95,7 @@ function GestaoVaga() {
   const [ata, setAta] = useState<string | null>(null);
   const [edit, setEdit] = useState(false);
   const [obs, setObs] = useState("");
+  const [notifAberta, setNotifAberta] = useState<string | null>(null);
 
   const cands = useMemo(
     () =>
@@ -146,18 +150,50 @@ function GestaoVaga() {
   const etapaAtiva = vaga.stages.find((s) => s.state === "active");
 
   function notificarFase(code: StageCode) {
-    const n = todos.length;
     const v = vaga!;
+    const modelo = (site.emailTemplates ?? []).find((t) => t.stage === code && t.enabled);
+    if (!modelo) {
+      toast.error(
+        `Não há notificação ativa para a fase “${STAGE_LABEL[code]}”. Configure-a em Administração → Notificações.`,
+      );
+      return;
+    }
+    if (!todos.length) {
+      toast.error("Ainda não há candidatos para notificar neste procedimento.");
+      return;
+    }
+    const data = formatDate(new Date().toISOString());
+    const novas = todos.map((a) => {
+      const nota = finalGrade(a);
+      const preencher = (txt: string) =>
+        txt
+          .replaceAll("{{candidato}}", a.name)
+          .replaceAll("{{email}}", a.email)
+          .replaceAll("{{procedimento}}", v.title)
+          .replaceAll("{{referencia}}", v.ref)
+          .replaceAll("{{fase}}", STAGE_LABEL[code])
+          .replaceAll("{{prazo}}", formatDate(v.deadline))
+          .replaceAll("{{classificacao}}", nota != null ? nota.toFixed(1) : "—")
+          .replaceAll("{{motivo}}", a.exclusionReason ?? "—")
+          .replaceAll("{{data}}", data);
+      return {
+        vagaId: v.id,
+        applicantId: a.id,
+        destinatario: a.name,
+        email: a.email,
+        stage: code,
+        nome: modelo.name,
+        assunto: preencher(modelo.subject),
+        texto: preencher(modelo.body),
+      };
+    });
+    addNotificacoes(novas);
     addVagaRegistro(v.id, {
       tipo: "NOTIFICACAO",
       stage: code,
-      texto: `Notificação da fase “${STAGE_LABEL[code]}” agendada para ${n} ${n === 1 ? "candidato" : "candidatos"} por email.`,
+      texto: `Notificação “${modelo.name}” enviada a ${novas.length} ${novas.length === 1 ? "candidato" : "candidatos"}.`,
     });
-    toast.success(
-      n > 0
-        ? `Notificação da fase “${STAGE_LABEL[code]}” registada para ${n} candidato(s). O envio por email arranca assim que o domínio de envio estiver configurado.`
-        : `Notificação da fase “${STAGE_LABEL[code]}” registada (sem candidatos para notificar).`,
-    );
+    toast.success(`Notificação “${modelo.name}” enviada a ${novas.length} candidato(s).`);
   }
 
   function adicionarObservacao(e: FormEvent) {
@@ -440,6 +476,76 @@ function GestaoVaga() {
                 </li>
               ))}
             </ul>
+          )}
+        </section>
+
+        {/* Notificações enviadas */}
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:110ms]">
+          <h2 className="text-lg font-semibold tracking-tight">
+            Notificações enviadas{" "}
+            <span className="font-mono text-[12px] font-normal text-muted-foreground">
+              ({notifsVaga.length})
+            </span>
+          </h2>
+          {notifsVaga.length === 0 ? (
+            <p className="mt-3 text-[13px] text-muted-foreground">
+              Ainda não foram enviadas notificações neste procedimento. Use o botão “Notificar” de
+              cada fase.
+            </p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left text-[13px]">
+                <thead>
+                  <tr className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    <th className="pb-2 pr-3">Data de envio</th>
+                    <th className="pb-2 pr-3">Nome</th>
+                    <th className="pb-2 pr-3">Assunto</th>
+                    <th className="pb-2 text-right">Texto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {notifsVaga.map((n) => (
+                    <Fragment key={n.id}>
+                      <tr className="border-t border-border/60">
+                        <td className="py-2 pr-3 font-mono text-[11px] text-muted-foreground">
+                          {formatDataHora(n.sentAt)}
+                        </td>
+                        <td className="py-2 pr-3">
+                          <span className="font-medium">{n.destinatario}</span>
+                          <span className="block font-mono text-[10px] text-muted-foreground">
+                            {n.nome}
+                          </span>
+                        </td>
+                        <td className="py-2 pr-3">{n.assunto}</td>
+                        <td className="py-2 text-right">
+                          <button
+                            type="button"
+                            title="Consultar o texto enviado"
+                            aria-label="Consultar o texto enviado"
+                            onClick={() => setNotifAberta(notifAberta === n.id ? null : n.id)}
+                            className="rounded-md border border-border p-2 transition hover:bg-foreground/5"
+                          >
+                            <Eye size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                      {notifAberta === n.id && (
+                        <tr className="border-t border-border/40 bg-white/40">
+                          <td colSpan={4} className="px-3 py-3">
+                            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                              Para {n.email}
+                            </p>
+                            <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed">
+                              {n.texto}
+                            </p>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
 
