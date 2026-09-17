@@ -18,7 +18,43 @@ export interface SiteConfig {
   showDepartmentFilter: boolean;
   showCareerFilter: boolean;
   showLocationFilter: boolean;
+  /** Perguntas frequentes apresentadas na página de apoio. */
+  faq: FaqItem[];
 }
+
+/** Um registo de pergunta e resposta da página de apoio. */
+export interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+export const DEFAULT_FAQ: FaqItem[] = [
+  {
+    id: "faq-1",
+    question: "Como me candidato a uma vaga?",
+    answer:
+      "Abra a vaga pretendida no portal público e preencha o formulário de candidatura dentro do prazo indicado. Receberá confirmação por email com a referência do procedimento.",
+  },
+  {
+    id: "faq-2",
+    question: "Que documentos são exigidos?",
+    answer:
+      "Curriculum vitae, documento de identificação, certificado de habilitações e, quando aplicável, declaração da entidade empregadora pública com a caracterização do vínculo.",
+  },
+  {
+    id: "faq-3",
+    question: "O que é a recolha de requisitos em falta?",
+    answer:
+      "Se a sua candidatura estiver incompleta, é notificado por email para juntar os elementos em falta num prazo fixado. Findo esse prazo sem resposta, a candidatura é excluída.",
+  },
+  {
+    id: "faq-4",
+    question: "O que é a audiência de interessados?",
+    answer:
+      "Após a lista provisória de admitidos e excluídos, os candidatos excluídos podem apresentar alegações escritas, que são apreciadas pelo júri antes da lista definitiva.",
+  },
+];
 
 export const DEFAULT_SITE: SiteConfig = {
   logoUrl: null,
@@ -34,6 +70,7 @@ export const DEFAULT_SITE: SiteConfig = {
   showDepartmentFilter: true,
   showCareerFilter: true,
   showLocationFilter: true,
+  faq: DEFAULT_FAQ.map((f) => ({ ...f })),
 };
 
 export const COLOR_FIELDS: {
