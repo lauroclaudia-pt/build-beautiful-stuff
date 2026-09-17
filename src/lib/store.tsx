@@ -177,8 +177,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       id: crypto.randomUUID(),
       state: "SUBMITTED",
       createdAt: new Date().toISOString().slice(0, 10),
+      documents: input.documents ?? DEFAULT_DOCUMENTS.map((d) => ({ ...d })),
     };
-    setData((d) => ({ ...d, applicants: [applicant, ...d.applicants] }));
+    setData((d) => {
+      const known = d.pessoas.some(
+        (p) => p.email.toLowerCase() === applicant.email.toLowerCase(),
+      );
+      const pessoas = known
+        ? d.pessoas
+        : [
+            ...d.pessoas,
+            {
+              id: crypto.randomUUID(),
+              name: applicant.name,
+              email: applicant.email,
+              phone: applicant.phone,
+              nif: applicant.nif,
+              hasLogin: true,
+              password: "ipma",
+              responsabilidades: [
+                {
+                  id: crypto.randomUUID(),
+                  role: "CANDIDATO" as Role,
+                  startDate: new Date().toISOString().slice(0, 10),
+                  endDate: null,
+                },
+              ],
+            } satisfies Pessoa,
+          ];
+      return { ...d, applicants: [applicant, ...d.applicants], pessoas };
+    });
     return applicant;
   }, []);
 
