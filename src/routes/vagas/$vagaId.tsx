@@ -51,7 +51,9 @@ const emptyForm = {
 function VagaDetalhe() {
   const { vagaId } = Route.useParams();
   const navigate = useNavigate();
-  const { vagas, applicants, addApplicant, hydrated } = useStore();
+  const { vagas, applicants, addApplicant, hydrated, opcoesDe } = useStore();
+  const habilitacoes = opcoesDe("HABILITACAO");
+  const situacoes = opcoesDe("SITUACAO_PROFISSIONAL");
   const vaga = vagas.find((v) => v.id === vagaId);
   const [form, setForm] = useState(emptyForm);
   const [anexos, setAnexos] = useState<string[]>([]);
