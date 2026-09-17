@@ -99,18 +99,28 @@ function Pessoas() {
               onChange={(e) => setNova({ ...nova, email: e.target.value })}
             />
           </label>
-          <input
-            className="input-ipma"
-            placeholder="Telefone"
-            value={nova.phone}
-            onChange={(e) => setNova({ ...nova, phone: e.target.value })}
-          />
-          <input
-            className="input-ipma"
-            placeholder="NIF"
-            value={nova.nif}
-            onChange={(e) => setNova({ ...nova, nif: e.target.value })}
-          />
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Telefone
+            </span>
+            <input
+              className="input-ipma mt-1"
+              placeholder="Telefone"
+              value={nova.phone}
+              onChange={(e) => setNova({ ...nova, phone: e.target.value })}
+            />
+          </label>
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              NIF
+            </span>
+            <input
+              className="input-ipma mt-1"
+              placeholder="NIF"
+              value={nova.nif}
+              onChange={(e) => setNova({ ...nova, nif: e.target.value })}
+            />
+          </label>
           <button
             type="button"
             onClick={() => {
