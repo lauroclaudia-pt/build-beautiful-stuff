@@ -18,4 +18,5 @@
 - [x] Portal do candidato `/candidato`: candidaturas, etapas, documentos e alegações
 
 ## Em aberto
+- [x] Código publicado no GitHub: lauroclaudia-pt/RECRUTAMENTO, branch `lovable/ipma-recrutamento`
 - [ ] Backend Java (Railway): falta a URL pública da API para ligar o frontend
