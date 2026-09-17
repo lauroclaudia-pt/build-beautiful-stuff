@@ -12,6 +12,7 @@ import {
   validateNif,
 } from "@/lib/recrutamento";
 import { applyJava, javaBase } from "@/lib/java-api";
+import { enviarConfirmacaoCandidatura } from "@/lib/emails.functions";
 
 export const Route = createFileRoute("/vagas/$vagaId")({
   head: () => ({
@@ -168,6 +169,16 @@ function VagaDetalhe() {
     setAnexos([]);
     setDeclaracaoIncap(null);
     toast.success("Candidatura submetida e registada.");
+    void enviarConfirmacaoCandidatura({
+      data: {
+        email: a.email,
+        nome: a.name,
+        vagaTitulo: vaga!.title,
+        referencia: vaga!.ref,
+        prazo: vaga!.deadline,
+        candidaturaId: a.id,
+      },
+    }).catch(() => undefined);
   }
 
   return (
