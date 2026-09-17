@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { PageShell, JobStateBadge } from "@/components/shell";
+import { PageShell, JobStateBadge, RequireRole } from "@/components/shell";
 import { useStore } from "@/lib/store";
 import {
   BONDS,
@@ -36,7 +36,11 @@ export const Route = createFileRoute("/backoffice/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Backoffice,
+  component: () => (
+    <RequireRole>
+      <Backoffice />
+    </RequireRole>
+  ),
 });
 
 const STATES: JobState[] = ["DRAFT", "PUBLISHED", "RUNNING", "FINISHED", "CANCELLED", "DESERT"];
@@ -80,6 +84,12 @@ function Backoffice() {
               Backoffice · Divisão de Recursos Humanos
             </p>
             <h1 className="mt-3 text-4xl font-bold tracking-tight">Painel de vagas</h1>
+            <Link
+              to="/backoffice/pessoas"
+              className="mt-4 inline-block rounded-md border border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] hover:bg-foreground/5"
+            >
+              Pessoas e responsabilidades
+            </Link>
           </div>
           <button
             onClick={() => setNovo((n) => !n)}

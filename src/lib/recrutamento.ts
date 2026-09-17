@@ -61,6 +61,29 @@ export interface Vaga {
   stages: JobStage[];
 }
 
+export type DocState = "PENDING" | "RECEIVED" | "VALIDATED" | "MISSING";
+
+export const DOC_STATE_LABEL: Record<DocState, string> = {
+  PENDING: "Por entregar",
+  RECEIVED: "Entregue",
+  VALIDATED: "Validado",
+  MISSING: "Em falta",
+};
+
+export interface CandidateDocument {
+  id: string;
+  label: string;
+  state: DocState;
+  note?: string;
+}
+
+export const DEFAULT_DOCUMENTS: CandidateDocument[] = [
+  { id: "cv", label: "Curriculum vitae", state: "RECEIVED" },
+  { id: "habilit", label: "Certificado de habilitações", state: "PENDING" },
+  { id: "bi", label: "Documento de identificação", state: "RECEIVED" },
+  { id: "decservico", label: "Declaração da entidade empregadora", state: "PENDING" },
+];
+
 export interface Applicant {
   id: string;
   vagaId: string;
@@ -78,6 +101,7 @@ export interface Applicant {
   eacGrade?: number | null;
   createdAt: string;
   appeal?: { text: string; createdAt: string } | null;
+  documents?: CandidateDocument[];
 }
 
 export const OFFER_TYPE_LABEL: Record<OfferType, string> = {

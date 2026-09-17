@@ -8,23 +8,30 @@ import {
   type ReactNode,
 } from "react";
 import {
+  DEFAULT_DOCUMENTS,
   SEED_APPLICANTS,
   SEED_VAGAS,
   newStages,
   type Applicant,
   type ApplicantState,
+  type CandidateDocument,
+  type DocState,
   type Vaga,
 } from "./recrutamento";
+import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
 
-const STORAGE_KEY = "ipma-recrutamento-v1";
+const STORAGE_KEY = "ipma-recrutamento-v2";
 
 interface Data {
   vagas: Vaga[];
   applicants: Applicant[];
+  pessoas: Pessoa[];
+  sessionId: string | null;
 }
 
 interface StoreValue extends Data {
   hydrated: boolean;
+  currentUser: Pessoa | null;
   addVaga: (vaga: Omit<Vaga, "id" | "stages" | "state" | "publishedAt">) => Vaga;
   updateVaga: (id: string, patch: Partial<Vaga>) => void;
   publishVaga: (id: string) => { ok: boolean; message: string };
@@ -33,24 +40,57 @@ interface StoreValue extends Data {
   setApplicantState: (id: string, state: ApplicantState, reason?: string) => void;
   setGrades: (id: string, grades: Pick<Applicant, "pcGrade" | "acGrade" | "eacGrade">) => void;
   addAppeal: (id: string, text: string) => void;
+  setDocumentState: (applicantId: string, docId: string, state: DocState) => void;
+  login: (email: string, password: string) => { ok: boolean; message: string; pessoa?: Pessoa };
+  logout: () => void;
+  addPessoa: (p: Omit<Pessoa, "id">) => Pessoa;
+  updatePessoa: (id: string, patch: Partial<Pessoa>) => void;
+  addResponsabilidade: (pessoaId: string, r: Omit<Responsabilidade, "id">) => void;
+  removeResponsabilidade: (pessoaId: string, respId: string) => void;
   reset: () => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
 
+function seed(): Data {
+  return {
+    vagas: SEED_VAGAS,
+    applicants: SEED_APPLICANTS.map((a) => ({
+      ...a,
+      documents: a.documents ?? DEFAULT_DOCUMENTS.map((d) => ({ ...d })),
+    })),
+    pessoas: SEED_PESSOAS,
+    sessionId: null,
+  };
+}
+
 function load(): Data {
-  if (typeof window === "undefined") return { vagas: SEED_VAGAS, applicants: SEED_APPLICANTS };
+  const base = seed();
+  if (typeof window === "undefined") return base;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as Data;
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<Data>;
+      return {
+        vagas: parsed.vagas ?? base.vagas,
+        applicants: (parsed.applicants ?? base.applicants).map((a) => ({
+          ...a,
+          documents: a.documents ?? DEFAULT_DOCUMENTS.map((d) => ({ ...d })),
+        })),
+        pessoas: parsed.pessoas ?? base.pessoas,
+        sessionId: parsed.sessionId ?? null,
+      };
+    }
   } catch {
     /* ignore */
   }
-  return { vagas: SEED_VAGAS, applicants: SEED_APPLICANTS };
+  return base;
 }
 
+export type { CandidateDocument };
+
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<Data>({ vagas: SEED_VAGAS, applicants: SEED_APPLICANTS });
+  const [data, setData] = useState<Data>(() => seed());
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -137,8 +177,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       id: crypto.randomUUID(),
       state: "SUBMITTED",
       createdAt: new Date().toISOString().slice(0, 10),
+      documents: input.documents ?? DEFAULT_DOCUMENTS.map((d) => ({ ...d })),
     };
-    setData((d) => ({ ...d, applicants: [applicant, ...d.applicants] }));
+    setData((d) => {
+      const known = d.pessoas.some(
+        (p) => p.email.toLowerCase() === applicant.email.toLowerCase(),
+      );
+      const pessoas = known
+        ? d.pessoas
+        : [
+            ...d.pessoas,
+            {
+              id: crypto.randomUUID(),
+              name: applicant.name,
+              email: applicant.email,
+              phone: applicant.phone,
+              nif: applicant.nif,
+              hasLogin: true,
+              password: "ipma",
+              responsabilidades: [
+                {
+                  id: crypto.randomUUID(),
+                  role: "CANDIDATO" as Role,
+                  startDate: new Date().toISOString().slice(0, 10),
+                  endDate: null,
+                },
+              ],
+            } satisfies Pessoa,
+          ];
+      return { ...d, applicants: [applicant, ...d.applicants], pessoas };
+    });
     return applicant;
   }, []);
 
@@ -173,14 +241,95 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const reset = useCallback(() => {
-    setData({ vagas: SEED_VAGAS, applicants: SEED_APPLICANTS });
+  const setDocumentState: StoreValue["setDocumentState"] = useCallback(
+    (applicantId, docId, state) => {
+      setData((d) => ({
+        ...d,
+        applicants: d.applicants.map((a) =>
+          a.id === applicantId
+            ? {
+                ...a,
+                documents: (a.documents ?? DEFAULT_DOCUMENTS).map((doc) =>
+                  doc.id === docId ? { ...doc, state } : doc,
+                ),
+              }
+            : a,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const login: StoreValue["login"] = useCallback(
+    (email, password) => {
+      const pessoa = data.pessoas.find(
+        (p) => p.email.trim().toLowerCase() === email.trim().toLowerCase(),
+      );
+      if (!pessoa) return { ok: false, message: "Não existe nenhum utilizador com esse email." };
+      if (!pessoa.hasLogin || !pessoa.password)
+        return { ok: false, message: "Esta pessoa não tem login ativo." };
+      if (pessoa.password !== password)
+        return { ok: false, message: "Palavra-passe incorreta." };
+      setData((d) => ({ ...d, sessionId: pessoa.id }));
+      return { ok: true, message: `Bem-vindo(a), ${pessoa.name}.`, pessoa };
+    },
+    [data.pessoas],
+  );
+
+  const logout = useCallback(() => setData((d) => ({ ...d, sessionId: null })), []);
+
+  const addPessoa: StoreValue["addPessoa"] = useCallback((input) => {
+    const pessoa: Pessoa = { ...input, id: crypto.randomUUID() };
+    setData((d) => ({ ...d, pessoas: [...d.pessoas, pessoa] }));
+    return pessoa;
   }, []);
+
+  const updatePessoa: StoreValue["updatePessoa"] = useCallback((id, patch) => {
+    setData((d) => ({
+      ...d,
+      pessoas: d.pessoas.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+    }));
+  }, []);
+
+  const addResponsabilidade: StoreValue["addResponsabilidade"] = useCallback((pessoaId, r) => {
+    setData((d) => ({
+      ...d,
+      pessoas: d.pessoas.map((p) =>
+        p.id === pessoaId
+          ? { ...p, responsabilidades: [...p.responsabilidades, { ...r, id: crypto.randomUUID() }] }
+          : p,
+      ),
+    }));
+  }, []);
+
+  const removeResponsabilidade: StoreValue["removeResponsabilidade"] = useCallback(
+    (pessoaId, respId) => {
+      setData((d) => ({
+        ...d,
+        pessoas: d.pessoas.map((p) =>
+          p.id === pessoaId
+            ? { ...p, responsabilidades: p.responsabilidades.filter((r) => r.id !== respId) }
+            : p,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const reset = useCallback(() => {
+    setData(seed());
+  }, []);
+
+  const currentUser = useMemo(
+    () => data.pessoas.find((p) => p.id === data.sessionId) ?? null,
+    [data.pessoas, data.sessionId],
+  );
 
   const value = useMemo<StoreValue>(
     () => ({
       ...data,
       hydrated,
+      currentUser,
       addVaga,
       updateVaga,
       publishVaga,
@@ -189,11 +338,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setApplicantState,
       setGrades,
       addAppeal,
+      setDocumentState,
+      login,
+      logout,
+      addPessoa,
+      updatePessoa,
+      addResponsabilidade,
+      removeResponsabilidade,
       reset,
     }),
     [
       data,
       hydrated,
+      currentUser,
       addVaga,
       updateVaga,
       publishVaga,
@@ -202,6 +359,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setApplicantState,
       setGrades,
       addAppeal,
+      setDocumentState,
+      login,
+      logout,
+      addPessoa,
+      updatePessoa,
+      addResponsabilidade,
+      removeResponsabilidade,
       reset,
     ],
   );

@@ -11,8 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApoioRouteImport } from './routes/apoio'
+import { Route as CandidatoRouteImport } from './routes/candidato'
+import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as BackofficeIndexRouteImport } from './routes/backoffice/index'
 import { Route as BackofficeVagaIdRouteImport } from './routes/backoffice/$vagaId'
+import { Route as BackofficePessoasRouteImport } from './routes/backoffice/pessoas'
 import { Route as VagasVagaIdRouteImport } from './routes/vagas/$vagaId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -25,6 +28,16 @@ const ApoioRoute = ApoioRouteImport.update({
   path: '/apoio',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CandidatoRoute = CandidatoRouteImport.update({
+  id: '/candidato',
+  path: '/candidato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntrarRoute = EntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BackofficeIndexRoute = BackofficeIndexRouteImport.update({
   id: '/backoffice/',
   path: '/backoffice/',
@@ -33,6 +46,11 @@ const BackofficeIndexRoute = BackofficeIndexRouteImport.update({
 const BackofficeVagaIdRoute = BackofficeVagaIdRouteImport.update({
   id: '/backoffice/$vagaId',
   path: '/backoffice/$vagaId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BackofficePessoasRoute = BackofficePessoasRouteImport.update({
+  id: '/backoffice/pessoas',
+  path: '/backoffice/pessoas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VagasVagaIdRoute = VagasVagaIdRouteImport.update({
@@ -44,14 +62,20 @@ const VagasVagaIdRoute = VagasVagaIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/apoio': typeof ApoioRoute
+  '/candidato': typeof CandidatoRoute
+  '/entrar': typeof EntrarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
+  '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice/': typeof BackofficeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/apoio': typeof ApoioRoute
+  '/candidato': typeof CandidatoRoute
+  '/entrar': typeof EntrarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
+  '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice': typeof BackofficeIndexRoute
 }
@@ -59,21 +83,42 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/apoio': typeof ApoioRoute
+  '/candidato': typeof CandidatoRoute
+  '/entrar': typeof EntrarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
+  '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice/': typeof BackofficeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/apoio' | '/backoffice/$vagaId' | '/vagas/$vagaId' | '/backoffice/'
+    | '/'
+    | '/apoio'
+    | '/candidato'
+    | '/entrar'
+    | '/backoffice/$vagaId'
+    | '/backoffice/pessoas'
+    | '/vagas/$vagaId'
+    | '/backoffice/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/apoio' | '/backoffice/$vagaId' | '/vagas/$vagaId' | '/backoffice'
+  to:
+    | '/'
+    | '/apoio'
+    | '/candidato'
+    | '/entrar'
+    | '/backoffice/$vagaId'
+    | '/backoffice/pessoas'
+    | '/vagas/$vagaId'
+    | '/backoffice'
   id:
     | '__root__'
     | '/'
     | '/apoio'
+    | '/candidato'
+    | '/entrar'
     | '/backoffice/$vagaId'
+    | '/backoffice/pessoas'
     | '/vagas/$vagaId'
     | '/backoffice/'
   fileRoutesById: FileRoutesById
@@ -81,7 +126,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApoioRoute: typeof ApoioRoute
+  CandidatoRoute: typeof CandidatoRoute
+  EntrarRoute: typeof EntrarRoute
   BackofficeVagaIdRoute: typeof BackofficeVagaIdRoute
+  BackofficePessoasRoute: typeof BackofficePessoasRoute
   VagasVagaIdRoute: typeof VagasVagaIdRoute
   BackofficeIndexRoute: typeof BackofficeIndexRoute
 }
@@ -102,6 +150,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApoioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/candidato': {
+      id: '/candidato'
+      path: '/candidato'
+      fullPath: '/candidato'
+      preLoaderRoute: typeof CandidatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrar': {
+      id: '/entrar'
+      path: '/entrar'
+      fullPath: '/entrar'
+      preLoaderRoute: typeof EntrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/backoffice/': {
       id: '/backoffice/'
       path: '/backoffice'
@@ -114,6 +176,13 @@ declare module '@tanstack/react-router' {
       path: '/backoffice/$vagaId'
       fullPath: '/backoffice/$vagaId'
       preLoaderRoute: typeof BackofficeVagaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/backoffice/pessoas': {
+      id: '/backoffice/pessoas'
+      path: '/backoffice/pessoas'
+      fullPath: '/backoffice/pessoas'
+      preLoaderRoute: typeof BackofficePessoasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vagas/$vagaId': {
@@ -129,7 +198,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApoioRoute: ApoioRoute,
+  CandidatoRoute: CandidatoRoute,
+  EntrarRoute: EntrarRoute,
   BackofficeVagaIdRoute: BackofficeVagaIdRoute,
+  BackofficePessoasRoute: BackofficePessoasRoute,
   VagasVagaIdRoute: VagasVagaIdRoute,
   BackofficeIndexRoute: BackofficeIndexRoute,
 }
