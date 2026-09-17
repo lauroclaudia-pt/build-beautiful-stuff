@@ -90,7 +90,7 @@ function load(): Data {
 export type { CandidateDocument };
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<Data>({ vagas: SEED_VAGAS, applicants: SEED_APPLICANTS });
+  const [data, setData] = useState<Data>(() => seed());
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
