@@ -78,7 +78,7 @@ export function SiteHeader() {
             activeProps={{ className: "bg-foreground/5 text-foreground" }}
             className="rounded-md px-3 py-2 hover:bg-foreground/5"
           >
-            Backoffice
+            Procedimentos
           </Link>
           <Link
             to="/candidato"

@@ -84,26 +84,6 @@ function Backoffice() {
               Backoffice · Divisão de Recursos Humanos
             </p>
             <h1 className="mt-3 text-4xl font-bold tracking-tight">Painel de vagas</h1>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Link
-                to="/backoffice/admin"
-                className="inline-block rounded-md border border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] hover:bg-foreground/5"
-              >
-                Painel de administração
-              </Link>
-              <Link
-                to="/backoffice/pessoas"
-                className="inline-block rounded-md border border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] hover:bg-foreground/5"
-              >
-                Pessoas e responsabilidades
-              </Link>
-              <Link
-                to="/backoffice/site"
-                className="inline-block rounded-md border border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] hover:bg-foreground/5"
-              >
-                Gestão do site
-              </Link>
-            </div>
           </div>
           <button
             onClick={() => setNovo((n) => !n)}
