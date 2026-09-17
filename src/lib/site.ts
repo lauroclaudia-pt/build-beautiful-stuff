@@ -223,6 +223,19 @@ export const DEFAULT_DOC_TEMPLATES: DocTemplate[] = [
 ];
 
 /** Um registo de pergunta e resposta da página de apoio. */
+/** Um contacto apresentado na página pública (designação + valor). */
+export interface ContactItem {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export const DEFAULT_CONTACTS: ContactItem[] = [
+  { id: "ct-1", label: "Divisão", value: "Recursos Humanos" },
+  { id: "ct-2", label: "Email", value: "recrutamento@ipma.pt" },
+  { id: "ct-3", label: "Horário", value: "9h30 — 17h00" },
+];
+
 export interface FaqItem {
   id: string;
   question: string;
@@ -271,6 +284,7 @@ export const DEFAULT_SITE: SiteConfig = {
   showCareerFilter: true,
   showLocationFilter: true,
   faq: DEFAULT_FAQ.map((f) => ({ ...f })),
+  contacts: DEFAULT_CONTACTS.map((c) => ({ ...c })),
   emailTemplates: DEFAULT_EMAIL_TEMPLATES.map((t) => ({ ...t })),
   docTemplates: DEFAULT_DOC_TEMPLATES.map((t) => ({ ...t })),
 };
