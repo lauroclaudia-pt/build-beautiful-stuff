@@ -406,6 +406,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updatePessoa,
       addResponsabilidade,
       removeResponsabilidade,
+      updateSite,
+      resetSite,
+      concludeScreening,
       reset,
     }),
     [
@@ -427,6 +430,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       updatePessoa,
       addResponsabilidade,
       removeResponsabilidade,
+      updateSite,
+      resetSite,
+      concludeScreening,
       reset,
     ],
   );
