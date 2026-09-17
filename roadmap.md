@@ -27,3 +27,7 @@
 - [x] Filtro por cargo/carreira na página inicial
 - [x] Formulário de candidatura atualizado (NIF módulo 11, maioridade, duplicados por NIF+vaga, quota de deficiência com declaração, RJEP, condições especiais, anexos, declaração de veracidade)
 - [x] Pipeline por tipo de oferta (modelos de fluxo), entrevista só com EAC, "Concluir triagem provisória" decide entre requisitos em falta e avaliação
+
+## Novos pedidos (2026-09-17)
+- [ ] Administração: editar os contactos da página inicial (designação + valor)
+- [ ] Página de cada vaga (backoffice): lista de candidaturas com nome, data, estado e botão para atualizar o estado

@@ -311,6 +311,39 @@ function GestaoVaga() {
           )}
         </section>
 
+        {/* Candidaturas recebidas */}
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:100ms]">
+          <h2 className="text-lg font-semibold tracking-tight">
+            Candidaturas recebidas{" "}
+            <span className="font-mono text-[12px] font-normal text-muted-foreground">
+              ({todos.length})
+            </span>
+          </h2>
+          {todos.length === 0 ? (
+            <p className="mt-3 text-[13px] text-muted-foreground">
+              Ainda não foram recebidas candidaturas neste procedimento.
+            </p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-left text-[13px]">
+                <thead>
+                  <tr className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    <th className="pb-2 pr-3">Nome</th>
+                    <th className="pb-2 pr-3">Data</th>
+                    <th className="pb-2 pr-3">Estado</th>
+                    <th className="pb-2">Atualizar estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {todos.map((a) => (
+                    <LinhaCandidatura key={a.id} a={a} onState={setApplicantState} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
         {/* Triagem */}
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:120ms]">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -385,6 +418,56 @@ function GestaoVaga() {
         </section>
       </main>
     </PageShell>
+  );
+}
+
+const TODOS_ESTADOS = Object.keys(APPLICANT_STATE_LABEL) as ApplicantState[];
+
+function LinhaCandidatura({
+  a,
+  onState,
+}: {
+  a: Applicant;
+  onState: ReturnType<typeof useStore>["setApplicantState"];
+}) {
+  const [estado, setEstado] = useState<ApplicantState>(a.state);
+
+  return (
+    <tr className="border-t border-border/60">
+      <td className="py-2 pr-3 font-medium">{a.name}</td>
+      <td className="py-2 pr-3 font-mono text-[12px] text-muted-foreground">
+        {formatDate(a.createdAt)}
+      </td>
+      <td className="py-2 pr-3">
+        <ApplicantStateBadge state={a.state} />
+      </td>
+      <td className="py-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={estado}
+            onChange={(e) => setEstado(e.target.value as ApplicantState)}
+            className="input-ipma max-w-[200px]"
+          >
+            {TODOS_ESTADOS.map((s) => (
+              <option key={s} value={s}>
+                {APPLICANT_STATE_LABEL[s]}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={estado === a.state}
+            onClick={() => {
+              onState(a.id, estado, estado === "EXCLUDED" ? a.exclusionReason ?? "" : undefined);
+              toast.success(`Estado alterado para ${APPLICANT_STATE_LABEL[estado]}.`);
+            }}
+            className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
+          >
+            Atualizar
+          </button>
+        </div>
+      </td>
+    </tr>
   );
 }
 
