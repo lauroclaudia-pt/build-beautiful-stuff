@@ -269,6 +269,8 @@ export const DEFAULT_SITE: SiteConfig = {
   showCareerFilter: true,
   showLocationFilter: true,
   faq: DEFAULT_FAQ.map((f) => ({ ...f })),
+  emailTemplates: DEFAULT_EMAIL_TEMPLATES.map((t) => ({ ...t })),
+  docTemplates: DEFAULT_DOC_TEMPLATES.map((t) => ({ ...t })),
 };
 
 export const COLOR_FIELDS: {
