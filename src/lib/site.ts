@@ -14,9 +14,10 @@ export interface SiteConfig {
   accentColor: string;
   heroTitle: string;
   heroLead: string;
-  showFilters: boolean;
   showTypeFilter: boolean;
+  showDepartmentFilter: boolean;
   showCareerFilter: boolean;
+  showLocationFilter: boolean;
 }
 
 export const DEFAULT_SITE: SiteConfig = {
@@ -29,9 +30,10 @@ export const DEFAULT_SITE: SiteConfig = {
   heroTitle: "Recrutamento de pessoal",
   heroLead:
     "Procedimentos concursais, mobilidades e bolsas de investigação do Instituto Português do Mar e da Atmosfera. Consulte o estado de cada processo e candidate-se dentro do prazo fixado.",
-  showFilters: true,
   showTypeFilter: true,
+  showDepartmentFilter: true,
   showCareerFilter: true,
+  showLocationFilter: true,
 };
 
 export const COLOR_FIELDS: {
