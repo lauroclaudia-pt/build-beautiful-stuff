@@ -18,6 +18,7 @@ import { Route as BackofficeVagaIdRouteImport } from './routes/backoffice/$vagaI
 import { Route as BackofficeAdminRouteImport } from './routes/backoffice/admin'
 import { Route as BackofficeDadosRouteImport } from './routes/backoffice/dados'
 import { Route as BackofficeFaqRouteImport } from './routes/backoffice/faq'
+import { Route as BackofficeNotificacoesRouteImport } from './routes/backoffice/notificacoes'
 import { Route as BackofficePessoasRouteImport } from './routes/backoffice/pessoas'
 import { Route as BackofficeSiteRouteImport } from './routes/backoffice/site'
 import { Route as VagasVagaIdRouteImport } from './routes/vagas/$vagaId'
@@ -67,6 +68,11 @@ const BackofficeFaqRoute = BackofficeFaqRouteImport.update({
   path: '/backoffice/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BackofficeNotificacoesRoute = BackofficeNotificacoesRouteImport.update({
+  id: '/backoffice/notificacoes',
+  path: '/backoffice/notificacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BackofficePessoasRoute = BackofficePessoasRouteImport.update({
   id: '/backoffice/pessoas',
   path: '/backoffice/pessoas',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
+  '/backoffice/notificacoes': typeof BackofficeNotificacoesRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/backoffice/site': typeof BackofficeSiteRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
+  '/backoffice/notificacoes': typeof BackofficeNotificacoesRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/backoffice/site': typeof BackofficeSiteRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
+  '/backoffice/notificacoes': typeof BackofficeNotificacoesRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/backoffice/site': typeof BackofficeSiteRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/backoffice/admin'
     | '/backoffice/dados'
     | '/backoffice/faq'
+    | '/backoffice/notificacoes'
     | '/backoffice/pessoas'
     | '/backoffice/site'
     | '/vagas/$vagaId'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/backoffice/admin'
     | '/backoffice/dados'
     | '/backoffice/faq'
+    | '/backoffice/notificacoes'
     | '/backoffice/pessoas'
     | '/backoffice/site'
     | '/vagas/$vagaId'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/backoffice/admin'
     | '/backoffice/dados'
     | '/backoffice/faq'
+    | '/backoffice/notificacoes'
     | '/backoffice/pessoas'
     | '/backoffice/site'
     | '/vagas/$vagaId'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   BackofficeAdminRoute: typeof BackofficeAdminRoute
   BackofficeDadosRoute: typeof BackofficeDadosRoute
   BackofficeFaqRoute: typeof BackofficeFaqRoute
+  BackofficeNotificacoesRoute: typeof BackofficeNotificacoesRoute
   BackofficePessoasRoute: typeof BackofficePessoasRoute
   BackofficeSiteRoute: typeof BackofficeSiteRoute
   VagasVagaIdRoute: typeof VagasVagaIdRoute
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BackofficeFaqRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/backoffice/notificacoes': {
+      id: '/backoffice/notificacoes'
+      path: '/backoffice/notificacoes'
+      fullPath: '/backoffice/notificacoes'
+      preLoaderRoute: typeof BackofficeNotificacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/backoffice/pessoas': {
       id: '/backoffice/pessoas'
       path: '/backoffice/pessoas'
@@ -284,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   BackofficeAdminRoute: BackofficeAdminRoute,
   BackofficeDadosRoute: BackofficeDadosRoute,
   BackofficeFaqRoute: BackofficeFaqRoute,
+  BackofficeNotificacoesRoute: BackofficeNotificacoesRoute,
   BackofficePessoasRoute: BackofficePessoasRoute,
   BackofficeSiteRoute: BackofficeSiteRoute,
   VagasVagaIdRoute: VagasVagaIdRoute,
