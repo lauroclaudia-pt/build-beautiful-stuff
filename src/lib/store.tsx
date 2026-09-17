@@ -345,6 +345,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((d) => ({ ...d, site: { ...DEFAULT_SITE } }));
   }, []);
 
+  const addOpcao: StoreValue["addOpcao"] = useCallback((o) => {
+    setData((d) => ({ ...d, opcoes: [...d.opcoes, { ...o, id: crypto.randomUUID() }] }));
+  }, []);
+
+  const updateOpcao: StoreValue["updateOpcao"] = useCallback((id, patch) => {
+    setData((d) => ({
+      ...d,
+      opcoes: d.opcoes.map((o) => (o.id === id ? { ...o, ...patch } : o)),
+    }));
+  }, []);
+
+  const removeOpcao: StoreValue["removeOpcao"] = useCallback((id) => {
+    setData((d) => ({ ...d, opcoes: d.opcoes.filter((o) => o.id !== id) }));
+  }, []);
+
+  const opcoesDe: StoreValue["opcoesDe"] = useCallback(
+    (category) => opcoesAtivas(data.opcoes, category),
+    [data.opcoes],
+  );
+
   /**
    * Conclui a triagem provisória: se existirem candidatos excluídos segue para a
    * recolha de requisitos em falta, caso contrário avança diretamente para a avaliação.
