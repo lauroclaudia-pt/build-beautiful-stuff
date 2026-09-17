@@ -22,6 +22,8 @@ export interface SiteConfig {
   showLocationFilter: boolean;
   /** Perguntas frequentes apresentadas na página de apoio. */
   faq: FaqItem[];
+  /** Contactos apresentados na página pública. */
+  contacts: ContactItem[];
   /** Notificações por email enviadas aos candidatos em cada fase. */
   emailTemplates: EmailTemplate[];
   /** Documentos (atas) a gerar em cada fase. */
