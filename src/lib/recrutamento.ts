@@ -55,6 +55,26 @@ export interface VagaRegistro {
   createdAt: string;
 }
 
+/** Notificação por email efetivamente enviada a um candidato, com o texto final. */
+export interface Notificacao {
+  id: string;
+  vagaId: string;
+  /** Candidato destinatário; nulo quando a notificação é geral do procedimento. */
+  applicantId: string | null;
+  /** Nome do destinatário apresentado nas listas. */
+  destinatario: string;
+  email: string;
+  /** Fase do procedimento que originou a notificação. */
+  stage: StageCode;
+  /** Nome do modelo de notificação utilizado. */
+  nome: string;
+  assunto: string;
+  /** Texto final enviado, já com os campos substituídos. */
+  texto: string;
+  /** Data/hora ISO do envio. */
+  sentAt: string;
+}
+
 export interface Vaga {
   id: string;
   /** Identificador no servidor de recrutamento (backend Java), quando sincronizado. */
