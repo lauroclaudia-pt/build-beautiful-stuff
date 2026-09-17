@@ -330,7 +330,13 @@ export const DEFAULT_SITE: SiteConfig = {
   contacts: DEFAULT_CONTACTS.map((c) => ({ ...c })),
   emailTemplates: DEFAULT_EMAIL_TEMPLATES.map((t) => ({ ...t })),
   docTemplates: DEFAULT_DOC_TEMPLATES.map((t) => ({ ...t })),
-  emailConfig: { fromName: "Recrutamento IPMA", fromEmail: "recrutamento@ipma.pt" },
+  emailConfig: {
+    fromName: "Recrutamento IPMA",
+    fromEmail: "recrutamento@ipma.pt",
+    sendingDomain: "noreply-rh.ipma.pt",
+    domainVerified: false,
+    verifiedAt: null,
+  },
 };
 
 export const COLOR_FIELDS: {
