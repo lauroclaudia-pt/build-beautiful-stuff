@@ -101,6 +101,7 @@ export interface Applicant {
   eacGrade?: number | null;
   createdAt: string;
   appeal?: { text: string; createdAt: string } | null;
+  documents?: CandidateDocument[];
 }
 
 export const OFFER_TYPE_LABEL: Record<OfferType, string> = {
