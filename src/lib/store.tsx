@@ -146,7 +146,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setData((d) => ({
       ...d,
       applicants: d.applicants.map((a) =>
-        a.id === id ? { ...a, state, exclusionReason: reason ?? a.exclusionReason } : a,
+        a.id === id ? { ...a, state, ...(reason ?? a.exclusionReason ? { exclusionReason: (reason ?? a.exclusionReason)! } : {}) } : a,
       ),
     }));
   }, []);
