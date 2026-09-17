@@ -41,7 +41,7 @@ export const Route = createFileRoute("/backoffice/dados")({
   ),
 });
 
-const hoje = () => new Date().toISOString().slice(0, 10);
+const hoje = hojeISO;
 
 function Dados() {
   const { opcoes, addOpcao, updateOpcao, removeOpcao } = useStore();
