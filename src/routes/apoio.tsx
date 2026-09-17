@@ -60,18 +60,17 @@ function Apoio() {
                 Contactos
               </p>
               <div className="mt-4 space-y-3 text-[13px]">
-                <div className="flex justify-between border-b border-border pb-2">
-                  <span className="text-muted-foreground">Divisão</span>
-                  <span className="font-medium">Recursos Humanos</span>
-                </div>
-                <div className="flex justify-between border-b border-border pb-2">
-                  <span className="text-muted-foreground">Email</span>
-                  <span className="font-medium">recrutamento@ipma.pt</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Horário</span>
-                  <span className="font-medium">9h30 — 17h00</span>
-                </div>
+                {contactos.map((c, i) => (
+                  <div
+                    key={c.id}
+                    className={`flex justify-between gap-3 ${
+                      i < contactos.length - 1 ? "border-b border-border pb-2" : ""
+                    }`}
+                  >
+                    <span className="text-muted-foreground">{c.label}</span>
+                    <span className="text-right font-medium">{c.value}</span>
+                  </div>
+                ))}
               </div>
               <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 Dados de contacto de demonstração
