@@ -62,6 +62,16 @@ export interface Vaga {
   publishedAt: string | null;
   deadline: string;
   stages: JobStage[];
+  /** Admite candidatos sem a habilitação exigida (allow_no_degree). */
+  allowNoDegree?: boolean;
+  /** Postos reservados a candidatos com deficiência (quota). */
+  vagasDeficiencia?: number;
+  /** Ativação condicional dos métodos de avaliação. */
+  hasPc?: boolean;
+  hasAc?: boolean;
+  hasEac?: boolean;
+  /** Suplemento remuneratório / informação adicional. */
+  salaryPlus?: string;
 }
 
 export type DocState = "PENDING" | "RECEIVED" | "VALIDATED" | "MISSING";
@@ -103,9 +113,30 @@ export interface Applicant {
   acGrade?: number | null;
   eacGrade?: number | null;
   createdAt: string;
-  appeal?: { text: string; createdAt: string } | null;
+  appeal?: { text: string; createdAt: string; channel?: AppealChannel } | null;
   documents?: CandidateDocument[];
+  /** Data de nascimento (validação de maioridade). */
+  birthDate?: string;
+  /** Candidato com deficiência (quota) — exige declaração de incapacidade. */
+  deficiencia?: boolean;
+  /** Candidato abrangido pelo Regime Jurídico do Emprego Público (RJEP). */
+  rjep?: boolean;
+  /** Condições especiais para a realização dos métodos de seleção. */
+  specialConditions?: string;
+  /** Declaração de veracidade das informações prestadas. */
+  truthDeclaration?: boolean;
+  /** Anexos entregues no momento da candidatura. */
+  attachments?: string[];
 }
+
+export type AppealChannel = "PORTAL" | "EMAIL" | "FISICO" | "SEM_RESPOSTA";
+
+export const APPEAL_CHANNEL_LABEL: Record<AppealChannel, string> = {
+  PORTAL: "Portal",
+  EMAIL: "Email",
+  FISICO: "Físico",
+  SEM_RESPOSTA: "Não respondeu",
+};
 
 export const OFFER_TYPE_LABEL: Record<OfferType, string> = {
   PROCEDIMENTO_CONCURSAL_COMUM: "Procedimento concursal comum",
@@ -135,17 +166,20 @@ export const APPLICANT_STATE_LABEL: Record<ApplicantState, string> = {
   APPROVED: "Aprovado",
   HIRED: "Contratado",
   REJECTED: "Rejeitado",
+  CANCELLED: "Cancelada",
 };
 
 export const STAGE_LABEL: Record<StageCode, string> = {
   OPENING: "Abertura",
   APPLICATIONS: "Candidaturas",
-  ADMISSION: "Admissão",
+  ADMISSION: "Triagem provisória",
   MISSING_REQUIREMENTS: "Requisitos em falta",
   EVALUATION: "Avaliação",
-  INTERVIEW: "Entrevista",
-  APPEAL: "Audiência",
+  INTERVIEW: "Entrevista (EAC)",
+  APPEAL: "Audiência de interessados",
   CONTRACT: "Contratação",
+  MOBILITY: "Acordo de mobilidade",
+  APPOINTMENT: "Nomeação / designação",
 };
 
 export const DEPARTMENTS = [
