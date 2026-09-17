@@ -245,22 +245,28 @@ function GestaoSite() {
           <h2 className="text-lg font-semibold tracking-tight">Filtros da página inicial</h2>
           <div className="mt-5 space-y-3">
             <Interruptor
-              checked={site.showFilters}
-              onChange={(v) => updateSite({ showFilters: v })}
-              label="Mostrar os filtros de pesquisa"
-              desc="Quando desligado, a página inicial apresenta apenas a lista de vagas."
-            />
-            <Interruptor
               checked={site.showTypeFilter}
               onChange={(v) => updateSite({ showTypeFilter: v })}
               label="Mostrar o filtro por tipo de procedimento"
               desc="Permite filtrar as vagas por tipo de procedimento (concurso, mobilidade, bolsa, etc.)."
             />
             <Interruptor
+              checked={site.showDepartmentFilter}
+              onChange={(v) => updateSite({ showDepartmentFilter: v })}
+              label="Mostrar o filtro por unidade orgânica"
+              desc="Permite filtrar as vagas pela unidade orgânica do IPMA."
+            />
+            <Interruptor
               checked={site.showCareerFilter}
               onChange={(v) => updateSite({ showCareerFilter: v })}
               label="Mostrar o filtro por cargo/carreira"
               desc="Permite filtrar as vagas por carreira (Técnico Superior, Assistente Técnico, etc.)."
+            />
+            <Interruptor
+              checked={site.showLocationFilter}
+              onChange={(v) => updateSite({ showLocationFilter: v })}
+              label="Mostrar o filtro por local"
+              desc="Permite filtrar as vagas pelo local de trabalho."
             />
           </div>
         </section>
