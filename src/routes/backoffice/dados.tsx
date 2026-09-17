@@ -329,7 +329,9 @@ function Dados() {
                       <input
                         type="date"
                         value={o.startDate}
-                        onChange={(e) => updateOpcao(o.id, { startDate: e.target.value })}
+                        onChange={(e) =>
+                          updateOpcao(o.id, { startDate: e.target.value || hoje() })
+                        }
                         className="input-ipma"
                       />
                     </td>
