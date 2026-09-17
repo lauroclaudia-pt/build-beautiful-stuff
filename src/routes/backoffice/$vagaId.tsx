@@ -82,6 +82,7 @@ function GestaoVaga() {
     advanceStage,
     concludeScreening,
     setApplicantState,
+    setTriagem,
     setGrades,
     addVagaRegistro,
   } = useStore();
