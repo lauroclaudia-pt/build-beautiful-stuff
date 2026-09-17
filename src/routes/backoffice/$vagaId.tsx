@@ -30,7 +30,11 @@ export const Route = createFileRoute("/backoffice/$vagaId")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: GestaoVaga,
+  component: () => (
+    <RequireRole>
+      <GestaoVaga />
+    </RequireRole>
+  ),
 });
 
 const TRIAGEM: ApplicantState[] = [

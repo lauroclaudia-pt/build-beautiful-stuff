@@ -115,13 +115,16 @@ export function RequireRole({
   const { currentUser, hydrated } = useStore();
   if (!hydrated) {
     return (
-      <main className="mx-auto max-w-[1200px] px-6 py-16">
-        <p className="font-mono text-xs text-muted-foreground">A carregar…</p>
-      </main>
+      <PageShell>
+        <main className="mx-auto max-w-[1200px] px-6 py-16">
+          <p className="font-mono text-xs text-muted-foreground">A carregar…</p>
+        </main>
+      </PageShell>
     );
   }
   if (!hasActiveRole(currentUser, ...roles)) {
     return (
+      <PageShell>
       <main className="mx-auto max-w-[720px] px-6 py-20 text-center">
         <h1 className="text-3xl font-semibold tracking-tight">Acesso reservado</h1>
         <p className="mt-3 text-sm text-muted-foreground">
@@ -134,6 +137,7 @@ export function RequireRole({
           Entrar
         </Link>
       </main>
+      </PageShell>
     );
   }
   return <>{children}</>;

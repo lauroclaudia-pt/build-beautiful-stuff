@@ -30,11 +30,11 @@ export const Route = createFileRoute("/backoffice/pessoas")({
     ],
   }),
   component: () => (
-    <PageShell>
-      <RequireRole roles={["ADMIN", "GESTOR_RH", "GESTAO"]}>
+    <RequireRole roles={["ADMIN", "GESTOR_RH", "GESTAO"]}>
+      <PageShell>
         <Pessoas />
-      </RequireRole>
-    </PageShell>
+      </PageShell>
+    </RequireRole>
   ),
 });
 

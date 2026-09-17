@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { PageShell, JobStateBadge } from "@/components/shell";
+import { PageShell, JobStateBadge, RequireRole } from "@/components/shell";
 import { useStore } from "@/lib/store";
 import {
   BONDS,
@@ -36,7 +36,11 @@ export const Route = createFileRoute("/backoffice/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Backoffice,
+  component: () => (
+    <RequireRole>
+      <Backoffice />
+    </RequireRole>
+  ),
 });
 
 const STATES: JobState[] = ["DRAFT", "PUBLISHED", "RUNNING", "FINISHED", "CANCELLED", "DESERT"];
