@@ -87,6 +87,24 @@ function Admin() {
             desc="Criar, editar, reordenar e remover as perguntas e respostas apresentadas na página de apoio ao candidato."
             accao="Gerir perguntas"
           />
+          <Cartao
+            to="/backoffice/notificacoes"
+            titulo="Notificações (emails)"
+            desc="Editar o assunto e o texto das mensagens enviadas aos candidatos em cada fase do procedimento e ativar ou desativar cada envio."
+            accao="Gerir notificações"
+          />
+          <Cartao
+            to="/backoffice/documentos"
+            titulo="Documentos e atas"
+            desc="Editar os modelos das atas e grelhas geradas em cada fase do procedimento, com nome do ficheiro e conteúdo."
+            accao="Gerir documentos"
+          />
+          <Cartao
+            to="/backoffice/contactos"
+            titulo="Contactos"
+            desc="Editar a designação e o valor de cada contacto apresentado nas páginas públicas, por exemplo «Divisão: Recursos Humanos»."
+            accao="Gerir contactos"
+          />
         </div>
       </main>
     </PageShell>
@@ -110,7 +128,14 @@ function Cartao({
   desc,
   accao,
 }: {
-  to: "/backoffice/pessoas" | "/backoffice/site" | "/backoffice/dados" | "/backoffice/faq";
+  to:
+    | "/backoffice/pessoas"
+    | "/backoffice/site"
+    | "/backoffice/dados"
+    | "/backoffice/faq"
+    | "/backoffice/notificacoes"
+    | "/backoffice/documentos"
+    | "/backoffice/contactos";
   titulo: string;
   desc: string;
   accao: string;
