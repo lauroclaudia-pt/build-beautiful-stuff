@@ -110,6 +110,7 @@ function Portal() {
         </section>
 
         <div className="mt-10 grid grid-cols-12 gap-6">
+          {site.showFilters && (
           <aside className="col-span-12 animate-rise [animation-delay:80ms] lg:col-span-3">
             <div className="glass rounded-xl p-5">
               <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -158,6 +159,29 @@ function Portal() {
                     ))}
                   </select>
                 </div>
+                {site.showCareerFilter && (
+                  <div>
+                    <label
+                      htmlFor="carreira"
+                      className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground"
+                    >
+                      Cargo / carreira
+                    </label>
+                    <select
+                      id="carreira"
+                      value={carreira}
+                      onChange={(e) => setCarreira(e.target.value)}
+                      className="mt-2 w-full rounded-md border border-border bg-white/50 px-3 py-2 text-[13px]"
+                    >
+                      <option value="">Todas</option>
+                      {carreiras.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                     Local
@@ -207,8 +231,11 @@ function Portal() {
               </button>
             </div>
           </aside>
+          )}
 
-          <div className="col-span-12 space-y-4 lg:col-span-6">
+          <div
+            className={`col-span-12 space-y-4 ${site.showFilters ? "lg:col-span-6" : "lg:col-span-9"}`}
+          >
             <div className="flex animate-rise items-center justify-between [animation-delay:120ms]">
               <p className="font-mono text-[11px] text-muted-foreground">
                 {lista.length} {lista.length === 1 ? "vaga encontrada" : "vagas encontradas"}
