@@ -17,6 +17,7 @@ import { Route as BackofficeIndexRouteImport } from './routes/backoffice/index'
 import { Route as BackofficeVagaIdRouteImport } from './routes/backoffice/$vagaId'
 import { Route as BackofficeAdminRouteImport } from './routes/backoffice/admin'
 import { Route as BackofficeDadosRouteImport } from './routes/backoffice/dados'
+import { Route as BackofficeFaqRouteImport } from './routes/backoffice/faq'
 import { Route as BackofficePessoasRouteImport } from './routes/backoffice/pessoas'
 import { Route as BackofficeSiteRouteImport } from './routes/backoffice/site'
 import { Route as VagasVagaIdRouteImport } from './routes/vagas/$vagaId'
@@ -61,6 +62,11 @@ const BackofficeDadosRoute = BackofficeDadosRouteImport.update({
   path: '/backoffice/dados',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BackofficeFaqRoute = BackofficeFaqRouteImport.update({
+  id: '/backoffice/faq',
+  path: '/backoffice/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BackofficePessoasRoute = BackofficePessoasRouteImport.update({
   id: '/backoffice/pessoas',
   path: '/backoffice/pessoas',
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
+  '/backoffice/faq': typeof BackofficeFaqRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/backoffice/site': typeof BackofficeSiteRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
+  '/backoffice/faq': typeof BackofficeFaqRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/backoffice/site': typeof BackofficeSiteRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
+  '/backoffice/faq': typeof BackofficeFaqRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/backoffice/site': typeof BackofficeSiteRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
     | '/backoffice/dados'
+    | '/backoffice/faq'
     | '/backoffice/pessoas'
     | '/backoffice/site'
     | '/vagas/$vagaId'
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
     | '/backoffice/dados'
+    | '/backoffice/faq'
     | '/backoffice/pessoas'
     | '/backoffice/site'
     | '/vagas/$vagaId'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
     | '/backoffice/dados'
+    | '/backoffice/faq'
     | '/backoffice/pessoas'
     | '/backoffice/site'
     | '/vagas/$vagaId'
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   BackofficeVagaIdRoute: typeof BackofficeVagaIdRoute
   BackofficeAdminRoute: typeof BackofficeAdminRoute
   BackofficeDadosRoute: typeof BackofficeDadosRoute
+  BackofficeFaqRoute: typeof BackofficeFaqRoute
   BackofficePessoasRoute: typeof BackofficePessoasRoute
   BackofficeSiteRoute: typeof BackofficeSiteRoute
   VagasVagaIdRoute: typeof VagasVagaIdRoute
@@ -231,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BackofficeDadosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/backoffice/faq': {
+      id: '/backoffice/faq'
+      path: '/backoffice/faq'
+      fullPath: '/backoffice/faq'
+      preLoaderRoute: typeof BackofficeFaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/backoffice/pessoas': {
       id: '/backoffice/pessoas'
       path: '/backoffice/pessoas'
@@ -263,6 +283,7 @@ const rootRouteChildren: RootRouteChildren = {
   BackofficeVagaIdRoute: BackofficeVagaIdRoute,
   BackofficeAdminRoute: BackofficeAdminRoute,
   BackofficeDadosRoute: BackofficeDadosRoute,
+  BackofficeFaqRoute: BackofficeFaqRoute,
   BackofficePessoasRoute: BackofficePessoasRoute,
   BackofficeSiteRoute: BackofficeSiteRoute,
   VagasVagaIdRoute: VagasVagaIdRoute,

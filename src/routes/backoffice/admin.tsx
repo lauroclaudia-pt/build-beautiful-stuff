@@ -62,7 +62,7 @@ function Admin() {
           <Kpi label="Candidaturas" value={applicants.length} />
         </div>
 
-        <div className="mt-8 grid animate-rise gap-4 [animation-delay:120ms] md:grid-cols-3">
+        <div className="mt-8 grid animate-rise gap-4 [animation-delay:120ms] md:grid-cols-2 xl:grid-cols-4">
           <Cartao
             to="/backoffice/pessoas"
             titulo="Pessoas e responsabilidades"
@@ -80,6 +80,12 @@ function Admin() {
             titulo="Gestão de dados"
             desc="Listar e gerir os valores de todas as listas de escolha dos formulários, com data de início, data de fim e estado ativo ou inativo."
             accao="Gerir dados"
+          />
+          <Cartao
+            to="/backoffice/faq"
+            titulo="Perguntas frequentes"
+            desc="Criar, editar, reordenar e remover as perguntas e respostas apresentadas na página de apoio ao candidato."
+            accao="Gerir perguntas"
           />
         </div>
       </main>
@@ -104,7 +110,7 @@ function Cartao({
   desc,
   accao,
 }: {
-  to: "/backoffice/pessoas" | "/backoffice/site" | "/backoffice/dados";
+  to: "/backoffice/pessoas" | "/backoffice/site" | "/backoffice/dados" | "/backoffice/faq";
   titulo: string;
   desc: string;
   accao: string;
