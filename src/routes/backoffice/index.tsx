@@ -84,6 +84,12 @@ function Backoffice() {
               Backoffice · Divisão de Recursos Humanos
             </p>
             <h1 className="mt-3 text-4xl font-bold tracking-tight">Painel de vagas</h1>
+            <Link
+              to="/backoffice/pessoas"
+              className="mt-4 inline-block rounded-md border border-border px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] hover:bg-foreground/5"
+            >
+              Pessoas e responsabilidades
+            </Link>
           </div>
           <button
             onClick={() => setNovo((n) => !n)}

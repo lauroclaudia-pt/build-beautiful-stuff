@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ApplicantStateBadge, JobStateBadge, PageShell } from "@/components/shell";
+import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/components/shell";
 import { finalGrade, useStore } from "@/lib/store";
 import {
   APPLICANT_STATE_LABEL,
