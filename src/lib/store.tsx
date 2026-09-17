@@ -20,6 +20,7 @@ import {
   type Vaga,
   type TriagemCriterios,
   type VagaRegistro,
+  type Notificacao,
 } from "./recrutamento";
 import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
 import { DEFAULT_SITE, type SiteConfig } from "./site";
@@ -39,6 +40,7 @@ interface Data {
   sessionId: string | null;
   site: SiteConfig;
   opcoes: OptionValue[];
+  notificacoes: Notificacao[];
 }
 
 interface StoreValue extends Data {
@@ -73,6 +75,8 @@ interface StoreValue extends Data {
   concludeScreening: (vagaId: string) => { ok: boolean; message: string };
   /** Acrescenta um registo ao procedimento (notificação enviada ou observação manual). */
   addVagaRegistro: (vagaId: string, reg: Omit<VagaRegistro, "id" | "createdAt">) => void;
+  /** Regista notificações enviadas aos candidatos, com o texto final. */
+  addNotificacoes: (novas: Omit<Notificacao, "id" | "sentAt">[]) => void;
   reset: () => void;
 }
 
@@ -89,6 +93,7 @@ function seed(): Data {
     sessionId: null,
     site: { ...DEFAULT_SITE },
     opcoes: SEED_OPCOES.map((o) => ({ ...o })),
+    notificacoes: [],
   };
 }
 
@@ -109,6 +114,7 @@ function load(): Data {
         sessionId: parsed.sessionId ?? null,
         site: { ...DEFAULT_SITE, ...(parsed.site ?? {}) },
         opcoes: parsed.opcoes?.length ? parsed.opcoes : base.opcoes,
+        notificacoes: parsed.notificacoes ?? [],
       };
     }
   } catch {
@@ -364,6 +370,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const addNotificacoes: StoreValue["addNotificacoes"] = useCallback((novas) => {
+    if (!novas.length) return;
+    const agora = new Date().toISOString();
+    const registos: Notificacao[] = novas.map((n) => ({
+      ...n,
+      id: crypto.randomUUID(),
+      sentAt: agora,
+    }));
+    setData((d) => ({ ...d, notificacoes: [...registos, ...d.notificacoes] }));
+  }, []);
+
   const addPessoa: StoreValue["addPessoa"] = useCallback((input) => {
     const pessoa: Pessoa = { ...input, id: crypto.randomUUID() };
     setData((d) => ({ ...d, pessoas: [...d.pessoas, pessoa] }));
@@ -524,6 +541,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       opcoesDe,
       concludeScreening,
       addVagaRegistro,
+      addNotificacoes,
       reset,
     }),
     [
@@ -556,6 +574,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       opcoesDe,
       concludeScreening,
       addVagaRegistro,
+      addNotificacoes,
       reset,
     ],
   );
