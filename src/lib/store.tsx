@@ -269,6 +269,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const setTriagem: StoreValue["setTriagem"] = useCallback((id, triagem) => {
+    setData((d) => ({
+      ...d,
+      applicants: d.applicants.map((a) => (a.id === id ? { ...a, triagem } : a)),
+    }));
+  }, []);
+
+
+
   const addAppeal: StoreValue["addAppeal"] = useCallback((id, text) => {
     setData((d) => ({
       ...d,
