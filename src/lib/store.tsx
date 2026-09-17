@@ -18,6 +18,7 @@ import {
   type CandidateDocument,
   type DocState,
   type Vaga,
+  type TriagemCriterios,
   type VagaRegistro,
 } from "./recrutamento";
 import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
