@@ -313,14 +313,14 @@ function NovaVaga({
           onChange={(e) => setF({ ...f, department: e.target.value })}
           className="input-ipma"
         >
-          {DEPARTMENTS.map((d) => (
+          {departamentos.map((d) => (
             <option key={d}>{d}</option>
           ))}
         </select>
       </L>
       <L label="Local">
         <select value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} className="input-ipma">
-          {LOCATIONS.map((d) => (
+          {locais.map((d) => (
             <option key={d}>{d}</option>
           ))}
         </select>
@@ -340,7 +340,7 @@ function NovaVaga({
           onChange={(e) => setF({ ...f, educationLevel: e.target.value })}
           className="input-ipma"
         >
-          {EDUCATION_LEVELS.map((d) => (
+          {habilitacoes.map((d) => (
             <option key={d}>{d}</option>
           ))}
         </select>
@@ -380,7 +380,7 @@ function NovaVaga({
       <div className="sm:col-span-3">
         <L label="Métodos de seleção">
           <div className="flex flex-wrap gap-2">
-            {SELECTION_METHODS.map((m) => {
+            {metodos.map((m) => {
               const on = f.selectionMethods.includes(m);
               return (
                 <button
