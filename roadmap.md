@@ -47,4 +47,4 @@
 - [x] Documentos e atas com estado ATIVO/INATIVO, Guardar e Remover — verificado com Playwright.
 
 - [ ] Publicar o código atualizado no GitHub (branch lovable/ipma-recrutamento)
-- [ ] Gestão de dados: botões de ação com ícone de lápis (editar) e caixote (remover) em todas as listas
+- [x] Gestão de dados: botões de ação com ícone de lápis (editar) e caixote (remover)
