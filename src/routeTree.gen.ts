@@ -15,6 +15,7 @@ import { Route as CandidatoRouteImport } from './routes/candidato'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as BackofficeIndexRouteImport } from './routes/backoffice/index'
 import { Route as BackofficeVagaIdRouteImport } from './routes/backoffice/$vagaId'
+import { Route as BackofficeAdminRouteImport } from './routes/backoffice/admin'
 import { Route as BackofficePessoasRouteImport } from './routes/backoffice/pessoas'
 import { Route as VagasVagaIdRouteImport } from './routes/vagas/$vagaId'
 
@@ -48,6 +49,11 @@ const BackofficeVagaIdRoute = BackofficeVagaIdRouteImport.update({
   path: '/backoffice/$vagaId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BackofficeAdminRoute = BackofficeAdminRouteImport.update({
+  id: '/backoffice/admin',
+  path: '/backoffice/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BackofficePessoasRoute = BackofficePessoasRouteImport.update({
   id: '/backoffice/pessoas',
   path: '/backoffice/pessoas',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/candidato': typeof CandidatoRoute
   '/entrar': typeof EntrarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
+  '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice/': typeof BackofficeIndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/candidato': typeof CandidatoRoute
   '/entrar': typeof EntrarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
+  '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice': typeof BackofficeIndexRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/candidato': typeof CandidatoRoute
   '/entrar': typeof EntrarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
+  '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice/': typeof BackofficeIndexRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/candidato'
     | '/entrar'
     | '/backoffice/$vagaId'
+    | '/backoffice/admin'
     | '/backoffice/pessoas'
     | '/vagas/$vagaId'
     | '/backoffice/'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/candidato'
     | '/entrar'
     | '/backoffice/$vagaId'
+    | '/backoffice/admin'
     | '/backoffice/pessoas'
     | '/vagas/$vagaId'
     | '/backoffice'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/candidato'
     | '/entrar'
     | '/backoffice/$vagaId'
+    | '/backoffice/admin'
     | '/backoffice/pessoas'
     | '/vagas/$vagaId'
     | '/backoffice/'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   CandidatoRoute: typeof CandidatoRoute
   EntrarRoute: typeof EntrarRoute
   BackofficeVagaIdRoute: typeof BackofficeVagaIdRoute
+  BackofficeAdminRoute: typeof BackofficeAdminRoute
   BackofficePessoasRoute: typeof BackofficePessoasRoute
   VagasVagaIdRoute: typeof VagasVagaIdRoute
   BackofficeIndexRoute: typeof BackofficeIndexRoute
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BackofficeVagaIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/backoffice/admin': {
+      id: '/backoffice/admin'
+      path: '/backoffice/admin'
+      fullPath: '/backoffice/admin'
+      preLoaderRoute: typeof BackofficeAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/backoffice/pessoas': {
       id: '/backoffice/pessoas'
       path: '/backoffice/pessoas'
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   CandidatoRoute: CandidatoRoute,
   EntrarRoute: EntrarRoute,
   BackofficeVagaIdRoute: BackofficeVagaIdRoute,
+  BackofficeAdminRoute: BackofficeAdminRoute,
   BackofficePessoasRoute: BackofficePessoasRoute,
   VagasVagaIdRoute: VagasVagaIdRoute,
   BackofficeIndexRoute: BackofficeIndexRoute,
