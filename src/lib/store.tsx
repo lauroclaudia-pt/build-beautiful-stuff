@@ -11,7 +11,7 @@ import {
   DEFAULT_DOCUMENTS,
   SEED_APPLICANTS,
   SEED_VAGAS,
-  newStages,
+  newStagesFor,
   type Applicant,
   type ApplicantState,
   type CandidateDocument,
@@ -19,14 +19,16 @@ import {
   type Vaga,
 } from "./recrutamento";
 import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
+import { DEFAULT_SITE, type SiteConfig } from "./site";
 
-const STORAGE_KEY = "ipma-recrutamento-v2";
+const STORAGE_KEY = "ipma-recrutamento-v3";
 
 interface Data {
   vagas: Vaga[];
   applicants: Applicant[];
   pessoas: Pessoa[];
   sessionId: string | null;
+  site: SiteConfig;
 }
 
 interface StoreValue extends Data {
@@ -47,6 +49,9 @@ interface StoreValue extends Data {
   updatePessoa: (id: string, patch: Partial<Pessoa>) => void;
   addResponsabilidade: (pessoaId: string, r: Omit<Responsabilidade, "id">) => void;
   removeResponsabilidade: (pessoaId: string, respId: string) => void;
+  updateSite: (patch: Partial<SiteConfig>) => void;
+  resetSite: () => void;
+  concludeScreening: (vagaId: string) => { ok: boolean; message: string };
   reset: () => void;
 }
 
@@ -61,6 +66,7 @@ function seed(): Data {
     })),
     pessoas: SEED_PESSOAS,
     sessionId: null,
+    site: { ...DEFAULT_SITE },
   };
 }
 
@@ -79,6 +85,7 @@ function load(): Data {
         })),
         pessoas: parsed.pessoas ?? base.pessoas,
         sessionId: parsed.sessionId ?? null,
+        site: { ...DEFAULT_SITE, ...(parsed.site ?? {}) },
       };
     }
   } catch {
@@ -109,7 +116,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       id: crypto.randomUUID(),
       state: "DRAFT",
       publishedAt: null,
-      stages: newStages(0),
+      stages: newStagesFor(input.offerType, { hasEac: input.hasEac ?? true, activeIndex: 0 }),
     };
     setData((d) => ({ ...d, vagas: [vaga, ...d.vagas] }));
     return vaga;
@@ -135,11 +142,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           };
           return v;
         }
+        const stages = newStagesFor(v.offerType, { hasEac: v.hasEac ?? true, activeIndex: 1 });
         return {
           ...v,
-          state: "PUBLISHED",
+          state: "PUBLISHED" as const,
           publishedAt: new Date().toISOString().slice(0, 10),
-          stages: newStages(1),
+          stages,
         };
       }),
     }));
