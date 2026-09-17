@@ -121,6 +121,57 @@ function CorreioEletronico() {
               Os destinatários verão «{form.fromName || "Recrutamento IPMA"} &lt;{form.fromEmail || "…"}&gt;».
             </span>
           </div>
+
+          <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+            Servidor de saída (SMTP)
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                Servidor de saída
+              </span>
+              <input
+                value={form.smtpHost ?? ""}
+                onChange={(e) => setForm({ ...form, smtpHost: e.target.value })}
+                placeholder="smtp.ipma.pt"
+                className="input-ipma mt-1 w-full"
+              />
+            </label>
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                Porta
+              </span>
+              <input
+                value={form.smtpPort ?? ""}
+                onChange={(e) => setForm({ ...form, smtpPort: e.target.value })}
+                placeholder="587"
+                className="input-ipma mt-1 w-full"
+              />
+            </label>
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                Utilizador
+              </span>
+              <input
+                value={form.smtpUser ?? ""}
+                onChange={(e) => setForm({ ...form, smtpUser: e.target.value })}
+                placeholder="recrutamento@ipma.pt"
+                className="input-ipma mt-1 w-full"
+              />
+            </label>
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                Palavra-passe
+              </span>
+              <input
+                type="password"
+                value={form.smtpPassword ?? ""}
+                onChange={(e) => setForm({ ...form, smtpPassword: e.target.value })}
+                placeholder="••••••••"
+                className="input-ipma mt-1 w-full"
+              />
+            </label>
+          </div>
         </form>
 
         <div className="glass mt-6 animate-rise rounded-xl p-5 [animation-delay:140ms]">

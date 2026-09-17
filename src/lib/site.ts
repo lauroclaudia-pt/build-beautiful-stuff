@@ -35,12 +35,20 @@ export interface SiteConfig {
   emailConfig: EmailConfig;
 }
 
-/** Configuração do remetente dos emails da aplicação. */
+/** Configuração do remetente e do servidor de saída (SMTP) dos emails da aplicação. */
 export interface EmailConfig {
   /** Nome a apresentar na caixa de entrada do destinatário. */
   fromName: string;
   /** Endereço de correio do remetente (caixa de correio). */
   fromEmail: string;
+  /** Servidor de saída (SMTP), por exemplo smtp.ipma.pt. */
+  smtpHost?: string;
+  /** Porta do servidor de saída (25, 465 ou 587). */
+  smtpPort?: string;
+  /** Utilizador da caixa de correio. */
+  smtpUser?: string;
+  /** Palavra-passe da caixa de correio. */
+  smtpPassword?: string;
 }
 
 /** Estado de um documento/valor com janela de validade por datas. */
