@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState, type FormEvent } from "react";
+import { Fragment, useMemo, useState, type FormEvent } from "react";
+import { Eye } from "lucide-react";
 import { toast } from "sonner";
 import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/components/shell";
 import { finalGrade, useStore } from "@/lib/store";
@@ -96,6 +97,14 @@ function GestaoVaga() {
   const [edit, setEdit] = useState(false);
   const [obs, setObs] = useState("");
   const [notifAberta, setNotifAberta] = useState<string | null>(null);
+
+  const notifsVaga = useMemo(
+    () =>
+      notificacoes
+        .filter((n) => n.vagaId === vagaId)
+        .sort((a, b) => b.sentAt.localeCompare(a.sentAt)),
+    [notificacoes, vagaId],
+  );
 
   const cands = useMemo(
     () =>
