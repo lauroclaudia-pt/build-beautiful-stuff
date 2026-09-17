@@ -50,6 +50,7 @@ interface StoreValue extends Data {
   addApplicant: (a: Omit<Applicant, "id" | "state" | "createdAt">) => Applicant;
   setApplicantState: (id: string, state: ApplicantState, reason?: string) => void;
   setGrades: (id: string, grades: Pick<Applicant, "pcGrade" | "acGrade" | "eacGrade">) => void;
+  setTriagem: (id: string, triagem: TriagemCriterios) => void;
   addAppeal: (id: string, text: string) => void;
   setDocumentState: (applicantId: string, docId: string, state: DocState) => void;
   login: (email: string, password: string) => { ok: boolean; message: string; pessoa?: Pessoa };
