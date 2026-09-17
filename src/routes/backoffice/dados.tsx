@@ -10,6 +10,7 @@ import {
   OPTION_CATEGORY_LABEL,
   isOpcaoAtiva,
   type OptionCategory,
+  type OptionValue,
 } from "@/lib/opcoes";
 
 const ADMIN_ROLES: Role[] = ["ADMIN", "GESTOR_RH", "GESTAO"];
@@ -44,7 +45,26 @@ const hoje = () => new Date().toISOString().slice(0, 10);
 function Dados() {
   const { opcoes, addOpcao, updateOpcao, removeOpcao } = useStore();
   const [categoria, setCategoria] = useState<OptionCategory>("DEPARTAMENTO");
-  const [novo, setNovo] = useState({ label: "", startDate: hoje(), endDate: "" });
+  const [novo, setNovo] = useState({
+    label: "",
+    startDate: hoje(),
+    endDate: "",
+    address: "",
+    distritoId: "",
+    concelhoId: "",
+  });
+
+  const distritos = useMemo(
+    () => opcoes.filter((o) => o.category === "DISTRITO" && isOpcaoAtiva(o)),
+    [opcoes],
+  );
+  const concelhos = useMemo(
+    () => opcoes.filter((o) => o.category === "CONCELHO" && isOpcaoAtiva(o)),
+    [opcoes],
+  );
+  const nomeDe = (id?: string | null) => opcoes.find((o) => o.id === id)?.label ?? "—";
+  const isLocal = categoria === "LOCAL";
+  const isConcelho = categoria === "CONCELHO";
 
   const lista = useMemo(
     () => opcoes.filter((o) => o.category === categoria),
@@ -57,13 +77,21 @@ function Dados() {
       toast.error("Indique a designação do valor.");
       return;
     }
+    if (isConcelho && !novo.distritoId) {
+      toast.error("Escolha o distrito do concelho.");
+      return;
+    }
     addOpcao({
       category: categoria,
       label: novo.label.trim(),
       startDate: novo.startDate || hoje(),
       endDate: novo.endDate || null,
+      endedAt: null,
+      address: isLocal ? novo.address.trim() || null : null,
+      distritoId: isLocal || isConcelho ? novo.distritoId || null : null,
+      concelhoId: isLocal ? novo.concelhoId || null : null,
     });
-    setNovo({ label: "", startDate: hoje(), endDate: "" });
+    setNovo({ label: "", startDate: hoje(), endDate: "", address: "", distritoId: "", concelhoId: "" });
     toast.success("Valor acrescentado à lista.");
   }
 
