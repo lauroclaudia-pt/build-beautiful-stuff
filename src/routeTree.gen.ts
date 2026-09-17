@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApoioRouteImport } from './routes/apoio'
+import { Route as VagasVagaIdRouteImport } from './routes/vagas/$vagaId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +23,40 @@ const ApoioRoute = ApoioRouteImport.update({
   path: '/apoio',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VagasVagaIdRoute = VagasVagaIdRouteImport.update({
+  id: '/vagas/$vagaId',
+  path: '/vagas/$vagaId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/apoio': typeof ApoioRoute
+  '/vagas/$vagaId': typeof VagasVagaIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/apoio': typeof ApoioRoute
+  '/vagas/$vagaId': typeof VagasVagaIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/apoio': typeof ApoioRoute
+  '/vagas/$vagaId': typeof VagasVagaIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/apoio'
+  fullPaths: '/' | '/apoio' | '/vagas/$vagaId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/apoio'
-  id: '__root__' | '/' | '/apoio'
+  to: '/' | '/apoio' | '/vagas/$vagaId'
+  id: '__root__' | '/' | '/apoio' | '/vagas/$vagaId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApoioRoute: typeof ApoioRoute
+  VagasVagaIdRoute: typeof VagasVagaIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApoioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vagas/$vagaId': {
+      id: '/vagas/$vagaId'
+      path: '/vagas/$vagaId'
+      fullPath: '/vagas/$vagaId'
+      preLoaderRoute: typeof VagasVagaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApoioRoute: ApoioRoute,
+  VagasVagaIdRoute: VagasVagaIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
