@@ -1,4 +1,4 @@
-# Pixel Perfect App Builder
+# Recrutamento
 
 Constrói uma aplicação a partir da specs, que deve ser altamente funcional e com um visual apelativo.
 
