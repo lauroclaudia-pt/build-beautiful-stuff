@@ -12,6 +12,7 @@ import {
   validateNif,
 } from "@/lib/recrutamento";
 import { applyJava, javaBase } from "@/lib/java-api";
+import { enviarConfirmacaoCandidatura } from "@/lib/emails.functions";
 
 export const Route = createFileRoute("/vagas/$vagaId")({
   head: () => ({
