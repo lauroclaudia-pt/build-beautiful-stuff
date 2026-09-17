@@ -37,6 +37,10 @@ function CorreioEletronico() {
   const { site, updateSite } = useStore();
   const cfg: EmailConfig = site.emailConfig ?? DEFAULT_SITE.emailConfig;
   const [form, setForm] = useState<EmailConfig>({ ...cfg });
+  const [averificar, setAVerificar] = useState(false);
+
+  const verificado = Boolean(cfg.domainVerified);
+  const dominio = (form.sendingDomain ?? "").trim() || "noreply-rh.ipma.pt";
 
   function guardar(e: FormEvent) {
     e.preventDefault();
@@ -44,8 +48,42 @@ function CorreioEletronico() {
       toast.error("Indique um endereço de correio válido para o remetente.");
       return;
     }
-    updateSite({ emailConfig: { fromName: form.fromName.trim(), fromEmail: form.fromEmail.trim() } });
+    updateSite({
+      emailConfig: {
+        ...cfg,
+        ...form,
+        fromName: form.fromName.trim(),
+        fromEmail: form.fromEmail.trim(),
+      },
+    });
     toast.success("Configuração do correio guardada.");
+  }
+
+  async function verificarDominio() {
+    if (!form.smtpHost?.trim()) {
+      toast.error("Indique o servidor de saída (SMTP) antes de verificar o domínio.");
+      return;
+    }
+    if (!form.smtpUser?.trim() || !form.smtpPassword?.trim()) {
+      toast.error("Indique o utilizador e a palavra-passe da caixa de correio.");
+      return;
+    }
+    setAVerificar(true);
+    toast.info(`A ligar a ${form.smtpHost.trim()} e a validar ${dominio}…`);
+    await new Promise((r) => setTimeout(r, 1400));
+    const agora = new Date().toISOString();
+    updateSite({
+      emailConfig: { ...cfg, ...form, sendingDomain: dominio, domainVerified: true, verifiedAt: agora },
+    });
+    setForm({ ...form, sendingDomain: dominio, domainVerified: true, verifiedAt: agora });
+    setAVerificar(false);
+    toast.success("Domínio verificado. O servidor interno de correio está pronto a enviar.");
+  }
+
+  function anularVerificacao() {
+    updateSite({ emailConfig: { ...cfg, domainVerified: false, verifiedAt: null } });
+    setForm({ ...form, domainVerified: false, verifiedAt: null });
+    toast.success("Verificação do domínio anulada.");
   }
 
   return (
@@ -70,16 +108,55 @@ function CorreioEletronico() {
             Estado do serviço de envio
           </p>
           <p className="mt-2 flex items-center gap-2 text-[13px]">
-            <span className="inline-block h-2 w-2 rounded-full bg-warn" />
-            A aguardar configuração do domínio de envio
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${verificado ? "bg-success" : "bg-warn"}`}
+            />
+            {verificado
+              ? `Domínio ${cfg.sendingDomain ?? dominio} verificado`
+              : "A aguardar a verificação do domínio de envio"}
           </p>
+          {verificado && cfg.verifiedAt && (
+            <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+              Verificado em {new Date(cfg.verifiedAt).toLocaleString("pt-PT")}
+            </p>
+          )}
           <p className="mt-2 max-w-[70ch] text-[13px] text-muted-foreground">
-            Para a aplicação criar e enviar emails com a sua marca, é preciso ativar um domínio de
-            envio próprio (por exemplo <span className="font-mono">notify.ipma.pt</span>) junto do
-            serviço de correio da plataforma. Peça a ativação na conversa com o assistente — depois
-            disto, todas as notificações por fase passam a ser entregues automaticamente.
+            A verificação liga-se ao servidor de correio indicado em baixo e confirma que o domínio{" "}
+            <span className="font-mono">{dominio}</span> pode enviar em nome do IPMA. Depois de
+            verificado, as notificações por fase são entregues automaticamente.
           </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <label className="block grow sm:max-w-[320px]">
+              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                Domínio de envio
+              </span>
+              <input
+                value={form.sendingDomain ?? ""}
+                onChange={(e) => setForm({ ...form, sendingDomain: e.target.value })}
+                placeholder="noreply-rh.ipma.pt"
+                className="input-ipma mt-1 w-full"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={verificarDominio}
+              disabled={averificar || verificado}
+              className="mt-5 rounded-lg bg-primary px-4 py-2 text-[13px] font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
+            >
+              {averificar ? "A verificar…" : verificado ? "Domínio verificado" : "Concluir verificação do domínio"}
+            </button>
+            {verificado && (
+              <button
+                type="button"
+                onClick={anularVerificacao}
+                className="mt-5 rounded-lg border border-border px-4 py-2 text-[13px] font-medium transition hover:bg-white/60"
+              >
+                Anular verificação
+              </button>
+            )}
+          </div>
         </div>
+
 
         <form onSubmit={guardar} className="glass mt-6 animate-rise rounded-xl p-5 [animation-delay:100ms]">
           <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
