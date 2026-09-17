@@ -8,23 +8,30 @@ import {
   type ReactNode,
 } from "react";
 import {
+  DEFAULT_DOCUMENTS,
   SEED_APPLICANTS,
   SEED_VAGAS,
   newStages,
   type Applicant,
   type ApplicantState,
+  type CandidateDocument,
+  type DocState,
   type Vaga,
 } from "./recrutamento";
+import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
 
-const STORAGE_KEY = "ipma-recrutamento-v1";
+const STORAGE_KEY = "ipma-recrutamento-v2";
 
 interface Data {
   vagas: Vaga[];
   applicants: Applicant[];
+  pessoas: Pessoa[];
+  sessionId: string | null;
 }
 
 interface StoreValue extends Data {
   hydrated: boolean;
+  currentUser: Pessoa | null;
   addVaga: (vaga: Omit<Vaga, "id" | "stages" | "state" | "publishedAt">) => Vaga;
   updateVaga: (id: string, patch: Partial<Vaga>) => void;
   publishVaga: (id: string) => { ok: boolean; message: string };
@@ -33,21 +40,54 @@ interface StoreValue extends Data {
   setApplicantState: (id: string, state: ApplicantState, reason?: string) => void;
   setGrades: (id: string, grades: Pick<Applicant, "pcGrade" | "acGrade" | "eacGrade">) => void;
   addAppeal: (id: string, text: string) => void;
+  setDocumentState: (applicantId: string, docId: string, state: DocState) => void;
+  login: (email: string, password: string) => { ok: boolean; message: string; pessoa?: Pessoa };
+  logout: () => void;
+  addPessoa: (p: Omit<Pessoa, "id">) => Pessoa;
+  updatePessoa: (id: string, patch: Partial<Pessoa>) => void;
+  addResponsabilidade: (pessoaId: string, r: Omit<Responsabilidade, "id">) => void;
+  removeResponsabilidade: (pessoaId: string, respId: string) => void;
   reset: () => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
 
+function seed(): Data {
+  return {
+    vagas: SEED_VAGAS,
+    applicants: SEED_APPLICANTS.map((a) => ({
+      ...a,
+      documents: a.documents ?? DEFAULT_DOCUMENTS.map((d) => ({ ...d })),
+    })),
+    pessoas: SEED_PESSOAS,
+    sessionId: null,
+  };
+}
+
 function load(): Data {
-  if (typeof window === "undefined") return { vagas: SEED_VAGAS, applicants: SEED_APPLICANTS };
+  const base = seed();
+  if (typeof window === "undefined") return base;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as Data;
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<Data>;
+      return {
+        vagas: parsed.vagas ?? base.vagas,
+        applicants: (parsed.applicants ?? base.applicants).map((a) => ({
+          ...a,
+          documents: a.documents ?? DEFAULT_DOCUMENTS.map((d) => ({ ...d })),
+        })),
+        pessoas: parsed.pessoas ?? base.pessoas,
+        sessionId: parsed.sessionId ?? null,
+      };
+    }
   } catch {
     /* ignore */
   }
-  return { vagas: SEED_VAGAS, applicants: SEED_APPLICANTS };
+  return base;
 }
+
+export type { CandidateDocument };
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<Data>({ vagas: SEED_VAGAS, applicants: SEED_APPLICANTS });
