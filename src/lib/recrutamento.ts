@@ -17,7 +17,8 @@ export type ApplicantState =
   | "UNDER_APPEAL"
   | "APPROVED"
   | "HIRED"
-  | "REJECTED";
+  | "REJECTED"
+  | "CANCELLED";
 
 export type StageCode =
   | "OPENING"
@@ -27,9 +28,11 @@ export type StageCode =
   | "EVALUATION"
   | "INTERVIEW"
   | "APPEAL"
-  | "CONTRACT";
+  | "CONTRACT"
+  | "MOBILITY"
+  | "APPOINTMENT";
 
-export type StageState = "draft" | "active" | "completed" | "skipped";
+export type StageState = "draft" | "active" | "completed" | "skipped" | "cancelled";
 
 export interface JobStage {
   code: StageCode;
