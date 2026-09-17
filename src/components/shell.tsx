@@ -48,6 +48,13 @@ export function SiteHeader() {
             Backoffice
           </Link>
           <Link
+            to="/candidato"
+            activeProps={{ className: "bg-foreground/5 text-foreground" }}
+            className="rounded-md px-3 py-2 hover:bg-foreground/5"
+          >
+            Candidato
+          </Link>
+          <Link
             to="/apoio"
             activeProps={{ className: "bg-foreground/5 text-foreground" }}
             className="rounded-md px-3 py-2 hover:bg-foreground/5"
@@ -56,19 +63,80 @@ export function SiteHeader() {
           </Link>
         </nav>
         <div className="ml-auto flex items-center gap-3">
-          <span className="hidden items-center gap-2 rounded-md border border-border bg-white/40 px-3 py-2 font-mono text-[11px] text-muted-foreground sm:flex">
-            <span className="size-1.5 rounded-full bg-atmosfera" /> Portal de recrutamento
-          </span>
-          <Link
-            to="/backoffice"
-            className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground ring-1 ring-black/5 transition-colors hover:bg-primary/90"
-          >
-            Entrar
-          </Link>
+          <SessionArea />
         </div>
       </div>
     </header>
   );
+}
+
+function SessionArea() {
+  const { currentUser, logout, hydrated } = useStore();
+  if (!hydrated || !currentUser) {
+    return (
+      <Link
+        to="/entrar"
+        className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground ring-1 ring-black/5 transition-colors hover:bg-primary/90"
+      >
+        Entrar
+      </Link>
+    );
+  }
+  const roles = activeRoles(currentUser);
+  return (
+    <div className="flex items-center gap-3">
+      <div className="hidden text-right sm:block">
+        <p className="text-[13px] font-medium leading-tight">{currentUser.name}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+          {roles.map((r) => ROLE_LABEL[r]).join(" · ") || "Sem responsabilidades ativas"}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => {
+          logout();
+          toast.success("Sessão terminada.");
+        }}
+        className="rounded-md border border-border px-3 py-2 font-mono text-[10px] uppercase tracking-[0.12em] hover:bg-foreground/5"
+      >
+        Sair
+      </button>
+    </div>
+  );
+}
+
+export function RequireRole({
+  roles = BACKOFFICE_ROLES,
+  children,
+}: {
+  roles?: Role[];
+  children: ReactNode;
+}) {
+  const { currentUser, hydrated } = useStore();
+  if (!hydrated) {
+    return (
+      <main className="mx-auto max-w-[1200px] px-6 py-16">
+        <p className="font-mono text-xs text-muted-foreground">A carregar…</p>
+      </main>
+    );
+  }
+  if (!hasActiveRole(currentUser, ...roles)) {
+    return (
+      <main className="mx-auto max-w-[720px] px-6 py-20 text-center">
+        <h1 className="text-3xl font-semibold tracking-tight">Acesso reservado</h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Esta área exige uma responsabilidade ativa de {roles.map((r) => ROLE_LABEL[r]).join(", ")}.
+        </p>
+        <Link
+          to="/entrar"
+          className="mt-6 inline-block rounded-md bg-primary px-5 py-2.5 text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          Entrar
+        </Link>
+      </main>
+    );
+  }
+  return <>{children}</>;
 }
 
 export function SiteFooter() {
