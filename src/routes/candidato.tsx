@@ -49,8 +49,16 @@ function PortalCandidato() {
     applicants,
     setDocumentState,
     addAppeal,
+    notificacoes,
   } = useStore();
   const [appealText, setAppealText] = useState<Record<string, string>>({});
+
+  const minhasNotificacoes = useMemo(() => {
+    if (!currentUser) return [];
+    return notificacoes
+      .filter((n) => n.email.toLowerCase() === currentUser.email.toLowerCase())
+      .sort((a, b) => b.sentAt.localeCompare(a.sentAt));
+  }, [notificacoes, currentUser]);
 
   const minhas = useMemo(() => {
     if (!currentUser) return [];
@@ -298,6 +306,39 @@ function PortalCandidato() {
               </article>
             );
           })}
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            As minhas notificações
+          </h2>
+          {minhasNotificacoes.length === 0 ? (
+            <p className="glass rounded-xl p-6 text-sm text-muted-foreground">
+              Ainda não recebeu notificações. Quando o júri o notificar, a mensagem fica aqui
+              disponível para consulta.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {minhasNotificacoes.map((n) => {
+                const v = vagas.find((x) => x.id === n.vagaId);
+                return (
+                  <li key={n.id} className="glass rounded-xl p-5">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                      {new Date(n.sentAt).toLocaleString("pt-PT", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                      {v ? ` · ${v.ref}` : ""} · {STAGE_LABEL[n.stage]}
+                    </p>
+                    <h3 className="mt-1 text-[15px] font-semibold">{n.assunto}</h3>
+                    <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-muted-foreground">
+                      {n.texto}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </section>
 
         <section className="space-y-4">
