@@ -312,6 +312,39 @@ function NovaVaga({
           ))}
         </select>
       </L>
+      <L label="Cargo / carreira">
+        <select
+          value={f.career}
+          onChange={(e) => setF({ ...f, career: e.target.value })}
+          className="input-ipma"
+        >
+          {carreiras.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+      </L>
+      <L label="Vínculo">
+        <select
+          value={f.bond}
+          onChange={(e) => setF({ ...f, bond: e.target.value })}
+          className="input-ipma"
+        >
+          {vinculos.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+      </L>
+      <L label="Regime">
+        <select
+          value={f.regime}
+          onChange={(e) => setF({ ...f, regime: e.target.value })}
+          className="input-ipma"
+        >
+          {regimes.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+      </L>
       <L label="Local">
         <select value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} className="input-ipma">
           {locais.map((d) => (
