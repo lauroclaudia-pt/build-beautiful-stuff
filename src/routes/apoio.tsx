@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/shell";
+import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/apoio")({
   head: () => ({
@@ -20,26 +21,11 @@ export const Route = createFileRoute("/apoio")({
   component: Apoio,
 });
 
-const faq = [
-  {
-    q: "Como me candidato a uma vaga?",
-    a: "Abra a vaga pretendida no portal público e preencha o formulário de candidatura dentro do prazo indicado. Receberá confirmação por email com a referência do procedimento.",
-  },
-  {
-    q: "Que documentos são exigidos?",
-    a: "Curriculum vitae, documento de identificação, certificado de habilitações e, quando aplicável, declaração da entidade empregadora pública com a caracterização do vínculo.",
-  },
-  {
-    q: "O que é a recolha de requisitos em falta?",
-    a: "Se a sua candidatura estiver incompleta, é notificado por email para juntar os elementos em falta num prazo fixado. Findo esse prazo sem resposta, a candidatura é excluída.",
-  },
-  {
-    q: "O que é a audiência de interessados?",
-    a: "Após a lista provisória de admitidos e excluídos, os candidatos excluídos podem apresentar alegações escritas, que são apreciadas pelo júri antes da lista definitiva.",
-  },
-];
 
 function Apoio() {
+  const { site } = useStore();
+  const faq = site.faq ?? [];
+
   return (
     <PageShell>
       <main className="mx-auto max-w-[1440px] px-6 py-10">
@@ -59,12 +45,12 @@ function Apoio() {
           <div className="col-span-12 space-y-4 lg:col-span-8">
             {faq.map((f, i) => (
               <div
-                key={f.q}
+                key={f.id}
                 style={{ animationDelay: `${80 + i * 60}ms` }}
                 className="glass animate-rise rounded-xl p-5"
               >
-                <h2 className="text-[15px] font-semibold tracking-tight">{f.q}</h2>
-                <p className="mt-2 text-[13px] text-muted-foreground text-pretty">{f.a}</p>
+                <h2 className="text-[15px] font-semibold tracking-tight">{f.question}</h2>
+                <p className="mt-2 text-[13px] text-muted-foreground text-pretty">{f.answer}</p>
               </div>
             ))}
           </div>
