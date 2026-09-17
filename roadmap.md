@@ -45,3 +45,5 @@
 - Painel de Administração: componentes para configurar caixa de correio / envio de emails pela aplicação (requer domínio de envio próprio — apresentar dialog de configuração).
 - [x] Correio eletrónico: campos SMTP (servidor de saída, porta, username, password) — FEITO e verificado.
 - [x] Documentos e atas com estado ATIVO/INATIVO, Guardar e Remover — verificado com Playwright.
+
+- [ ] Publicar o código atualizado no GitHub (branch lovable/ipma-recrutamento)
