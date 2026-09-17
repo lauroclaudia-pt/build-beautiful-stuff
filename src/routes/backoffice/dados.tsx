@@ -153,22 +153,26 @@ function Dados() {
           <label className="block sm:col-span-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Novo valor
+              <Req />
             </span>
             <input
               value={novo.label}
               onChange={(e) => setNovo({ ...novo, label: e.target.value })}
               placeholder={`Designação (${OPTION_CATEGORY_LABEL[categoria]})`}
+              required
               className="input-ipma mt-1.5"
             />
           </label>
           <label className="block">
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               Data de início
+              <Req />
             </span>
             <input
               type="date"
               value={novo.startDate}
-              onChange={(e) => setNovo({ ...novo, startDate: e.target.value })}
+              onChange={(e) => setNovo({ ...novo, startDate: e.target.value || hoje() })}
+              required
               className="input-ipma mt-1.5"
             />
           </label>
