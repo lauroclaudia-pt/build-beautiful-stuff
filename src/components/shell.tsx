@@ -1,6 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { toast } from "sonner";
 import logo from "@/assets/logo-ipma.png.asset.json";
+import { useStore } from "@/lib/store";
+import { BACKOFFICE_ROLES, ROLE_LABEL, activeRoles, hasActiveRole, type Role } from "@/lib/pessoas";
 import {
   APPLICANT_STATE_LABEL,
   JOB_STATE_LABEL,
