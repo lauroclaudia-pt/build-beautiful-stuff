@@ -49,7 +49,14 @@ export interface EmailConfig {
   smtpUser?: string;
   /** Palavra-passe da caixa de correio. */
   smtpPassword?: string;
+  /** Domínio de envio configurado (ex.: noreply-rh.ipma.pt). */
+  sendingDomain?: string;
+  /** Verificação do domínio concluída junto do servidor de correio. */
+  domainVerified?: boolean;
+  /** Data e hora da última verificação com sucesso. */
+  verifiedAt?: string | null;
 }
+
 
 /** Estado de um documento/valor com janela de validade por datas. */
 export function docEstado(
