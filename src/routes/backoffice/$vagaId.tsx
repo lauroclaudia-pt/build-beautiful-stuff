@@ -421,6 +421,56 @@ function GestaoVaga() {
   );
 }
 
+const TODOS_ESTADOS = Object.keys(APPLICANT_STATE_LABEL) as ApplicantState[];
+
+function LinhaCandidatura({
+  a,
+  onState,
+}: {
+  a: Applicant;
+  onState: ReturnType<typeof useStore>["setApplicantState"];
+}) {
+  const [estado, setEstado] = useState<ApplicantState>(a.state);
+
+  return (
+    <tr className="border-t border-border/60">
+      <td className="py-2 pr-3 font-medium">{a.name}</td>
+      <td className="py-2 pr-3 font-mono text-[12px] text-muted-foreground">
+        {formatDate(a.createdAt)}
+      </td>
+      <td className="py-2 pr-3">
+        <ApplicantStateBadge state={a.state} />
+      </td>
+      <td className="py-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={estado}
+            onChange={(e) => setEstado(e.target.value as ApplicantState)}
+            className="input-ipma max-w-[200px]"
+          >
+            {TODOS_ESTADOS.map((s) => (
+              <option key={s} value={s}>
+                {APPLICANT_STATE_LABEL[s]}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={estado === a.state}
+            onClick={() => {
+              onState(a.id, estado, estado === "EXCLUDED" ? a.exclusionReason ?? "" : undefined);
+              toast.success(`Estado alterado para ${APPLICANT_STATE_LABEL[estado]}.`);
+            }}
+            className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
+          >
+            Atualizar
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 function CandidatoLinha({
   a,
   aberto,
