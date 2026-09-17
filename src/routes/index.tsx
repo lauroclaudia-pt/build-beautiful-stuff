@@ -117,6 +117,7 @@ function Portal() {
                 Filtros
               </p>
               <div className="mt-4 space-y-5">
+                {site.showTypeFilter && (
                 <div>
                   <label
                     htmlFor="tipo"
@@ -138,6 +139,7 @@ function Portal() {
                     ))}
                   </select>
                 </div>
+                )}
                 <div>
                   <label
                     htmlFor="unidade"
