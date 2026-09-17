@@ -1,0 +1,557 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import { ApplicantStateBadge, JobStateBadge, PageShell } from "@/components/shell";
+import { finalGrade, useStore } from "@/lib/store";
+import {
+  APPLICANT_STATE_LABEL,
+  OFFER_TYPE_LABEL,
+  STAGE_LABEL,
+  formatDate,
+  type Applicant,
+  type ApplicantState,
+} from "@/lib/recrutamento";
+
+export const Route = createFileRoute("/backoffice/$vagaId")({
+  head: () => ({
+    meta: [
+      { title: "Gestão do procedimento — Backoffice Recrutamento IPMA" },
+      {
+        name: "description",
+        content:
+          "Acompanhe as etapas do procedimento, faça a triagem de candidaturas, registe notas dos métodos de seleção e gere a ata do júri.",
+      },
+      { property: "og:title", content: "Gestão do procedimento — Backoffice Recrutamento IPMA" },
+      {
+        property: "og:description",
+        content: "Etapas, triagem de candidaturas, notas e ata do júri do IPMA, I.P.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: GestaoVaga,
+});
+
+const TRIAGEM: ApplicantState[] = [
+  "SUBMITTED",
+  "UNDER_REVIEW",
+  "ADMITTED",
+  "EXCLUDED",
+  "UNDER_APPEAL",
+  "APPROVED",
+  "HIRED",
+  "REJECTED",
+];
+
+function GestaoVaga() {
+  const { vagaId } = Route.useParams();
+  const { vagas, applicants, updateVaga, publishVaga, advanceStage, setApplicantState, setGrades } =
+    useStore();
+  const vaga = vagas.find((v) => v.id === vagaId);
+  const [filtro, setFiltro] = useState<ApplicantState | "">("");
+  const [aberto, setAberto] = useState<string | null>(null);
+  const [ata, setAta] = useState<string | null>(null);
+  const [edit, setEdit] = useState(false);
+
+  const cands = useMemo(
+    () =>
+      applicants
+        .filter((a) => a.vagaId === vagaId && (!filtro || a.state === filtro))
+        .sort((a, b) => (finalGrade(b) ?? -1) - (finalGrade(a) ?? -1)),
+    [applicants, vagaId, filtro],
+  );
+
+  if (!vaga) {
+    return (
+      <PageShell>
+        <main className="mx-auto max-w-[1440px] px-6 py-20 text-center">
+          <h1 className="text-2xl font-semibold">Procedimento não encontrado</h1>
+          <Link to="/backoffice" className="mt-6 inline-block text-primary underline">
+            Voltar ao painel
+          </Link>
+        </main>
+      </PageShell>
+    );
+  }
+
+  const todos = applicants.filter((a) => a.vagaId === vaga.id);
+  const etapaAtiva = vaga.stages.find((s) => s.state === "active");
+
+  function gerarAta() {
+    const v = vaga!;
+    const ordenados = [...todos].sort((a, b) => (finalGrade(b) ?? -1) - (finalGrade(a) ?? -1));
+    const linhas = [
+      `ATA DO JÚRI — INSTITUTO PORTUGUÊS DO MAR E DA ATMOSFERA, I.P.`,
+      `Procedimento ${v.ref} — ${v.title}`,
+      `Tipo: ${OFFER_TYPE_LABEL[v.offerType]}`,
+      `Unidade orgânica: ${v.department} · Local: ${v.location} · Postos: ${v.positions}`,
+      `Código BEP/Edital: ${v.bepCode || "(por atribuir)"}`,
+      `Data: ${new Date().toLocaleDateString("pt-PT")}`,
+      ``,
+      `COMPOSIÇÃO DO JÚRI`,
+      `Presidente: ${v.juryPresident || "(por designar)"}`,
+      ...(v.juryMembers.length ? v.juryMembers.map((m, i) => `Vogal ${i + 1}: ${m}`) : ["Vogais: (por designar)"]),
+      ``,
+      `MÉTODOS DE SELEÇÃO`,
+      ...v.selectionMethods.map((m) => `- ${m}`),
+      ``,
+      `ETAPAS DO PROCEDIMENTO`,
+      ...v.stages.map(
+        (s) =>
+          `- ${STAGE_LABEL[s.code]}: ${
+            s.state === "completed" ? "concluída" : s.state === "active" ? "em curso" : "por iniciar"
+          }`,
+      ),
+      ``,
+      `LISTA ORDENADA DE CANDIDATOS (${ordenados.length})`,
+      ...ordenados.map((a, i) => {
+        const nf = finalGrade(a);
+        return `${String(i + 1).padStart(2, "0")}. ${a.name} — ${APPLICANT_STATE_LABEL[a.state]}${
+          nf !== null ? ` — classificação final ${nf.toFixed(2)} valores` : ""
+        }${a.exclusionReason ? ` — motivo: ${a.exclusionReason}` : ""}`;
+      }),
+      ``,
+      `Nada mais havendo a tratar, foi lavrada a presente ata, que vai ser assinada pelos membros do júri.`,
+    ];
+    setAta(linhas.join("\n"));
+  }
+
+  function descarregarAta() {
+    if (!ata) return;
+    const blob = new Blob([ata], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ata-${vaga!.ref.replace("/", "-")}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Ata descarregada.");
+  }
+
+  return (
+    <PageShell>
+      <main className="mx-auto max-w-[1440px] px-6 py-10">
+        <Link
+          to="/backoffice"
+          className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground"
+        >
+          ← Painel de vagas
+        </Link>
+
+        <div className="mt-5 flex animate-rise flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-primary">
+                Ref. {vaga.ref}
+              </span>
+              <JobStateBadge state={vaga.state} />
+            </div>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight">{vaga.title}</h1>
+            <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+              {vaga.department} · {vaga.location} · prazo {formatDate(vaga.deadline)}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setEdit((e) => !e)}
+              className="rounded-md border border-border bg-white/60 px-4 py-2 text-[13px] font-medium"
+            >
+              {edit ? "Fechar edição" : "Editar dados"}
+            </button>
+            {vaga.state === "DRAFT" ? (
+              <button
+                onClick={() => {
+                  const r = publishVaga(vaga.id);
+                  r.ok ? toast.success(r.message) : toast.error(r.message);
+                }}
+                className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Publicar no portal
+              </button>
+            ) : (
+              <Link
+                to="/vagas/$vagaId"
+                params={{ vagaId: vaga.id }}
+                className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Ver publicação
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {edit && (
+          <div className="glass mt-6 grid animate-rise gap-4 rounded-xl p-6 sm:grid-cols-3">
+            <Campo label="Código BEP/Edital">
+              <input
+                value={vaga.bepCode}
+                onChange={(e) => updateVaga(vaga.id, { bepCode: e.target.value })}
+                className="input-ipma"
+              />
+            </Campo>
+            <Campo label="Presidente do júri">
+              <input
+                value={vaga.juryPresident}
+                onChange={(e) => updateVaga(vaga.id, { juryPresident: e.target.value })}
+                className="input-ipma"
+              />
+            </Campo>
+            <Campo label="Vogais (vírgula)">
+              <input
+                value={vaga.juryMembers.join(", ")}
+                onChange={(e) =>
+                  updateVaga(vaga.id, {
+                    juryMembers: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                  })
+                }
+                className="input-ipma"
+              />
+            </Campo>
+            <Campo label="Prazo">
+              <input
+                type="date"
+                value={vaga.deadline}
+                onChange={(e) => updateVaga(vaga.id, { deadline: e.target.value })}
+                className="input-ipma"
+              />
+            </Campo>
+            <Campo label="Postos">
+              <input
+                type="number"
+                min={1}
+                value={vaga.positions}
+                onChange={(e) => updateVaga(vaga.id, { positions: Number(e.target.value) || 1 })}
+                className="input-ipma"
+              />
+            </Campo>
+            <Campo label="Estado">
+              <select
+                value={vaga.state}
+                onChange={(e) => updateVaga(vaga.id, { state: e.target.value as typeof vaga.state })}
+                className="input-ipma"
+              >
+                {(["DRAFT", "PUBLISHED", "RUNNING", "FINISHED", "CANCELLED", "DESERT"] as const).map(
+                  (s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ),
+                )}
+              </select>
+            </Campo>
+          </div>
+        )}
+
+        {/* Pipeline */}
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:80ms]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">Pipeline de etapas</h2>
+            <button
+              onClick={() => {
+                advanceStage(vaga.id);
+                toast.success("Etapa avançada.");
+              }}
+              className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              Avançar etapa
+            </button>
+          </div>
+          <ol className="mt-5 grid gap-2 md:grid-cols-6">
+            {vaga.stages.map((s, i) => (
+              <li
+                key={s.code}
+                className={`rounded-lg border p-3 ${
+                  s.state === "active"
+                    ? "border-atmosfera bg-atmosfera/10"
+                    : s.state === "completed"
+                      ? "border-success/40 bg-success/5"
+                      : "border-border bg-white/40"
+                }`}
+              >
+                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                  {String(i + 1).padStart(2, "0")}
+                </p>
+                <p className="mt-1 text-[13px] font-medium">{STAGE_LABEL[s.code]}</p>
+                <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                  {s.state === "completed" ? "concluída" : s.state === "active" ? "em curso" : "por iniciar"}
+                </p>
+              </li>
+            ))}
+          </ol>
+          {etapaAtiva && (
+            <p className="mt-4 font-mono text-[11px] text-muted-foreground">
+              Etapa atual: {STAGE_LABEL[etapaAtiva.code]}
+            </p>
+          )}
+        </section>
+
+        {/* Triagem */}
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:120ms]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">
+              Triagem de candidaturas{" "}
+              <span className="font-mono text-[12px] font-normal text-muted-foreground">
+                ({todos.length})
+              </span>
+            </h2>
+            <div className="flex flex-wrap gap-1.5">
+              <FiltroChip active={filtro === ""} onClick={() => setFiltro("")}>
+                Todas
+              </FiltroChip>
+              {TRIAGEM.map((s) => (
+                <FiltroChip key={s} active={filtro === s} onClick={() => setFiltro(s)}>
+                  {APPLICANT_STATE_LABEL[s]}
+                </FiltroChip>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {cands.length === 0 && (
+              <p className="rounded-lg border border-border bg-white/40 p-6 text-center text-[13px] text-muted-foreground">
+                Ainda não há candidaturas com este critério.
+              </p>
+            )}
+            {cands.map((a) => (
+              <CandidatoLinha
+                key={a.id}
+                a={a}
+                aberto={aberto === a.id}
+                onToggle={() => setAberto(aberto === a.id ? null : a.id)}
+                onState={setApplicantState}
+                onGrades={setGrades}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Ata */}
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:160ms]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">Ata do júri</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={gerarAta}
+                className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Gerar ata
+              </button>
+              {ata && (
+                <button
+                  onClick={descarregarAta}
+                  className="rounded-md border border-border bg-white/60 px-4 py-2 text-[13px] font-medium"
+                >
+                  Descarregar .txt
+                </button>
+              )}
+            </div>
+          </div>
+          {ata ? (
+            <pre className="mt-4 max-h-[420px] overflow-auto rounded-lg border border-border bg-white/60 p-4 font-mono text-[12px] leading-relaxed whitespace-pre-wrap">
+              {ata}
+            </pre>
+          ) : (
+            <p className="mt-3 text-[13px] text-muted-foreground">
+              A ata reúne o júri, os métodos de seleção, as etapas e a lista ordenada de candidatos com
+              a classificação final.
+            </p>
+          )}
+        </section>
+      </main>
+    </PageShell>
+  );
+}
+
+function CandidatoLinha({
+  a,
+  aberto,
+  onToggle,
+  onState,
+  onGrades,
+}: {
+  a: Applicant;
+  aberto: boolean;
+  onToggle: () => void;
+  onState: ReturnType<typeof useStore>["setApplicantState"];
+  onGrades: ReturnType<typeof useStore>["setGrades"];
+}) {
+  const [motivo, setMotivo] = useState(a.exclusionReason ?? "");
+  const nf = finalGrade(a);
+
+  function nota(k: "pcGrade" | "acGrade" | "eacGrade", v: string) {
+    const n = v === "" ? null : Math.max(0, Math.min(20, Number(v)));
+    onGrades(a.id, {
+      pcGrade: a.pcGrade ?? null,
+      acGrade: a.acGrade ?? null,
+      eacGrade: a.eacGrade ?? null,
+      [k]: n,
+    } as never);
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-white/50">
+      <div className="flex flex-wrap items-center gap-3 p-4">
+        <button onClick={onToggle} className="flex-1 text-left">
+          <p className="text-[14px] font-medium">{a.name}</p>
+          <p className="font-mono text-[11px] text-muted-foreground">
+            {a.email} · {a.education} · submetida {formatDate(a.createdAt)}
+          </p>
+        </button>
+        <ApplicantStateBadge state={a.state} />
+        <div className="text-right">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            Class. final
+          </p>
+          <p className="text-[15px] font-semibold text-primary">{nf !== null ? nf.toFixed(2) : "—"}</p>
+        </div>
+        <select
+          value={a.state}
+          onChange={(e) => {
+            const s = e.target.value as ApplicantState;
+            onState(a.id, s, s === "EXCLUDED" ? motivo : undefined);
+            toast.success(`Estado alterado para ${APPLICANT_STATE_LABEL[s]}.`);
+          }}
+          className="input-ipma max-w-[190px]"
+        >
+          {TRIAGEM.map((s) => (
+            <option key={s} value={s}>
+              {APPLICANT_STATE_LABEL[s]}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {aberto && (
+        <div className="grid gap-4 border-t border-border p-4 sm:grid-cols-3">
+          <div className="sm:col-span-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Motivação
+            </p>
+            <p className="mt-1 text-[13px] text-pretty">{a.motivation}</p>
+          </div>
+          <Campo label="Prova de Conhecimentos (0-20)">
+            <input
+              type="number"
+              step="0.1"
+              min={0}
+              max={20}
+              value={a.pcGrade ?? ""}
+              onChange={(e) => nota("pcGrade", e.target.value)}
+              className="input-ipma"
+            />
+          </Campo>
+          <Campo label="Avaliação Curricular (0-20)">
+            <input
+              type="number"
+              step="0.1"
+              min={0}
+              max={20}
+              value={a.acGrade ?? ""}
+              onChange={(e) => nota("acGrade", e.target.value)}
+              className="input-ipma"
+            />
+          </Campo>
+          <Campo label="Entrevista EAC (0-20)">
+            <input
+              type="number"
+              step="0.1"
+              min={0}
+              max={20}
+              value={a.eacGrade ?? ""}
+              onChange={(e) => nota("eacGrade", e.target.value)}
+              className="input-ipma"
+            />
+          </Campo>
+          <div className="sm:col-span-2">
+            <Campo label="Motivo de exclusão">
+              <input
+                value={motivo}
+                maxLength={300}
+                onChange={(e) => setMotivo(e.target.value)}
+                className="input-ipma"
+              />
+            </Campo>
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={() => {
+                if (!motivo.trim()) {
+                  toast.error("Indique o motivo da exclusão.");
+                  return;
+                }
+                onState(a.id, "EXCLUDED", motivo.trim());
+                toast.success("Candidato excluído com motivo registado.");
+              }}
+              className="w-full rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-[13px] font-medium text-destructive"
+            >
+              Excluir candidato
+            </button>
+          </div>
+          {a.appeal && (
+            <div className="sm:col-span-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">
+                Alegação em audiência de interessados · {formatDate(a.appeal.createdAt)}
+              </p>
+              <p className="mt-1 text-[13px] text-pretty">{a.appeal.text}</p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => {
+                    onState(a.id, "ADMITTED");
+                    toast.success("Alegação deferida — candidato admitido.");
+                  }}
+                  className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground"
+                >
+                  Deferir
+                </button>
+                <button
+                  onClick={() => {
+                    onState(a.id, "EXCLUDED", a.exclusionReason ?? "Alegação indeferida pelo júri.");
+                    toast.success("Alegação indeferida.");
+                  }}
+                  className="rounded-md border border-border bg-white/60 px-3 py-1.5 text-[12px] font-medium"
+                >
+                  Indeferir
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Campo({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </span>
+      <div className="mt-1.5">{children}</div>
+    </label>
+  );
+}
+
+function FiltroChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-md px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] transition-colors ${
+        active
+          ? "bg-primary text-primary-foreground"
+          : "border border-border bg-white/50 text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
