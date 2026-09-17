@@ -20,8 +20,14 @@ import {
 } from "./recrutamento";
 import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
 import { DEFAULT_SITE, type SiteConfig } from "./site";
+import {
+  SEED_OPCOES,
+  opcoesAtivas,
+  type OptionCategory,
+  type OptionValue,
+} from "./opcoes";
 
-const STORAGE_KEY = "ipma-recrutamento-v3";
+const STORAGE_KEY = "ipma-recrutamento-v4";
 
 interface Data {
   vagas: Vaga[];
@@ -29,6 +35,7 @@ interface Data {
   pessoas: Pessoa[];
   sessionId: string | null;
   site: SiteConfig;
+  opcoes: OptionValue[];
 }
 
 interface StoreValue extends Data {
