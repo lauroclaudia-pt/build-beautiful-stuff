@@ -19,11 +19,13 @@ import { Route as BackofficeAdminRouteImport } from './routes/backoffice/admin'
 import { Route as BackofficeContactosRouteImport } from './routes/backoffice/contactos'
 import { Route as BackofficeDadosRouteImport } from './routes/backoffice/dados'
 import { Route as BackofficeDocumentosRouteImport } from './routes/backoffice/documentos'
+import { Route as BackofficeEmailRouteImport } from './routes/backoffice/email'
 import { Route as BackofficeFaqRouteImport } from './routes/backoffice/faq'
 import { Route as BackofficeNotificacoesRouteImport } from './routes/backoffice/notificacoes'
 import { Route as BackofficePessoasRouteImport } from './routes/backoffice/pessoas'
 import { Route as BackofficeSiteRouteImport } from './routes/backoffice/site'
 import { Route as VagasVagaIdRouteImport } from './routes/vagas/$vagaId'
+import { Route as ApiJavaSplatRouteImport } from './routes/api/java/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -75,6 +77,11 @@ const BackofficeDocumentosRoute = BackofficeDocumentosRouteImport.update({
   path: '/backoffice/documentos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BackofficeEmailRoute = BackofficeEmailRouteImport.update({
+  id: '/backoffice/email',
+  path: '/backoffice/email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BackofficeFaqRoute = BackofficeFaqRouteImport.update({
   id: '/backoffice/faq',
   path: '/backoffice/faq',
@@ -100,6 +107,11 @@ const VagasVagaIdRoute = VagasVagaIdRouteImport.update({
   path: '/vagas/$vagaId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiJavaSplatRoute = ApiJavaSplatRouteImport.update({
+  id: '/api/java/$',
+  path: '/api/java/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -111,12 +123,14 @@ export interface FileRoutesByFullPath {
   '/backoffice/contactos': typeof BackofficeContactosRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
   '/backoffice/documentos': typeof BackofficeDocumentosRoute
+  '/backoffice/email': typeof BackofficeEmailRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
   '/backoffice/notificacoes': typeof BackofficeNotificacoesRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/backoffice/site': typeof BackofficeSiteRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice/': typeof BackofficeIndexRoute
+  '/api/java/$': typeof ApiJavaSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -128,12 +142,14 @@ export interface FileRoutesByTo {
   '/backoffice/contactos': typeof BackofficeContactosRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
   '/backoffice/documentos': typeof BackofficeDocumentosRoute
+  '/backoffice/email': typeof BackofficeEmailRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
   '/backoffice/notificacoes': typeof BackofficeNotificacoesRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/backoffice/site': typeof BackofficeSiteRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice': typeof BackofficeIndexRoute
+  '/api/java/$': typeof ApiJavaSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -146,12 +162,14 @@ export interface FileRoutesById {
   '/backoffice/contactos': typeof BackofficeContactosRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
   '/backoffice/documentos': typeof BackofficeDocumentosRoute
+  '/backoffice/email': typeof BackofficeEmailRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
   '/backoffice/notificacoes': typeof BackofficeNotificacoesRoute
   '/backoffice/pessoas': typeof BackofficePessoasRoute
   '/backoffice/site': typeof BackofficeSiteRoute
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice/': typeof BackofficeIndexRoute
+  '/api/java/$': typeof ApiJavaSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -165,12 +183,14 @@ export interface FileRouteTypes {
     | '/backoffice/contactos'
     | '/backoffice/dados'
     | '/backoffice/documentos'
+    | '/backoffice/email'
     | '/backoffice/faq'
     | '/backoffice/notificacoes'
     | '/backoffice/pessoas'
     | '/backoffice/site'
     | '/vagas/$vagaId'
     | '/backoffice/'
+    | '/api/java/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -182,12 +202,14 @@ export interface FileRouteTypes {
     | '/backoffice/contactos'
     | '/backoffice/dados'
     | '/backoffice/documentos'
+    | '/backoffice/email'
     | '/backoffice/faq'
     | '/backoffice/notificacoes'
     | '/backoffice/pessoas'
     | '/backoffice/site'
     | '/vagas/$vagaId'
     | '/backoffice'
+    | '/api/java/$'
   id:
     | '__root__'
     | '/'
@@ -199,12 +221,14 @@ export interface FileRouteTypes {
     | '/backoffice/contactos'
     | '/backoffice/dados'
     | '/backoffice/documentos'
+    | '/backoffice/email'
     | '/backoffice/faq'
     | '/backoffice/notificacoes'
     | '/backoffice/pessoas'
     | '/backoffice/site'
     | '/vagas/$vagaId'
     | '/backoffice/'
+    | '/api/java/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -217,12 +241,14 @@ export interface RootRouteChildren {
   BackofficeContactosRoute: typeof BackofficeContactosRoute
   BackofficeDadosRoute: typeof BackofficeDadosRoute
   BackofficeDocumentosRoute: typeof BackofficeDocumentosRoute
+  BackofficeEmailRoute: typeof BackofficeEmailRoute
   BackofficeFaqRoute: typeof BackofficeFaqRoute
   BackofficeNotificacoesRoute: typeof BackofficeNotificacoesRoute
   BackofficePessoasRoute: typeof BackofficePessoasRoute
   BackofficeSiteRoute: typeof BackofficeSiteRoute
   VagasVagaIdRoute: typeof VagasVagaIdRoute
   BackofficeIndexRoute: typeof BackofficeIndexRoute
+  ApiJavaSplatRoute: typeof ApiJavaSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -297,6 +323,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BackofficeDocumentosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/backoffice/email': {
+      id: '/backoffice/email'
+      path: '/backoffice/email'
+      fullPath: '/backoffice/email'
+      preLoaderRoute: typeof BackofficeEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/backoffice/faq': {
       id: '/backoffice/faq'
       path: '/backoffice/faq'
@@ -332,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VagasVagaIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/java/$': {
+      id: '/api/java/$'
+      path: '/api/java/$'
+      fullPath: '/api/java/$'
+      preLoaderRoute: typeof ApiJavaSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -345,12 +385,14 @@ const rootRouteChildren: RootRouteChildren = {
   BackofficeContactosRoute: BackofficeContactosRoute,
   BackofficeDadosRoute: BackofficeDadosRoute,
   BackofficeDocumentosRoute: BackofficeDocumentosRoute,
+  BackofficeEmailRoute: BackofficeEmailRoute,
   BackofficeFaqRoute: BackofficeFaqRoute,
   BackofficeNotificacoesRoute: BackofficeNotificacoesRoute,
   BackofficePessoasRoute: BackofficePessoasRoute,
   BackofficeSiteRoute: BackofficeSiteRoute,
   VagasVagaIdRoute: VagasVagaIdRoute,
   BackofficeIndexRoute: BackofficeIndexRoute,
+  ApiJavaSplatRoute: ApiJavaSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

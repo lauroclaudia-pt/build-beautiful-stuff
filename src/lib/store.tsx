@@ -12,11 +12,13 @@ import {
   SEED_APPLICANTS,
   SEED_VAGAS,
   newStagesFor,
+  STAGE_LABEL,
   type Applicant,
   type ApplicantState,
   type CandidateDocument,
   type DocState,
   type Vaga,
+  type VagaRegistro,
 } from "./recrutamento";
 import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
 import { DEFAULT_SITE, type SiteConfig } from "./site";
@@ -51,6 +53,10 @@ interface StoreValue extends Data {
   addAppeal: (id: string, text: string) => void;
   setDocumentState: (applicantId: string, docId: string, state: DocState) => void;
   login: (email: string, password: string) => { ok: boolean; message: string; pessoa?: Pessoa };
+  /** Define a sessão ativa para uma pessoa existente (ex.: login no servidor de recrutamento). */
+  setSession: (pessoaId: string) => void;
+  /** Insere vagas sincronizadas do servidor de recrutamento (ignora as que já existem). */
+  syncJavaVagas: (incoming: Vaga[]) => number;
   logout: () => void;
   addPessoa: (p: Omit<Pessoa, "id">) => Pessoa;
   updatePessoa: (id: string, patch: Partial<Pessoa>) => void;
@@ -63,6 +69,8 @@ interface StoreValue extends Data {
   removeOpcao: (id: string) => void;
   opcoesDe: (category: OptionCategory) => string[];
   concludeScreening: (vagaId: string) => { ok: boolean; message: string };
+  /** Acrescenta um registo ao procedimento (notificação enviada ou observação manual). */
+  addVagaRegistro: (vagaId: string, reg: Omit<VagaRegistro, "id" | "createdAt">) => void;
   reset: () => void;
 }
 
@@ -144,6 +152,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const publishVaga: StoreValue["publishVaga"] = useCallback((id) => {
     let result = { ok: true, message: "Vaga publicada no portal público." };
+    const hoje = new Date().toISOString().slice(0, 10);
     setData((d) => ({
       ...d,
       vagas: d.vagas.map((v) => {
@@ -155,11 +164,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           };
           return v;
         }
-        const stages = newStagesFor(v.offerType, { hasEac: v.hasEac ?? true, activeIndex: 1 });
+        const stages = newStagesFor(v.offerType, { hasEac: v.hasEac ?? true, activeIndex: 1 }).map(
+          (s, i) =>
+            i === 0
+              ? { ...s, startedAt: hoje, endedAt: hoje }
+              : i === 1
+                ? { ...s, startedAt: hoje }
+                : s,
+        );
         return {
           ...v,
           state: "PUBLISHED" as const,
-          publishedAt: new Date().toISOString().slice(0, 10),
+          publishedAt: hoje,
           stages,
         };
       }),
@@ -168,6 +184,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const advanceStage: StoreValue["advanceStage"] = useCallback((id) => {
+    const hoje = new Date().toISOString().slice(0, 10);
     setData((d) => ({
       ...d,
       vagas: d.vagas.map((v) => {
@@ -176,15 +193,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (idx === -1 || idx === v.stages.length - 1) {
           return {
             ...v,
-            state: "FINISHED",
-            stages: v.stages.map((s) => ({ ...s, state: "completed" as const })),
+            state: "FINISHED" as const,
+            stages: v.stages.map((s) =>
+              s.state === "active"
+                ? { ...s, state: "completed" as const, endedAt: hoje }
+                : { ...s, state: "completed" as const },
+            ),
           };
         }
         const stages = v.stages.map((s, i) =>
           i === idx
-            ? { ...s, state: "completed" as const }
+            ? { ...s, state: "completed" as const, endedAt: hoje }
             : i === idx + 1
-              ? { ...s, state: "active" as const }
+              ? { ...s, state: "active" as const, startedAt: hoje }
               : s,
         );
         return { ...v, state: "RUNNING" as const, stages };
@@ -298,6 +319,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => setData((d) => ({ ...d, sessionId: null })), []);
+
+  const setSession: StoreValue["setSession"] = useCallback((pessoaId) => {
+    setData((d) => ({ ...d, sessionId: pessoaId }));
+  }, []);
+
+  const syncJavaVagas: StoreValue["syncJavaVagas"] = useCallback((incoming) => {
+    let added = 0;
+    setData((d) => {
+      const known = new Set(d.vagas.flatMap((v) => (v.javaId != null ? [v.javaId] : [])));
+      const novos = incoming.filter((v) => v.javaId != null && !known.has(v.javaId));
+      if (!novos.length) return d;
+      added = novos.length;
+      return { ...d, vagas: [...novos, ...d.vagas] };
+    });
+    return added;
+  }, []);
+
+  const addVagaRegistro: StoreValue["addVagaRegistro"] = useCallback((vagaId, reg) => {
+    setData((d) => ({
+      ...d,
+      vagas: d.vagas.map((v) =>
+        v.id === vagaId
+          ? {
+              ...v,
+              registros: [
+                ...(v.registros ?? []),
+                { ...reg, id: crypto.randomUUID(), createdAt: new Date().toISOString() },
+              ],
+            }
+          : v,
+      ),
+    }));
+  }, []);
 
   const addPessoa: StoreValue["addPessoa"] = useCallback((input) => {
     const pessoa: Pessoa = { ...input, id: crypto.randomUUID() };
@@ -444,6 +498,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setDocumentState,
       login,
       logout,
+      setSession,
+      syncJavaVagas,
       addPessoa,
       updatePessoa,
       addResponsabilidade,
@@ -455,6 +511,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeOpcao,
       opcoesDe,
       concludeScreening,
+      addVagaRegistro,
       reset,
     }),
     [
@@ -472,6 +529,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setDocumentState,
       login,
       logout,
+      setSession,
+      syncJavaVagas,
       addPessoa,
       updatePessoa,
       addResponsabilidade,
@@ -483,6 +542,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeOpcao,
       opcoesDe,
       concludeScreening,
+      addVagaRegistro,
       reset,
     ],
   );

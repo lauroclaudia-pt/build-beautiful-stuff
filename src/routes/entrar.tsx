@@ -9,6 +9,7 @@ import {
   isResponsabilidadeAtiva,
   type Pessoa,
 } from "@/lib/pessoas";
+import { loginJava, mapJavaRoles, saveJavaAuth, javaBase } from "@/lib/java-api";
 
 export const Route = createFileRoute("/entrar")({
   head: () => ({
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/entrar")({
 
 function Entrar() {
   const navigate = useNavigate();
-  const { pessoas, currentUser, login, logout, hydrated } = useStore();
+  const { pessoas, currentUser, login, logout, hydrated, site, addPessoa, setSession } = useStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [erro, setErro] = useState<string | null>(null);
@@ -44,15 +45,48 @@ function Entrar() {
     return "/candidato" as const;
   }
 
-  function submeter(e: React.FormEvent) {
+  async function submeter(e: React.FormEvent) {
     e.preventDefault();
+    setErro(null);
+    // 1) Servidor de recrutamento (backend Java, HTTP Basic).
+    const java = await loginJava(javaBase(site.apiUrl), email.trim(), password);
+    if (java.ok && java.me) {
+      saveJavaAuth(email.trim(), password);
+      const emailNorm = java.me.email.trim().toLowerCase();
+      let pessoa = pessoas.find((p) => p.email.trim().toLowerCase() === emailNorm);
+      if (!pessoa) {
+        const hoje = new Date().toISOString().slice(0, 10);
+        pessoa = addPessoa({
+          name: java.me.name || emailNorm,
+          email: java.me.email,
+          phone: "",
+          nif: "",
+          hasLogin: false,
+          password: null,
+          responsabilidades: mapJavaRoles(java.me.roles).map((role) => ({
+            id: crypto.randomUUID(),
+            role,
+            startDate: hoje,
+            endDate: null,
+          })),
+        });
+      }
+      setSession(pessoa.id);
+      toast.success(java.message);
+      navigate({ to: destinoPara(pessoa) });
+      return;
+    }
+    // 2) Alternativa: contas locais (demonstração) quando o servidor recusa ou não responde.
     const res = login(email, password);
     if (!res.ok || !res.pessoa) {
-      setErro(res.message);
+      const msg =
+        java.failure === "unreachable"
+          ? res.message
+          : `${res.message} (Servidor de recrutamento: ${java.message})`;
+      setErro(msg);
       toast.error(res.message);
       return;
     }
-    setErro(null);
     toast.success(res.message);
     navigate({ to: destinoPara(res.pessoa) });
   }
