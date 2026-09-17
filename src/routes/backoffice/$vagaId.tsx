@@ -681,7 +681,7 @@ function LinhaCandidatura({
               <button
                 type="button"
                 onClick={() => decidir("ADMITTED", false)}
-                className="rounded-md bg-ok px-4 py-2 text-[12px] font-semibold text-white transition hover:opacity-90"
+                className="rounded-md bg-success px-4 py-2 text-[12px] font-semibold text-white transition hover:opacity-90"
               >
                 Aprovar
               </button>
