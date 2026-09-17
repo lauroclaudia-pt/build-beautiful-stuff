@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { PageShell, JobStateBadge } from "@/components/shell";
 import { useStore } from "@/lib/store";
 import {
-  EDUCATION_LEVELS,
   OFFER_TYPE_LABEL,
   STAGE_LABEL,
   ageFrom,
@@ -34,22 +33,14 @@ export const Route = createFileRoute("/vagas/$vagaId")({
   component: VagaDetalhe,
 });
 
-const SITUACOES = [
-  "Trabalhador em funções públicas",
-  "Trabalhador por conta de outrem",
-  "Trabalhador independente",
-  "Desempregado",
-  "Estudante",
-];
-
 const emptyForm = {
   name: "",
   email: "",
   phone: "",
   nif: "",
   birthDate: "",
-  education: EDUCATION_LEVELS[1]!,
-  professionalSituation: SITUACOES[0]!,
+  education: "",
+  professionalSituation: "",
   motivation: "",
   deficiencia: false,
   rjep: false,
@@ -282,7 +273,7 @@ function VagaDetalhe() {
                       onChange={(e) => set("education", e.target.value)}
                       className="input-ipma"
                     >
-                      {EDUCATION_LEVELS.map((l) => (
+                      {habilitacoes.map((l) => (
                         <option key={l}>{l}</option>
                       ))}
                     </select>
@@ -293,7 +284,7 @@ function VagaDetalhe() {
                       onChange={(e) => set("professionalSituation", e.target.value)}
                       className="input-ipma"
                     >
-                      {SITUACOES.map((l) => (
+                      {situacoes.map((l) => (
                         <option key={l}>{l}</option>
                       ))}
                     </select>
