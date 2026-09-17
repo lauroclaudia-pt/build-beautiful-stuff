@@ -17,7 +17,9 @@ export type OptionCategory =
   | "VINCULO"
   | "REGIME"
   | "METODO_SELECAO"
-  | "SITUACAO_PROFISSIONAL";
+  | "SITUACAO_PROFISSIONAL"
+  | "DISTRITO"
+  | "CONCELHO";
 
 export const OPTION_CATEGORY_LABEL: Record<OptionCategory, string> = {
   DEPARTAMENTO: "Unidade orgânica",
@@ -28,6 +30,8 @@ export const OPTION_CATEGORY_LABEL: Record<OptionCategory, string> = {
   REGIME: "Regime",
   METODO_SELECAO: "Método de seleção",
   SITUACAO_PROFISSIONAL: "Situação profissional",
+  DISTRITO: "Distrito",
+  CONCELHO: "Concelho",
 };
 
 export const OPTION_CATEGORY_FORMS: Record<OptionCategory, string> = {
@@ -39,6 +43,8 @@ export const OPTION_CATEGORY_FORMS: Record<OptionCategory, string> = {
   REGIME: "Novo procedimento",
   METODO_SELECAO: "Novo procedimento",
   SITUACAO_PROFISSIONAL: "Formulário de candidatura",
+  DISTRITO: "Locais",
+  CONCELHO: "Locais",
 };
 
 export const OPTION_CATEGORIES = Object.keys(OPTION_CATEGORY_LABEL) as OptionCategory[];
@@ -51,6 +57,14 @@ export interface OptionValue {
   startDate: string;
   /** Data de fim (AAAA-MM-DD) ou nula quando não tem termo. */
   endDate: string | null;
+  /** Data e hora exatas em que o valor foi desativado (ISO) ou nula. */
+  endedAt?: string | null;
+  /** Morada completa (apenas para a categoria LOCAL). */
+  address?: string | null;
+  /** Distrito associado, por identificador (LOCAL e CONCELHO). */
+  distritoId?: string | null;
+  /** Concelho associado, por identificador (LOCAL). */
+  concelhoId?: string | null;
 }
 
 /**
@@ -59,6 +73,7 @@ export interface OptionValue {
  */
 export function isOpcaoAtiva(o: OptionValue, hoje = new Date()): boolean {
   const hojeISO = hoje.toISOString().slice(0, 10);
+  if (o.endedAt && new Date(o.endedAt) <= hoje) return false;
   if (!o.startDate || o.startDate > hojeISO) return false;
   if (o.endDate && o.endDate < hojeISO) return false;
   return true;
@@ -66,6 +81,11 @@ export function isOpcaoAtiva(o: OptionValue, hoje = new Date()): boolean {
 
 export function opcaoEstado(o: OptionValue): "ATIVO" | "INATIVO" {
   return isOpcaoAtiva(o) ? "ATIVO" : "INATIVO";
+}
+
+/** Registos ativos de uma categoria. */
+export function registosAtivos(opcoes: OptionValue[], category: OptionCategory): OptionValue[] {
+  return opcoes.filter((o) => o.category === category && isOpcaoAtiva(o));
 }
 
 /** Valores ativos de uma categoria, pela ordem definida. */
@@ -93,7 +113,40 @@ export const SITUACOES_PROFISSIONAIS = [
   "Estudante",
 ];
 
+export const DISTRITOS_CONCELHOS: Record<string, string[]> = {
+  Lisboa: ["Lisboa", "Cascais", "Oeiras", "Sintra", "Loures", "Amadora"],
+  Porto: ["Porto", "Matosinhos", "Vila Nova de Gaia", "Maia", "Gondomar"],
+  Faro: ["Faro", "Olhão", "Portimão", "Lagos", "Tavira"],
+  Setúbal: ["Setúbal", "Almada", "Seixal", "Sesimbra", "Palmela"],
+  Aveiro: ["Aveiro", "Ílhavo", "Ovar", "Águeda"],
+  Coimbra: ["Coimbra", "Figueira da Foz", "Cantanhede"],
+  Braga: ["Braga", "Guimarães", "Barcelos", "Esposende"],
+  "Ilha da Madeira": ["Funchal", "Machico", "Câmara de Lobos"],
+  "Ilha de São Miguel": ["Ponta Delgada", "Ribeira Grande", "Lagoa"],
+};
+
+const distritos: OptionValue[] = Object.keys(DISTRITOS_CONCELHOS).map((label, i) => ({
+  id: `distrito-${i + 1}`,
+  category: "DISTRITO" as OptionCategory,
+  label,
+  startDate: INICIO,
+  endDate: null,
+}));
+
+const concelhos: OptionValue[] = distritos.flatMap((d, di) =>
+  (DISTRITOS_CONCELHOS[d.label] ?? []).map((label, i) => ({
+    id: `concelho-${di + 1}-${i + 1}`,
+    category: "CONCELHO" as OptionCategory,
+    label,
+    startDate: INICIO,
+    endDate: null,
+    distritoId: d.id,
+  })),
+);
+
 export const SEED_OPCOES: OptionValue[] = [
+  ...distritos,
+  ...concelhos,
   ...build("DEPARTAMENTO", DEPARTMENTS),
   ...build("LOCAL", LOCATIONS),
   ...build("CARREIRA", CAREERS),
