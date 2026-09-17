@@ -16,6 +16,7 @@ import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as BackofficeIndexRouteImport } from './routes/backoffice/index'
 import { Route as BackofficeVagaIdRouteImport } from './routes/backoffice/$vagaId'
 import { Route as BackofficeAdminRouteImport } from './routes/backoffice/admin'
+import { Route as BackofficeContactosRouteImport } from './routes/backoffice/contactos'
 import { Route as BackofficeDadosRouteImport } from './routes/backoffice/dados'
 import { Route as BackofficeDocumentosRouteImport } from './routes/backoffice/documentos'
 import { Route as BackofficeFaqRouteImport } from './routes/backoffice/faq'
@@ -57,6 +58,11 @@ const BackofficeVagaIdRoute = BackofficeVagaIdRouteImport.update({
 const BackofficeAdminRoute = BackofficeAdminRouteImport.update({
   id: '/backoffice/admin',
   path: '/backoffice/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BackofficeContactosRoute = BackofficeContactosRouteImport.update({
+  id: '/backoffice/contactos',
+  path: '/backoffice/contactos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BackofficeDadosRoute = BackofficeDadosRouteImport.update({
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/entrar': typeof EntrarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
+  '/backoffice/contactos': typeof BackofficeContactosRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
   '/backoffice/documentos': typeof BackofficeDocumentosRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/entrar': typeof EntrarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
+  '/backoffice/contactos': typeof BackofficeContactosRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
   '/backoffice/documentos': typeof BackofficeDocumentosRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/entrar': typeof EntrarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
+  '/backoffice/contactos': typeof BackofficeContactosRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
   '/backoffice/documentos': typeof BackofficeDocumentosRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/entrar'
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
+    | '/backoffice/contactos'
     | '/backoffice/dados'
     | '/backoffice/documentos'
     | '/backoffice/faq'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/entrar'
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
+    | '/backoffice/contactos'
     | '/backoffice/dados'
     | '/backoffice/documentos'
     | '/backoffice/faq'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/entrar'
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
+    | '/backoffice/contactos'
     | '/backoffice/dados'
     | '/backoffice/documentos'
     | '/backoffice/faq'
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   EntrarRoute: typeof EntrarRoute
   BackofficeVagaIdRoute: typeof BackofficeVagaIdRoute
   BackofficeAdminRoute: typeof BackofficeAdminRoute
+  BackofficeContactosRoute: typeof BackofficeContactosRoute
   BackofficeDadosRoute: typeof BackofficeDadosRoute
   BackofficeDocumentosRoute: typeof BackofficeDocumentosRoute
   BackofficeFaqRoute: typeof BackofficeFaqRoute
@@ -263,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BackofficeAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/backoffice/contactos': {
+      id: '/backoffice/contactos'
+      path: '/backoffice/contactos'
+      fullPath: '/backoffice/contactos'
+      preLoaderRoute: typeof BackofficeContactosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/backoffice/dados': {
       id: '/backoffice/dados'
       path: '/backoffice/dados'
@@ -322,6 +342,7 @@ const rootRouteChildren: RootRouteChildren = {
   EntrarRoute: EntrarRoute,
   BackofficeVagaIdRoute: BackofficeVagaIdRoute,
   BackofficeAdminRoute: BackofficeAdminRoute,
+  BackofficeContactosRoute: BackofficeContactosRoute,
   BackofficeDadosRoute: BackofficeDadosRoute,
   BackofficeDocumentosRoute: BackofficeDocumentosRoute,
   BackofficeFaqRoute: BackofficeFaqRoute,
