@@ -234,21 +234,30 @@ function NovaVaga({
   onCreate: ReturnType<typeof useStore>["addVaga"];
   onDone: () => void;
 }) {
+  const { opcoesDe } = useStore();
+  const departamentos = opcoesDe("DEPARTAMENTO");
+  const locais = opcoesDe("LOCAL");
+  const carreiras = opcoesDe("CARREIRA");
+  const habilitacoes = opcoesDe("HABILITACAO");
+  const vinculos = opcoesDe("VINCULO");
+  const regimes = opcoesDe("REGIME");
+  const metodos = opcoesDe("METODO_SELECAO");
+
   const [f, setF] = useState({
     ref: "",
     title: "",
     offerType: "PROCEDIMENTO_CONCURSAL_COMUM" as OfferType,
-    department: DEPARTMENTS[0]!,
-    location: LOCATIONS[0]!,
+    department: departamentos[0] ?? "",
+    location: locais[0] ?? "",
     positions: 1,
-    career: "Técnico Superior",
-    bond: BONDS[0]!,
-    regime: REGIMES[0]!,
+    career: carreiras[0] ?? "",
+    bond: vinculos[0] ?? "",
+    regime: regimes[0] ?? "",
     remuneration: "",
-    educationLevel: EDUCATION_LEVELS[1]!,
+    educationLevel: habilitacoes[1] ?? habilitacoes[0] ?? "",
     requirements: "",
     description: "",
-    selectionMethods: [SELECTION_METHODS[1]!],
+    selectionMethods: metodos[1] ? [metodos[1]] : metodos.slice(0, 1),
     juryPresident: "",
     juryMembers: "",
     bepCode: "",
