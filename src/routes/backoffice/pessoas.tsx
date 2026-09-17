@@ -229,30 +229,52 @@ function Pessoas() {
                 </tbody>
               </table>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-4">
-                <select
-                  className="input-ipma"
-                  value={c.role}
-                  onChange={(e) => setResp({ ...resp, [p.id]: { ...c, role: e.target.value as Role } })}
-                >
-                  {ROLES.map((r) => (
-                    <option key={r} value={r}>
-                      {ROLE_LABEL[r]}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="date"
-                  className="input-ipma"
-                  value={c.start}
-                  onChange={(e) => setResp({ ...resp, [p.id]: { ...c, start: e.target.value } })}
-                />
-                <input
-                  type="date"
-                  className="input-ipma"
-                  value={c.end}
-                  onChange={(e) => setResp({ ...resp, [p.id]: { ...c, end: e.target.value } })}
-                />
+              <div className="mt-4 grid items-end gap-3 md:grid-cols-4">
+                <label className="block">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    Responsabilidade
+                    <Req />
+                  </span>
+                  <select
+                    className="input-ipma mt-1"
+                    value={c.role}
+                    onChange={(e) =>
+                      setResp({ ...resp, [p.id]: { ...c, role: e.target.value as Role } })
+                    }
+                  >
+                    {ROLES.map((r) => (
+                      <option key={r} value={r}>
+                        {ROLE_LABEL[r]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    Data de início
+                    <Req />
+                  </span>
+                  <input
+                    type="date"
+                    required
+                    className="input-ipma mt-1"
+                    value={c.start}
+                    onChange={(e) =>
+                      setResp({ ...resp, [p.id]: { ...c, start: e.target.value || hoje() } })
+                    }
+                  />
+                </label>
+                <label className="block">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    Data de fim (opcional)
+                  </span>
+                  <input
+                    type="date"
+                    className="input-ipma mt-1"
+                    value={c.end}
+                    onChange={(e) => setResp({ ...resp, [p.id]: { ...c, end: e.target.value } })}
+                  />
+                </label>
                 <button
                   type="button"
                   onClick={() => {
