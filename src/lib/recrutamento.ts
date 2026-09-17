@@ -147,9 +147,36 @@ export interface Applicant {
   truthDeclaration?: boolean;
   /** Anexos entregues no momento da candidatura. */
   attachments?: string[];
+  /** Resultado da triagem por critério. */
+  triagem?: TriagemCriterios;
 }
 
+/** Critérios booleanos verificados na triagem da candidatura. */
+export interface TriagemCriterios {
+  habilitacao: boolean | null;
+  vinculo: boolean | null;
+  documentos: boolean | null;
+  experiencia: boolean | null;
+  motivo?: string;
+}
+
+export const TRIAGEM_CRITERIOS: { key: keyof Omit<TriagemCriterios, "motivo">; label: string }[] = [
+  { key: "habilitacao", label: "Habilitação" },
+  { key: "vinculo", label: "Vínculo" },
+  { key: "documentos", label: "Documentos" },
+  { key: "experiencia", label: "Experiência" },
+];
+
+export const EMPTY_TRIAGEM: TriagemCriterios = {
+  habilitacao: null,
+  vinculo: null,
+  documentos: null,
+  experiencia: null,
+  motivo: "",
+};
+
 export type AppealChannel = "PORTAL" | "EMAIL" | "FISICO" | "SEM_RESPOSTA";
+
 
 export const APPEAL_CHANNEL_LABEL: Record<AppealChannel, string> = {
   PORTAL: "Portal",

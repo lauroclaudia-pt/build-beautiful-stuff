@@ -18,6 +18,7 @@ import {
   type CandidateDocument,
   type DocState,
   type Vaga,
+  type TriagemCriterios,
   type VagaRegistro,
 } from "./recrutamento";
 import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
@@ -50,6 +51,7 @@ interface StoreValue extends Data {
   addApplicant: (a: Omit<Applicant, "id" | "state" | "createdAt">) => Applicant;
   setApplicantState: (id: string, state: ApplicantState, reason?: string) => void;
   setGrades: (id: string, grades: Pick<Applicant, "pcGrade" | "acGrade" | "eacGrade">) => void;
+  setTriagem: (id: string, triagem: TriagemCriterios) => void;
   addAppeal: (id: string, text: string) => void;
   setDocumentState: (applicantId: string, docId: string, state: DocState) => void;
   login: (email: string, password: string) => { ok: boolean; message: string; pessoa?: Pessoa };
@@ -267,6 +269,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       applicants: d.applicants.map((a) => (a.id === id ? { ...a, ...grades } : a)),
     }));
   }, []);
+
+  const setTriagem: StoreValue["setTriagem"] = useCallback((id, triagem) => {
+    setData((d) => ({
+      ...d,
+      applicants: d.applicants.map((a) => (a.id === id ? { ...a, triagem } : a)),
+    }));
+  }, []);
+
+
 
   const addAppeal: StoreValue["addAppeal"] = useCallback((id, text) => {
     setData((d) => ({
@@ -494,6 +505,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addApplicant,
       setApplicantState,
       setGrades,
+      setTriagem,
       addAppeal,
       setDocumentState,
       login,
@@ -525,6 +537,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addApplicant,
       setApplicantState,
       setGrades,
+      setTriagem,
       addAppeal,
       setDocumentState,
       login,

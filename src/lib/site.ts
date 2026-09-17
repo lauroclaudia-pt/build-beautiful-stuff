@@ -49,7 +49,14 @@ export interface EmailConfig {
   smtpUser?: string;
   /** Palavra-passe da caixa de correio. */
   smtpPassword?: string;
+  /** Domínio de envio configurado (ex.: noreply-rh.ipma.pt). */
+  sendingDomain?: string;
+  /** Verificação do domínio concluída junto do servidor de correio. */
+  domainVerified?: boolean;
+  /** Data e hora da última verificação com sucesso. */
+  verifiedAt?: string | null;
 }
+
 
 /** Estado de um documento/valor com janela de validade por datas. */
 export function docEstado(
@@ -323,7 +330,13 @@ export const DEFAULT_SITE: SiteConfig = {
   contacts: DEFAULT_CONTACTS.map((c) => ({ ...c })),
   emailTemplates: DEFAULT_EMAIL_TEMPLATES.map((t) => ({ ...t })),
   docTemplates: DEFAULT_DOC_TEMPLATES.map((t) => ({ ...t })),
-  emailConfig: { fromName: "Recrutamento IPMA", fromEmail: "recrutamento@ipma.pt" },
+  emailConfig: {
+    fromName: "Recrutamento IPMA",
+    fromEmail: "recrutamento@ipma.pt",
+    sendingDomain: "noreply-rh.ipma.pt",
+    domainVerified: false,
+    verifiedAt: null,
+  },
 };
 
 export const COLOR_FIELDS: {

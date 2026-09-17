@@ -5,12 +5,15 @@ import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/co
 import { finalGrade, useStore } from "@/lib/store";
 import {
   APPLICANT_STATE_LABEL,
+  EMPTY_TRIAGEM,
   OFFER_TYPE_LABEL,
   STAGE_LABEL,
+  TRIAGEM_CRITERIOS,
   formatDate,
   type Applicant,
   type ApplicantState,
   type StageCode,
+  type TriagemCriterios,
 } from "@/lib/recrutamento";
 
 export const Route = createFileRoute("/backoffice/$vagaId")({
@@ -79,6 +82,7 @@ function GestaoVaga() {
     advanceStage,
     concludeScreening,
     setApplicantState,
+    setTriagem,
     setGrades,
     addVagaRegistro,
   } = useStore();
@@ -464,7 +468,12 @@ function GestaoVaga() {
                 </thead>
                 <tbody>
                   {todos.map((a) => (
-                    <LinhaCandidatura key={a.id} a={a} onState={setApplicantState} />
+                    <LinhaCandidatura
+                      key={a.id}
+                      a={a}
+                      onState={setApplicantState}
+                      onTriagem={setTriagem}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -554,50 +563,150 @@ const TODOS_ESTADOS = Object.keys(APPLICANT_STATE_LABEL) as ApplicantState[];
 function LinhaCandidatura({
   a,
   onState,
+  onTriagem,
 }: {
   a: Applicant;
   onState: ReturnType<typeof useStore>["setApplicantState"];
+  onTriagem: ReturnType<typeof useStore>["setTriagem"];
 }) {
   const [estado, setEstado] = useState<ApplicantState>(a.state);
+  const [aberto, setAberto] = useState(false);
+  const [crit, setCrit] = useState<TriagemCriterios>({ ...EMPTY_TRIAGEM, ...(a.triagem ?? {}) });
+
+  const motivo = (crit.motivo ?? "").trim();
+  const porPreencher = TRIAGEM_CRITERIOS.filter((c) => crit[c.key] === null).map((c) => c.label);
+
+  function decidir(novo: ApplicantState, exigeMotivo: boolean) {
+    if (porPreencher.length > 0) {
+      toast.error(`Indique Sim ou Não em: ${porPreencher.join(", ")}.`);
+      return;
+    }
+    if (exigeMotivo && !motivo) {
+      toast.error("Indique o motivo de exclusão.");
+      return;
+    }
+    onTriagem(a.id, { ...crit, motivo });
+    onState(a.id, novo, exigeMotivo ? motivo : undefined);
+    setEstado(novo);
+    toast.success(`Candidatura de ${a.name}: ${APPLICANT_STATE_LABEL[novo]}.`);
+  }
 
   return (
-    <tr className="border-t border-border/60">
-      <td className="py-2 pr-3 font-medium">{a.name}</td>
-      <td className="py-2 pr-3 font-mono text-[12px] text-muted-foreground">
-        {formatDate(a.createdAt)}
-      </td>
-      <td className="py-2 pr-3">
-        <ApplicantStateBadge state={a.state} />
-      </td>
-      <td className="py-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={estado}
-            onChange={(e) => setEstado(e.target.value as ApplicantState)}
-            className="input-ipma max-w-[200px]"
-          >
-            {TODOS_ESTADOS.map((s) => (
-              <option key={s} value={s}>
-                {APPLICANT_STATE_LABEL[s]}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            disabled={estado === a.state}
-            onClick={() => {
-              onState(a.id, estado, estado === "EXCLUDED" ? a.exclusionReason ?? "" : undefined);
-              toast.success(`Estado alterado para ${APPLICANT_STATE_LABEL[estado]}.`);
-            }}
-            className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
-          >
-            Atualizar
-          </button>
-        </div>
-      </td>
-    </tr>
+    <>
+      <tr className="border-t border-border/60">
+        <td className="py-2 pr-3 font-medium">{a.name}</td>
+        <td className="py-2 pr-3 font-mono text-[12px] text-muted-foreground">
+          {formatDate(a.createdAt)}
+        </td>
+        <td className="py-2 pr-3">
+          <ApplicantStateBadge state={a.state} />
+        </td>
+        <td className="py-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={estado}
+              onChange={(e) => setEstado(e.target.value as ApplicantState)}
+              className="input-ipma max-w-[200px]"
+            >
+              {TODOS_ESTADOS.map((s) => (
+                <option key={s} value={s}>
+                  {APPLICANT_STATE_LABEL[s]}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              disabled={estado === a.state}
+              onClick={() => {
+                onState(a.id, estado, estado === "EXCLUDED" ? a.exclusionReason ?? "" : undefined);
+                toast.success(`Estado alterado para ${APPLICANT_STATE_LABEL[estado]}.`);
+              }}
+              className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
+            >
+              Atualizar
+            </button>
+            <button
+              type="button"
+              onClick={() => setAberto(!aberto)}
+              className="rounded-md border border-border px-3 py-1.5 text-[12px] font-medium transition hover:bg-white/60"
+            >
+              {aberto ? "Fechar triagem" : "Triagem"}
+            </button>
+          </div>
+        </td>
+      </tr>
+      {aberto && (
+        <tr className="border-t border-border/40 bg-white/40">
+          <td colSpan={4} className="px-1 py-4">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+              Verificação dos requisitos
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {TRIAGEM_CRITERIOS.map((c) => (
+                <fieldset key={c.key} className="rounded-lg border border-border bg-white/70 p-3">
+                  <legend className="px-1 text-[12px] font-semibold">{c.label}</legend>
+                  <div className="mt-1 flex gap-4">
+                    {[
+                      { v: true, l: "Sim" },
+                      { v: false, l: "Não" },
+                    ].map((o) => (
+                      <label key={o.l} className="flex items-center gap-1.5 text-[12px]">
+                        <input
+                          type="radio"
+                          name={`${c.key}-${a.id}`}
+                          checked={crit[c.key] === o.v}
+                          onChange={() => setCrit({ ...crit, [c.key]: o.v })}
+                          className="h-3.5 w-3.5 accent-primary"
+                        />
+                        {o.l}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              ))}
+            </div>
+            <label className="mt-3 block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                Motivo de exclusão
+              </span>
+              <textarea
+                value={crit.motivo ?? ""}
+                onChange={(e) => setCrit({ ...crit, motivo: e.target.value })}
+                rows={2}
+                placeholder="Fundamentação, obrigatória para recusar ou rejeitar a candidatura."
+                className="input-ipma mt-1 w-full"
+              />
+            </label>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => decidir("ADMITTED", false)}
+                className="rounded-md bg-success px-4 py-2 text-[12px] font-semibold text-white transition hover:opacity-90"
+              >
+                Aprovar
+              </button>
+              <button
+                type="button"
+                onClick={() => decidir("EXCLUDED", true)}
+                className="rounded-md bg-warn px-4 py-2 text-[12px] font-semibold text-black transition hover:opacity-90"
+              >
+                Recusar
+              </button>
+              <button
+                type="button"
+                onClick={() => decidir("REJECTED", true)}
+                className="rounded-md bg-destructive px-4 py-2 text-[12px] font-semibold text-white transition hover:opacity-90"
+              >
+                Rejeitar
+              </button>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
+
 
 function CandidatoLinha({
   a,
