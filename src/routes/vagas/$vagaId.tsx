@@ -7,8 +7,10 @@ import {
   EDUCATION_LEVELS,
   OFFER_TYPE_LABEL,
   STAGE_LABEL,
+  ageFrom,
   daysUntil,
   formatDate,
+  validateNif,
 } from "@/lib/recrutamento";
 
 export const Route = createFileRoute("/vagas/$vagaId")({
@@ -266,6 +268,14 @@ function VagaDetalhe() {
                       className="input-ipma"
                     />
                   </Field>
+                  <Field label="Data de nascimento" error={errors["birthDate"]}>
+                    <input
+                      type="date"
+                      value={form.birthDate}
+                      onChange={(e) => set("birthDate", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
                   <Field label="Habilitações">
                     <select
                       value={form.education}
@@ -299,6 +309,113 @@ function VagaDetalhe() {
                       />
                     </Field>
                   </div>
+
+                  <div className="sm:col-span-2">
+                    <Field label="Condições especiais para a realização dos métodos de seleção">
+                      <input
+                        value={form.specialConditions}
+                        maxLength={200}
+                        placeholder="Opcional — ex.: apoio à mobilidade, tempo adicional"
+                        onChange={(e) => set("specialConditions", e.target.value)}
+                        className="input-ipma"
+                      />
+                    </Field>
+                  </div>
+
+                  <div className="space-y-3 sm:col-span-2">
+                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                      <input
+                        type="checkbox"
+                        checked={form.deficiencia}
+                        onChange={(e) => set("deficiencia", e.target.checked)}
+                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                      />
+                      <span>
+                        Candidato(a) com grau de incapacidade igual ou superior a 60% (quota de
+                        emprego)
+                      </span>
+                    </label>
+                    {form.deficiencia && (
+                      <div className="rounded-lg border border-border bg-white/40 p-3">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                          Declaração de incapacidade (obrigatória)
+                        </p>
+                        <input
+                          type="file"
+                          accept=".pdf,image/*"
+                          onChange={(e) =>
+                            setDeclaracaoIncap(e.target.files?.[0]?.name ?? null)
+                          }
+                          className="mt-2 text-[12px]"
+                        />
+                        {declaracaoIncap && (
+                          <p className="mt-1 font-mono text-[11px] text-success">
+                            {declaracaoIncap}
+                          </p>
+                        )}
+                        {errors["deficiencia"] && (
+                          <p className="mt-1 text-[11px] text-destructive">
+                            {errors["deficiencia"]}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                      <input
+                        type="checkbox"
+                        checked={form.rjep}
+                        onChange={(e) => set("rjep", e.target.checked)}
+                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                      />
+                      <span>
+                        Detenho vínculo de emprego público (RJEP) — junto declaração da entidade
+                        empregadora
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="sm:col-span-2 rounded-lg border border-border bg-white/40 p-3">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      Documentos a anexar (CV, certificado de habilitações, identificação)
+                    </p>
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,image/*"
+                      onChange={(e) =>
+                        setAnexos(Array.from(e.target.files ?? []).map((f) => f.name))
+                      }
+                      className="mt-2 text-[12px]"
+                    />
+                    {anexos.length > 0 && (
+                      <ul className="mt-2 list-inside list-disc font-mono text-[11px] text-muted-foreground">
+                        {anexos.map((n) => (
+                          <li key={n}>{n}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                      <input
+                        type="checkbox"
+                        checked={form.truthDeclaration}
+                        onChange={(e) => set("truthDeclaration", e.target.checked)}
+                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                      />
+                      <span>
+                        Declaro, sob compromisso de honra, que as informações prestadas são
+                        verdadeiras e que reúno os requisitos de admissão.
+                      </span>
+                    </label>
+                    {errors["truthDeclaration"] && (
+                      <p className="mt-1 text-[11px] text-destructive">
+                        {errors["truthDeclaration"]}
+                      </p>
+                    )}
+                  </div>
+
                   <div className="flex items-center gap-4 sm:col-span-2">
                     <button
                       type="submit"
