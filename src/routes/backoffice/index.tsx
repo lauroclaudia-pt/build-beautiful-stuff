@@ -55,11 +55,19 @@ function Backoffice() {
     [vagas, filtro, q],
   );
 
+  const candidatosUnicos = useMemo(() => {
+    const chaves = new Set(
+      applicants.map((a) => (a.nif ? `nif:${a.nif}` : a.email ? `mail:${a.email.toLowerCase()}` : a.id)),
+    );
+    return chaves.size;
+  }, [applicants]);
+
   const kpis = [
     ["Procedimentos", vagas.length],
     ["Publicados", vagas.filter((v) => v.state === "PUBLISHED").length],
     ["Em curso", vagas.filter((v) => v.state === "RUNNING").length],
     ["Candidaturas", applicants.length],
+    ["Candidatos", candidatosUnicos],
     ["Por analisar", applicants.filter((a) => a.state === "SUBMITTED").length],
   ] as const;
 
@@ -87,7 +95,7 @@ function Backoffice() {
           </button>
         </div>
 
-        <div className="mt-6 grid animate-rise grid-cols-2 gap-3 [animation-delay:80ms] md:grid-cols-5">
+        <div className="mt-6 grid animate-rise grid-cols-2 gap-3 [animation-delay:80ms] md:grid-cols-3 lg:grid-cols-6">
           {kpis.map(([k, v]) => (
             <div key={k} className="glass rounded-xl p-4">
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
