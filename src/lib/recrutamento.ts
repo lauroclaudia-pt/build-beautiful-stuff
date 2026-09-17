@@ -212,6 +212,15 @@ export const BONDS = ["Contrato de trabalho em funções públicas", "Comissão 
 export const REGIMES = ["Tempo inteiro", "Tempo parcial"];
 export const SELECTION_METHODS = ["Prova de Conhecimentos (PC)", "Avaliação Curricular (AC)", "Entrevista de Avaliação de Competências (EAC)"];
 
+export const CAREERS = [
+  "Técnico Superior",
+  "Assistente Técnico",
+  "Assistente Operacional",
+  "Informático",
+  "Bolseiro de investigação",
+  "Dirigente intermédio",
+];
+
 export const DEFAULT_STAGES: StageCode[] = [
   "OPENING",
   "APPLICATIONS",
@@ -221,11 +230,122 @@ export const DEFAULT_STAGES: StageCode[] = [
   "CONTRACT",
 ];
 
+/** Modelos de fluxo por tipo de oferta (WorkflowTemplate). */
+export const WORKFLOW_TEMPLATES: Record<OfferType, StageCode[]> = {
+  PROCEDIMENTO_CONCURSAL_COMUM: [
+    "OPENING",
+    "APPLICATIONS",
+    "ADMISSION",
+    "MISSING_REQUIREMENTS",
+    "EVALUATION",
+    "INTERVIEW",
+    "APPEAL",
+    "CONTRACT",
+  ],
+  PROCEDIMENTO_CONCURSAL_RESERVA: [
+    "OPENING",
+    "APPLICATIONS",
+    "ADMISSION",
+    "MISSING_REQUIREMENTS",
+    "EVALUATION",
+    "INTERVIEW",
+    "APPEAL",
+    "CONTRACT",
+  ],
+  SELECAO_INTERNACIONAL: [
+    "OPENING",
+    "APPLICATIONS",
+    "ADMISSION",
+    "MISSING_REQUIREMENTS",
+    "EVALUATION",
+    "INTERVIEW",
+    "APPEAL",
+    "CONTRACT",
+  ],
+  CARGOS_DIRECAO: [
+    "OPENING",
+    "APPLICATIONS",
+    "ADMISSION",
+    "EVALUATION",
+    "INTERVIEW",
+    "APPOINTMENT",
+  ],
+  MOBILIDADE_INTERNA: [
+    "OPENING",
+    "APPLICATIONS",
+    "ADMISSION",
+    "EVALUATION",
+    "INTERVIEW",
+    "APPEAL",
+    "MOBILITY",
+  ],
+  MOBILIDADE_INTERCARREIRAS: [
+    "OPENING",
+    "APPLICATIONS",
+    "ADMISSION",
+    "EVALUATION",
+    "INTERVIEW",
+    "APPEAL",
+    "MOBILITY",
+  ],
+  BOLSA_INVESTIGACAO_CIENTIFICA: [
+    "OPENING",
+    "APPLICATIONS",
+    "ADMISSION",
+    "EVALUATION",
+    "INTERVIEW",
+    "APPEAL",
+    "CONTRACT",
+  ],
+};
+
 export function newStages(activeIndex = 0): JobStage[] {
   return DEFAULT_STAGES.map((code, i) => ({
     code,
     state: i < activeIndex ? "completed" : i === activeIndex ? "active" : "draft",
   }));
+}
+
+/**
+ * Cria o pipeline de uma vaga a partir do modelo do tipo de oferta.
+ * A entrevista só entra quando a vaga tem EAC; a recolha de requisitos em falta
+ * fica sempre presente mas só é ativada quando existirem candidatos excluídos.
+ */
+export function newStagesFor(
+  offerType: OfferType,
+  opts: { hasEac?: boolean; activeIndex?: number } = {},
+): JobStage[] {
+  const { hasEac = true, activeIndex = 0 } = opts;
+  const codes = (WORKFLOW_TEMPLATES[offerType] ?? DEFAULT_STAGES).filter(
+    (c) => c !== "INTERVIEW" || hasEac,
+  );
+  return codes.map((code, i) => ({
+    code,
+    state: i < activeIndex ? "completed" : i === activeIndex ? "active" : "draft",
+  }));
+}
+
+/** Validação do NIF português (algoritmo do módulo 11). */
+export function validateNif(nif: string): boolean {
+  const n = nif.replace(/\D/g, "");
+  if (n.length !== 9) return false;
+  if (!"125689".includes(n[0]!)) return false;
+  let soma = 0;
+  for (let i = 0; i < 8; i += 1) soma += Number(n[i]) * (9 - i);
+  const resto = soma % 11;
+  const check = resto < 2 ? 0 : 11 - resto;
+  return check === Number(n[8]);
+}
+
+/** Idade em anos completos à data de hoje. */
+export function ageFrom(birthISO: string): number {
+  const b = new Date(birthISO);
+  if (Number.isNaN(b.getTime())) return -1;
+  const hoje = new Date();
+  let a = hoje.getFullYear() - b.getFullYear();
+  const m = hoje.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && hoje.getDate() < b.getDate())) a -= 1;
+  return a;
 }
 
 export function daysUntil(dateISO: string): number {
