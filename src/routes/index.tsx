@@ -44,22 +44,24 @@ function Portal() {
     [vagas],
   );
 
+  const algumFiltro =
+    site.showTypeFilter || site.showDepartmentFilter || site.showCareerFilter || site.showLocationFilter;
+
   const carreiras = useMemo(
     () => Array.from(new Set(publicas.map((v) => v.career))).sort((a, b) => a.localeCompare(b, "pt")),
     [publicas],
   );
 
   const lista = useMemo(() => {
-    if (!site.showFilters) return publicas;
     return publicas.filter((v) => {
-      if (tipo && v.offerType !== tipo) return false;
-      if (unidade && v.department !== unidade) return false;
+      if (site.showTypeFilter && tipo && v.offerType !== tipo) return false;
+      if (site.showDepartmentFilter && unidade && v.department !== unidade) return false;
       if (site.showCareerFilter && carreira && v.career !== carreira) return false;
-      if (locais.length && !locais.includes(v.location)) return false;
+      if (site.showLocationFilter && locais.length && !locais.includes(v.location)) return false;
       if (prazo && daysUntil(v.deadline) > prazo) return false;
       return true;
     });
-  }, [publicas, tipo, unidade, carreira, locais, prazo, site.showFilters, site.showCareerFilter]);
+  }, [publicas, tipo, unidade, carreira, locais, prazo, site]);
 
   const detalhe = lista.find((v) => v.id === selected) ?? lista[0];
   const aEncerrar = publicas.filter((v) => daysUntil(v.deadline) <= 7).length;
@@ -110,7 +112,7 @@ function Portal() {
         </section>
 
         <div className="mt-10 grid grid-cols-12 gap-6">
-          {site.showFilters && (
+          {algumFiltro && (
           <aside className="col-span-12 animate-rise [animation-delay:80ms] lg:col-span-3">
             <div className="glass rounded-xl p-5">
               <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -140,6 +142,7 @@ function Portal() {
                   </select>
                 </div>
                 )}
+                {site.showDepartmentFilter && (
                 <div>
                   <label
                     htmlFor="unidade"
@@ -161,6 +164,7 @@ function Portal() {
                     ))}
                   </select>
                 </div>
+                )}
                 {site.showCareerFilter && (
                   <div>
                     <label
@@ -184,6 +188,7 @@ function Portal() {
                     </select>
                   </div>
                 )}
+                {site.showLocationFilter && (
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                     Local
@@ -202,6 +207,7 @@ function Portal() {
                     ))}
                   </div>
                 </div>
+                )}
                 <div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                     Prazo
@@ -236,7 +242,7 @@ function Portal() {
           )}
 
           <div
-            className={`col-span-12 space-y-4 ${site.showFilters ? "lg:col-span-6" : "lg:col-span-9"}`}
+            className={`col-span-12 space-y-4 ${algumFiltro ? "lg:col-span-6" : "lg:col-span-9"}`}
           >
             <div className="flex animate-rise items-center justify-between [animation-delay:120ms]">
               <p className="font-mono text-[11px] text-muted-foreground">
