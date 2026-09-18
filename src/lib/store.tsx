@@ -17,6 +17,7 @@ import {
   type ApplicantState,
   type CandidateDocument,
   type DocState,
+  type DocumentUpload,
   type Vaga,
   type TriagemCriterios,
   type VagaRegistro,
