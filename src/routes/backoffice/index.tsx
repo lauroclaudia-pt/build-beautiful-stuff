@@ -177,7 +177,7 @@ function Backoffice() {
                     <td className="px-4 py-3 font-mono">{n}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
-                        {v.state === "DRAFT" && (
+                        {v.state === "DRAFT" && podeGerir(v) && (
                           <button
                             onClick={() => publicar(v.id)}
                             className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground hover:bg-primary/90"
@@ -186,12 +186,24 @@ function Backoffice() {
                           </button>
                         )}
                         <Link
-                          to="/backoffice/$vagaId"
+                          to="/vagas/$vagaId"
                           params={{ vagaId: v.id }}
-                          className="rounded-md border border-border bg-white/60 px-3 py-1.5 text-[12px] font-medium"
+                          title="Consultar"
+                          aria-label="Consultar"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white/60 px-3 py-1.5 text-[12px] font-medium"
                         >
-                          Gerir
+                          <Eye size={14} />
+                          Consultar
                         </Link>
+                        {podeGerir(v) && (
+                          <Link
+                            to="/backoffice/$vagaId"
+                            params={{ vagaId: v.id }}
+                            className="rounded-md border border-border bg-white/60 px-3 py-1.5 text-[12px] font-medium"
+                          >
+                            Gerir
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>
