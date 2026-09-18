@@ -1,21 +1,25 @@
 # ============================================================
 # Backend Java (Spring Boot 3 / Java 21) — imagem para Railway
-# Colocar este ficheiro na RAIZ do repositório do backend Java.
+#
+# O código-fonte Java NÃO está neste repositório (aqui está o
+# portal em React). Por isso a imagem obtém o backend diretamente
+# do repositório público no GitHub antes de compilar.
 # ============================================================
 
-# ---------- 1) Compilação ----------
+# ---------- 1) Obter o código-fonte Java ----------
+FROM alpine:3.20 AS source
+RUN apk add --no-cache git
+ARG JAVA_REPO=https://github.com/lauroclaudia-pt/appJavaRAilway.git
+ARG JAVA_BRANCH=main
+RUN git clone --depth 1 --branch "$JAVA_BRANCH" "$JAVA_REPO" /source
+
+# ---------- 2) Compilação ----------
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
-
-# Cache das dependências
-COPY pom.xml .
-RUN mvn -B -q dependency:go-offline
-
-# Código-fonte
-COPY src ./src
+COPY --from=source /source ./
 RUN mvn -B -DskipTests clean package
 
-# ---------- 2) Execução ----------
+# ---------- 3) Execução ----------
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
