@@ -181,7 +181,7 @@ function VagaDetalhe() {
       err["alternativeQualification"] =
         "Descreva a formação ou experiência substitutiva do grau académico.";
     if (ehConcursal && form.selectionMethodsWanted.length === 0)
-      err["selectionMethodsWanted"] = "Escolha pelo menos um método de seleção.";
+      err["selectionMethodsWanted"] = "Escolha um método de seleção.";
     if (!validateNif(nif)) err["nif"] = "NIF inválido (verificação do dígito de controlo).";
     else if (
       applicants.some((a) => a.vagaId === vaga!.id && a.nif.replace(/\s/g, "") === nif)
