@@ -125,7 +125,7 @@ export const DOC_STATE_LABEL: Record<DocState, string> = {
 
 export interface DocumentUpload {
   name: string;
-  description?: string;
+  description?: string | undefined;
 }
 
 export interface CandidateDocument {

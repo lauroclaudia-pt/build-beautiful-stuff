@@ -49,7 +49,6 @@ function PortalCandidato() {
     currentUser,
     vagas,
     applicants,
-    setDocumentState,
     addDocumentUploads,
     addAppeal,
     notificacoes,
