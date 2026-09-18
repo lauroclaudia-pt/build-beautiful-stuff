@@ -146,6 +146,13 @@ function VagaDetalhe() {
   const dias = daysUntil(vaga.deadline);
   const encerrado = dias <= 0 || vaga.state === "FINISHED" || vaga.state === "CANCELLED";
   const total = applicants.filter((a) => a.vagaId === vaga.id).length;
+  const ehConcursal =
+    vaga.offerType === "PROCEDIMENTO_CONCURSAL_COMUM" ||
+    vaga.offerType === "PROCEDIMENTO_CONCURSAL_RESERVA";
+  const ehMobilidade =
+    vaga.offerType === "MOBILIDADE_INTERNA" || vaga.offerType === "MOBILIDADE_INTERCARREIRAS";
+  const ehBolsa = vaga.offerType === "BOLSA_INVESTIGACAO_CIENTIFICA";
+  const mostraDeficiencia = (vaga.vagasDeficiencia ?? 0) > 0;
 
   function set<K extends keyof typeof emptyForm>(k: K, v: (typeof emptyForm)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
