@@ -95,6 +95,8 @@ export interface Vaga {
   description: string;
   selectionMethods: string[];
   juryPresident: string;
+  /** Pessoa (id) responsável pela gestão do procedimento — Gestor de RH. */
+  hrManagerId?: string;
   juryMembers: string[];
   bepCode: string;
   publishedAt: string | null;
@@ -468,6 +470,7 @@ function iso(offsetDays: number) {
 export const SEED_VAGAS: Vaga[] = [
   {
     id: "v1",
+    hrManagerId: "p1",
     ref: "014/2026",
     title: "Técnico Superior — Oceanografia Costeira",
     offerType: "PROCEDIMENTO_CONCURSAL_COMUM",
@@ -494,6 +497,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v2",
+    hrManagerId: "p2",
     ref: "021/2026",
     title: "Engenheiro de Sistemas de Previsão",
     offerType: "MOBILIDADE_INTERNA",
@@ -520,6 +524,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v3",
+    hrManagerId: "p1",
     ref: "009/2026",
     title: "Técnico de Observação Climática",
     offerType: "PROCEDIMENTO_CONCURSAL_RESERVA",
@@ -546,6 +551,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v4",
+    hrManagerId: "p2",
     ref: "027/2026",
     title: "Bolsa de Investigação — Dinâmica Atmosférica",
     offerType: "BOLSA_INVESTIGACAO_CIENTIFICA",
@@ -571,6 +577,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v5",
+    hrManagerId: "p1",
     ref: "031/2026",
     title: "Especialista em Análise de Vento",
     offerType: "PROCEDIMENTO_CONCURSAL_COMUM",
@@ -595,6 +602,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v6",
+    hrManagerId: "p2",
     ref: "004/2026",
     title: "Técnico Superior de Sismologia",
     offerType: "PROCEDIMENTO_CONCURSAL_COMUM",
@@ -620,6 +628,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v7",
+    hrManagerId: "p1",
     ref: "012/2026",
     title: "Assistente Técnico de Apoio Administrativo",
     offerType: "PROCEDIMENTO_CONCURSAL_COMUM",
@@ -644,6 +653,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v8",
+    hrManagerId: "p2",
     ref: "035/2026",
     title: "Coordenador de Mobilidade Interna — Rede de Estações",
     offerType: "MOBILIDADE_INTERNA",
