@@ -420,7 +420,8 @@ function VagaDetalhe() {
                 </p>
               ) : (
                 <form onSubmit={submeter} className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <Field label="Nome completo" error={errors["name"]}>
+                  <SectionTitle>Secção A — Identificação do candidato</SectionTitle>
+                  <Field label="Nome completo" req error={errors["name"]}>
                     <input
                       value={form.name}
                       maxLength={120}
@@ -428,7 +429,93 @@ function VagaDetalhe() {
                       className="input-ipma"
                     />
                   </Field>
-                  <Field label="Email" error={errors["email"]}>
+                  <Field label="Data de nascimento" req error={errors["birthDate"]}>
+                    <input
+                      type="date"
+                      value={form.birthDate}
+                      onChange={(e) => set("birthDate", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <Field label="Sexo" req error={errors["gender"]}>
+                    <select
+                      value={form.gender}
+                      onChange={(e) => set("gender", e.target.value)}
+                      className="input-ipma"
+                    >
+                      <option value="">Selecione…</option>
+                      <option>Masculino</option>
+                      <option>Feminino</option>
+                    </select>
+                  </Field>
+                  <Field label="Nacionalidade" req error={errors["nationality"]}>
+                    <select
+                      value={form.nationality}
+                      onChange={(e) => set("nationality", e.target.value)}
+                      className="input-ipma"
+                    >
+                      <option value="">Selecione…</option>
+                      {NACIONALIDADES.map((n) => (
+                        <option key={n}>{n}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field
+                    label="N.º de identificação civil (CC/BI)"
+                    req
+                    error={errors["idNumber"]}
+                  >
+                    <input
+                      value={form.idNumber}
+                      maxLength={20}
+                      onChange={(e) => set("idNumber", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <Field label="NIF" req error={errors["nif"]}>
+                    <input
+                      value={form.nif}
+                      maxLength={11}
+                      onChange={(e) => set("nif", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <div className="sm:col-span-2">
+                    <Field label="Endereço postal (rua, n.º, andar)" req error={errors["address"]}>
+                      <input
+                        value={form.address}
+                        maxLength={200}
+                        onChange={(e) => set("address", e.target.value)}
+                        className="input-ipma"
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Código postal" req error={errors["postalCode"]}>
+                    <input
+                      value={form.postalCode}
+                      maxLength={8}
+                      placeholder="0000-000"
+                      onChange={(e) => set("postalCode", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <Field label="Localidade" req error={errors["locality"]}>
+                    <input
+                      value={form.locality}
+                      maxLength={80}
+                      onChange={(e) => set("locality", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <Field label="Concelho de residência" req error={errors["municipality"]}>
+                    <input
+                      value={form.municipality}
+                      maxLength={80}
+                      onChange={(e) => set("municipality", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <Field label="Endereço eletrónico" req error={errors["email"]}>
                     <input
                       type="email"
                       value={form.email}
@@ -445,48 +532,113 @@ function VagaDetalhe() {
                       className="input-ipma"
                     />
                   </Field>
-                  <Field label="NIF" error={errors["nif"]}>
+                  <Field label="Telemóvel" req error={errors["mobile"]}>
                     <input
-                      value={form.nif}
-                      maxLength={11}
-                      onChange={(e) => set("nif", e.target.value)}
+                      value={form.mobile}
+                      maxLength={20}
+                      onChange={(e) => set("mobile", e.target.value)}
                       className="input-ipma"
                     />
                   </Field>
-                  <Field label="Data de nascimento" error={errors["birthDate"]}>
+
+                  <SectionTitle>
+                    Secção B — Situação perante os requisitos de admissão
+                  </SectionTitle>
+                  <div className="sm:col-span-2">
+                    <Field
+                      label="Nível habilitacional (curso e área de formação)"
+                      req
+                      error={errors["education"]}
+                    >
+                      <input
+                        list="habilitacoes-lista"
+                        value={form.education}
+                        maxLength={200}
+                        onChange={(e) => set("education", e.target.value)}
+                        className="input-ipma"
+                      />
+                      <datalist id="habilitacoes-lista">
+                        {habilitacoes.map((l) => (
+                          <option key={l} value={l} />
+                        ))}
+                      </datalist>
+                    </Field>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Field label="Pós-graduação, mestrado ou doutoramento">
+                      <textarea
+                        rows={2}
+                        value={form.postgradInfo}
+                        maxLength={600}
+                        onChange={(e) => set("postgradInfo", e.target.value)}
+                        className="input-ipma resize-y"
+                      />
+                    </Field>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                      <input
+                        type="checkbox"
+                        checked={form.rjep}
+                        onChange={(e) => set("rjep", e.target.checked)}
+                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                      />
+                      <span>
+                        Titular de vínculo de emprego público (RJEP)?
+                        <Req />
+                      </span>
+                    </label>
+                  </div>
+                  {form.rjep && (
+                    <div className="sm:col-span-2">
+                      <Field label="Situação de RJEP" req error={errors["employmentSituation"]}>
+                        <input
+                          list="situacoes-lista"
+                          value={form.employmentSituation}
+                          maxLength={200}
+                          onChange={(e) => set("employmentSituation", e.target.value)}
+                          className="input-ipma"
+                        />
+                        <datalist id="situacoes-lista">
+                          {situacoes.map((l) => (
+                            <option key={l} value={l} />
+                          ))}
+                        </datalist>
+                      </Field>
+                    </div>
+                  )}
+                  <Field label="Órgão/serviço onde exerce ou por último exerceu">
                     <input
-                      type="date"
-                      value={form.birthDate}
-                      onChange={(e) => set("birthDate", e.target.value)}
+                      value={form.lastEmployer}
+                      maxLength={200}
+                      onChange={(e) => set("lastEmployer", e.target.value)}
                       className="input-ipma"
                     />
                   </Field>
-                  <Field label="Habilitações">
-                    <select
-                      value={form.education}
-                      onChange={(e) => set("education", e.target.value)}
+                  <Field label="Atividade exercida ou que por último exerceu">
+                    <input
+                      value={form.lastActivity}
+                      maxLength={200}
+                      onChange={(e) => set("lastActivity", e.target.value)}
                       className="input-ipma"
-                    >
-                      <option value="">Selecione…</option>
-                      {habilitacoes.map((l) => (
-                        <option key={l}>{l}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Situação profissional">
-                    <select
-                      value={form.professionalSituation}
-                      onChange={(e) => set("professionalSituation", e.target.value)}
-                      className="input-ipma"
-                    >
-                      <option value="">Selecione…</option>
-                      {situacoes.map((l) => (
-                        <option key={l}>{l}</option>
-                      ))}
-                    </select>
+                    />
                   </Field>
                   <div className="sm:col-span-2">
-                    <Field label="Motivação e experiência relevante" error={errors["motivation"]}>
+                    <Field label="Avaliação de desempenho dos últimos 3 anos">
+                      <input
+                        value={form.performanceEvaluation}
+                        maxLength={200}
+                        onChange={(e) => set("performanceEvaluation", e.target.value)}
+                        className="input-ipma"
+                      />
+                    </Field>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Field
+                      label="Funções relacionadas com o posto de trabalho a que se candidata"
+                      req
+                      error={errors["motivation"]}
+                    >
                       <textarea
                         rows={5}
                         value={form.motivation}
@@ -496,69 +648,122 @@ function VagaDetalhe() {
                       />
                     </Field>
                   </div>
-
                   <div className="sm:col-span-2">
-                    <Field label="Condições especiais para a realização dos métodos de seleção">
-                      <input
-                        value={form.specialConditions}
-                        maxLength={200}
-                        placeholder="Opcional — ex.: apoio à mobilidade, tempo adicional"
-                        onChange={(e) => set("specialConditions", e.target.value)}
-                        className="input-ipma"
+                    <Field label="Outras funções e atividades exercidas">
+                      <textarea
+                        rows={3}
+                        value={form.otherExperience}
+                        maxLength={1000}
+                        onChange={(e) => set("otherExperience", e.target.value)}
+                        className="input-ipma resize-y"
                       />
                     </Field>
                   </div>
+                  {vaga.allowNoDegree && (
+                    <div className="sm:col-span-2">
+                      <Field
+                        label="Formação/experiência substitutiva de grau académico"
+                        req
+                        error={errors["alternativeQualification"]}
+                      >
+                        <textarea
+                          rows={3}
+                          value={form.alternativeQualification}
+                          maxLength={1000}
+                          onChange={(e) => set("alternativeQualification", e.target.value)}
+                          className="input-ipma resize-y"
+                        />
+                      </Field>
+                    </div>
+                  )}
 
-                  <div className="space-y-3 sm:col-span-2">
-                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
-                      <input
-                        type="checkbox"
-                        checked={form.deficiencia}
-                        onChange={(e) => set("deficiencia", e.target.checked)}
-                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
-                      />
-                      <span>
-                        Candidato(a) com grau de incapacidade igual ou superior a 60% (quota de
-                        emprego)
-                      </span>
-                    </label>
-                    {form.deficiencia && (
-                      <div className="rounded-lg border border-border bg-white/40 p-3">
-                        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                          Declaração de incapacidade (obrigatória)
+                  {ehConcursal && (
+                    <div className="sm:col-span-2">
+                      <SectionTitle>Secção C — Método de seleção</SectionTitle>
+                      <p className="text-[12px] text-muted-foreground">
+                        Método de seleção pretendido, nos termos do artigo 36.º, n.º 3 da LTFP.
+                        <Req />
+                      </p>
+                      <div className="mt-2 space-y-2">
+                        {METODOS_PRETENDIDOS.map((m) => (
+                          <label
+                            key={m}
+                            className="flex items-center gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={form.selectionMethodsWanted.includes(m)}
+                              onChange={(e) =>
+                                set(
+                                  "selectionMethodsWanted",
+                                  e.target.checked
+                                    ? [...form.selectionMethodsWanted, m]
+                                    : form.selectionMethodsWanted.filter((x) => x !== m),
+                                )
+                              }
+                              className="size-4 rounded border-border accent-[var(--primary)]"
+                            />
+                            <span>{m}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {errors["selectionMethodsWanted"] && (
+                        <p className="mt-1 text-[11px] text-destructive">
+                          {errors["selectionMethodsWanted"]}
                         </p>
-                        <div className="mt-2 flex flex-wrap items-center gap-3">
-                          <FilePickButton
-                            accept=".pdf,image/*"
-                            label="Escolher ficheiro"
-                            onPick={(files) => setDeclaracaoIncap(files[0] ?? null)}
-                          />
-                          {declaracaoIncap && (
-                            <span className="font-mono text-[11px] text-success">
-                              {declaracaoIncap.name}
-                            </span>
+                      )}
+                    </div>
+                  )}
+
+                  {mostraDeficiencia && (
+                    <div className="space-y-3 sm:col-span-2">
+                      <SectionTitle>Secção D — Candidatos com deficiência</SectionTitle>
+                      <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                        <input
+                          type="checkbox"
+                          checked={form.deficiencia}
+                          onChange={(e) => set("deficiencia", e.target.checked)}
+                          className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                        />
+                        <span>Tenho grau de incapacidade (Lei n.º 4/2019 — quota de emprego)</span>
+                      </label>
+                      {form.deficiencia && (
+                        <div className="rounded-lg border border-border bg-white/40 p-3">
+                          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                            Declaração de grau de incapacidade e tipo de deficiência
+                            <Req />
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-3">
+                            <FilePickButton
+                              accept=".pdf,image/*"
+                              label="Escolher ficheiro"
+                              onPick={(files) => setDeclaracaoIncap(files[0] ?? null)}
+                            />
+                            {declaracaoIncap && (
+                              <span className="font-mono text-[11px] text-success">
+                                {declaracaoIncap.name}
+                              </span>
+                            )}
+                          </div>
+                          {errors["deficiencia"] && (
+                            <p className="mt-1 text-[11px] text-destructive">
+                              {errors["deficiencia"]}
+                            </p>
                           )}
                         </div>
-                        {errors["deficiencia"] && (
-                          <p className="mt-1 text-[11px] text-destructive">
-                            {errors["deficiencia"]}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
-                      <input
-                        type="checkbox"
-                        checked={form.rjep}
-                        onChange={(e) => set("rjep", e.target.checked)}
-                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
-                      />
-                      <span>
-                        Detenho vínculo de emprego público (RJEP) — junto declaração da entidade
-                        empregadora
-                      </span>
-                    </label>
-                  </div>
+                      )}
+                      <Field label="Condições especiais para a realização dos métodos de seleção">
+                        <input
+                          value={form.specialConditions}
+                          maxLength={200}
+                          placeholder="Opcional — ex.: apoio à mobilidade, tempo adicional"
+                          onChange={(e) => set("specialConditions", e.target.value)}
+                          className="input-ipma"
+                        />
+                      </Field>
+                    </div>
+                  )}
+
 
                   <div className="space-y-3 sm:col-span-2">
                     <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
