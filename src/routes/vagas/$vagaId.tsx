@@ -158,7 +158,23 @@ function VagaDetalhe() {
     const nif = form.nif.replace(/\s/g, "");
     if (!form.name.trim() || form.name.trim().length > 120) err["name"] = "Indique o nome completo.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) err["email"] = "Email inválido.";
-    if (form.phone.replace(/\D/g, "").length < 9) err["phone"] = "Telefone inválido.";
+    if (form.mobile.replace(/\D/g, "").length < 9) err["mobile"] = "Telemóvel inválido.";
+    if (!form.gender) err["gender"] = "Indique o sexo.";
+    if (!form.nationality) err["nationality"] = "Indique a nacionalidade.";
+    if (!form.idNumber.trim()) err["idNumber"] = "Indique o número de identificação civil.";
+    if (!form.address.trim()) err["address"] = "Indique o endereço postal.";
+    if (!/^\d{4}-\d{3}$/.test(form.postalCode.trim()))
+      err["postalCode"] = "Código postal no formato 0000-000.";
+    if (!form.locality.trim()) err["locality"] = "Indique a localidade.";
+    if (!form.municipality.trim()) err["municipality"] = "Indique o concelho de residência.";
+    if (!form.education.trim()) err["education"] = "Indique o nível habilitacional.";
+    if (form.rjep && !form.employmentSituation.trim())
+      err["employmentSituation"] = "Descreva a situação de RJEP.";
+    if (vaga!.allowNoDegree && !form.alternativeQualification.trim())
+      err["alternativeQualification"] =
+        "Descreva a formação ou experiência substitutiva do grau académico.";
+    if (ehConcursal && form.selectionMethodsWanted.length === 0)
+      err["selectionMethodsWanted"] = "Escolha pelo menos um método de seleção.";
     if (!validateNif(nif)) err["nif"] = "NIF inválido (verificação do dígito de controlo).";
     else if (
       applicants.some((a) => a.vagaId === vaga!.id && a.nif.replace(/\s/g, "") === nif)
