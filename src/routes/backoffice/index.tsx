@@ -10,6 +10,9 @@ import {
   OFFER_TYPE_LABEL,
   daysUntil,
   formatDate,
+  offerTypeRules,
+  stageCodesFor,
+  STAGE_LABEL,
   type JobState,
   type OfferType,
 } from "@/lib/recrutamento";
@@ -315,6 +318,9 @@ function NovaVaga({
     }
     onCreate({
       ...f,
+      hasPc,
+      hasAc,
+      hasEac,
       ref: f.ref.trim(),
       title: f.title.trim(),
       positions: Number(f.positions) || 1,
@@ -340,7 +346,7 @@ function NovaVaga({
       <L label="Tipo de oferta">
         <select
           value={f.offerType}
-          onChange={(e) => setF({ ...f, offerType: e.target.value as OfferType })}
+          onChange={(e) => mudarTipo(e.target.value as OfferType)}
           className="input-ipma"
         >
           {Object.entries(OFFER_TYPE_LABEL).map(([k, v]) => (
@@ -405,9 +411,10 @@ function NovaVaga({
         <input
           type="number"
           min={1}
-          value={f.positions}
+          value={rules.singlePosition ? 1 : f.positions}
+          disabled={rules.singlePosition}
           onChange={(e) => setF({ ...f, positions: Number(e.target.value) })}
-          className="input-ipma"
+          className="input-ipma disabled:opacity-60"
         />
       </L>
       <L label="Habilitação mínima">
@@ -466,6 +473,42 @@ function NovaVaga({
           className="input-ipma"
         />
       </L>
+      <div className="sm:col-span-3 rounded-lg border border-border bg-white/50 p-4">
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          Tramitação deste tipo de oferta
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {fases.map((c, i) => (
+            <span key={c} className="flex items-center gap-1.5">
+              {i > 0 && <span className="text-muted-foreground">›</span>}
+              <span className="rounded-md bg-primary/10 px-2 py-1 text-[12px] text-primary">
+                {STAGE_LABEL[c]}
+              </span>
+            </span>
+          ))}
+        </div>
+        <p className="mt-2 text-[12px] text-muted-foreground">{rules.nota}</p>
+        <div className="mt-3 flex flex-wrap gap-4">
+          {([
+            ["Prova de conhecimentos (PC)", hasPc, rules.pc !== null, (v: boolean) => setF({ ...f, hasPc: v })],
+            ["Avaliação curricular (AC)", hasAc, rules.ac !== null, (v: boolean) => setF({ ...f, hasAc: v })],
+            ["Entrevista (EAC)", hasEac, rules.eac !== null, (v: boolean) => setF({ ...f, hasEac: v })],
+          ] as const).map(([label, val, locked, set]) => (
+            <label key={label} className="flex items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={val}
+                disabled={locked}
+                onChange={(e) => set(e.target.checked)}
+              />
+              <span className={locked ? "text-muted-foreground" : ""}>
+                {label}
+                {locked ? " (imposto)" : ""}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
       <div className="sm:col-span-3">
         <L label="Métodos de seleção">
           <div className="flex flex-wrap gap-2">
