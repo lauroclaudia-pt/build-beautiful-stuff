@@ -12,6 +12,7 @@ import {
   SEED_APPLICANTS,
   SEED_VAGAS,
   newStagesFor,
+  offerTypeRules,
   STAGE_LABEL,
   type Applicant,
   type ApplicantState,
@@ -186,7 +187,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           };
           return v;
         }
-        const stages = newStagesFor(v.offerType, { hasEac: v.hasEac ?? true, activeIndex: 1 }).map(
+        const stages = newStagesFor(v.offerType, { hasAc: v.hasAc, hasEac: v.hasEac, activeIndex: 1 }).map(
           (s, i) =>
             i === 0
               ? { ...s, startedAt: hoje, endedAt: hoje }
