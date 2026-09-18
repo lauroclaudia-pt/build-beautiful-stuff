@@ -12,6 +12,8 @@ import {
   formatDate,
   type DocState,
 } from "@/lib/recrutamento";
+import { FilePickButton } from "@/components/file-upload";
+import { FileText } from "lucide-react";
 
 export const Route = createFileRoute("/candidato")({
   head: () => ({
@@ -48,10 +50,12 @@ function PortalCandidato() {
     vagas,
     applicants,
     setDocumentState,
+    addDocumentUploads,
     addAppeal,
     notificacoes,
   } = useStore();
   const [appealText, setAppealText] = useState<Record<string, string>>({});
+  const [docDesc, setDocDesc] = useState<Record<string, string>>({});
 
   const minhasNotificacoes = useMemo(() => {
     if (!currentUser) return [];
