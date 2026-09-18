@@ -709,17 +709,11 @@ function VagaDetalhe() {
                             className="flex items-center gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]"
                           >
                             <input
-                              type="checkbox"
-                              checked={form.selectionMethodsWanted.includes(m)}
-                              onChange={(e) =>
-                                set(
-                                  "selectionMethodsWanted",
-                                  e.target.checked
-                                    ? [...form.selectionMethodsWanted, m]
-                                    : form.selectionMethodsWanted.filter((x) => x !== m),
-                                )
-                              }
-                              className="size-4 rounded border-border accent-[var(--primary)]"
+                              type="radio"
+                              name="metodo-selecao"
+                              checked={form.selectionMethodsWanted[0] === m}
+                              onChange={() => set("selectionMethodsWanted", [m])}
+                              className="size-4 rounded-full border-border accent-[var(--primary)]"
                             />
                             <span>{m}</span>
                           </label>
