@@ -78,7 +78,10 @@ export async function loginJava(
     if (!res.ok) {
       return { ok: false, failure: "server", message: `O servidor de recrutamento respondeu com o erro ${res.status}.` };
     }
-    const me = (await res.json()) as JavaMe;
+    const me = (await res.json()) as JavaMe & { javaUnavailable?: boolean };
+    if (me?.javaUnavailable || !me?.email) {
+      return { ok: false, failure: "unreachable", message: "Servidor de recrutamento indisponível." };
+    }
     return { ok: true, me, message: `Bem-vindo(a), ${me.name}.` };
   } catch {
     return { ok: false, failure: "unreachable", message: "Servidor de recrutamento indisponível." };
