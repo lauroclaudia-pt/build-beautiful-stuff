@@ -38,19 +38,57 @@ export const Route = createFileRoute("/vagas/$vagaId")({
   component: VagaDetalhe,
 });
 
+const NACIONALIDADES = [
+  "Portuguesa",
+  "Espanhola",
+  "Brasileira",
+  "Francesa",
+  "Alemã",
+  "Italiana",
+  "Cabo-verdiana",
+  "Angolana",
+  "Moçambicana",
+  "Outra",
+];
+
+const METODOS_PRETENDIDOS = ["Avaliação Curricular (AC)", "Prova de Conhecimentos (PC)"];
+
 const emptyForm = {
+  // Secção A
   name: "",
+  birthDate: "",
+  gender: "",
+  nationality: "",
+  idNumber: "",
+  nif: "",
+  address: "",
+  postalCode: "",
+  locality: "",
+  municipality: "",
   email: "",
   phone: "",
-  nif: "",
-  birthDate: "",
+  mobile: "",
+  // Secção B
   education: "",
-  professionalSituation: "",
-  motivation: "",
-  deficiencia: false,
+  postgradInfo: "",
   rjep: false,
+  employmentSituation: "",
+  lastEmployer: "",
+  lastActivity: "",
+  performanceEvaluation: "",
+  motivation: "",
+  otherExperience: "",
+  alternativeQualification: "",
+  professionalSituation: "",
+  // Secção C
+  selectionMethodsWanted: [] as string[],
+  // Secção D
+  deficiencia: false,
   specialConditions: "",
+  // Secção E
   truthDeclaration: false,
+  mobDeclaration: false,
+  grantDeclaration: false,
 };
 
 function VagaDetalhe() {
