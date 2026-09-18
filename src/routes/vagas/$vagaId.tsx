@@ -807,7 +807,8 @@ function VagaDetalhe() {
                     ))}
                   </div>
 
-                  <div className="sm:col-span-2">
+                  <div className="space-y-3 sm:col-span-2">
+                    <SectionTitle>Secção E — Declaração de veracidade</SectionTitle>
                     <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
                       <input
                         type="checkbox"
@@ -816,14 +817,70 @@ function VagaDetalhe() {
                         className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
                       />
                       <span>
-                        Declaro, sob compromisso de honra, que as informações prestadas são
-                        verdadeiras e que reúno os requisitos de admissão.
+                        Declaro, para os devidos efeitos, sob compromisso de honra, que os dados,
+                        elementos e informações constantes do presente documento são verdadeiros,
+                        exatos, completos e correspondem fielmente à realidade.
+                        <Req />
                       </span>
                     </label>
                     {errors["truthDeclaration"] && (
-                      <p className="mt-1 text-[11px] text-destructive">
-                        {errors["truthDeclaration"]}
-                      </p>
+                      <p className="text-[11px] text-destructive">{errors["truthDeclaration"]}</p>
+                    )}
+                    {ehMobilidade && (
+                      <>
+                        <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                          <input
+                            type="checkbox"
+                            checked={form.mobDeclaration}
+                            onChange={(e) => set("mobDeclaration", e.target.checked)}
+                            className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                          />
+                          <span>
+                            Venho, pelo presente, manifestar o meu interesse em integrar o Instituto
+                            Português do Mar e da Atmosfera (IPMA), no âmbito de um processo de
+                            mobilidade, entendendo que esta oportunidade representa uma mais-valia
+                            para o meu percurso profissional e me permitirá contribuir para os
+                            objetivos e missão da instituição.
+                            <Req />
+                          </span>
+                        </label>
+                        {errors["mobDeclaration"] && (
+                          <p className="text-[11px] text-destructive">{errors["mobDeclaration"]}</p>
+                        )}
+                      </>
+                    )}
+                    {ehBolsa && (
+                      <>
+                        <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                          <input
+                            type="checkbox"
+                            checked={form.grantDeclaration}
+                            onChange={(e) => set("grantDeclaration", e.target.checked)}
+                            className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                          />
+                          <span>
+                            Declaro, sob compromisso de honra, que reúno e preencho todos os
+                            requisitos de admissão ao presente concurso previstos na Lei, em
+                            especial no Regulamento de Bolsas de Investigação Científica do IPMA,
+                            I.P. e, subsidiariamente, no Regulamento de Bolsas de Investigação da
+                            Fundação para a Ciência e a Tecnologia, I.P. (FCT, I.P.), no Estatuto do
+                            Bolseiro de Investigação (EBI) e no Aviso de abertura do presente
+                            concurso. Declaro que não exerço qualquer atividade profissional ou de
+                            prestação de serviços que viole o dever de dedicação exclusiva. Declaro
+                            ter pleno conhecimento de que, sem prejuízo do disposto na lei penal, a
+                            prestação de falsas declarações sobre matérias relevantes para a
+                            concessão ou renovação da bolsa, nos termos do artigo 25.º do
+                            Regulamento de Bolsas de Investigação da FCT, I.P., implica o
+                            cancelamento da respetiva bolsa.
+                            <Req />
+                          </span>
+                        </label>
+                        {errors["grantDeclaration"] && (
+                          <p className="text-[11px] text-destructive">
+                            {errors["grantDeclaration"]}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
 
