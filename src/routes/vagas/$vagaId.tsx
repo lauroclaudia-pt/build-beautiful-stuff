@@ -210,14 +210,30 @@ function VagaDetalhe() {
       const fd = new FormData();
       fd.append("partnerName", form.name.trim());
       fd.append("birthDate", form.birthDate);
-      fd.append("nationality", "Não indicada");
-      fd.append("idNumber", nif);
+      fd.append("nationality", form.nationality);
+      fd.append("idNumber", form.idNumber.trim());
       fd.append("idNif", nif);
       fd.append("emailFrom", form.email.trim());
       fd.append("partnerPhone", form.phone.trim());
-      fd.append("partnerMobile", form.phone.trim());
+      fd.append("partnerMobile", form.mobile.trim());
+      fd.append("address", form.address.trim());
+      fd.append("postalCode", form.postalCode.trim());
+      fd.append("locality", form.locality.trim());
+      fd.append("municipality", form.municipality.trim());
+      fd.append("gender", form.gender);
       if (form.education) fd.append("educationCourse", form.education);
-      if (form.professionalSituation) fd.append("employmentSituation", form.professionalSituation);
+      if (form.postgradInfo.trim()) fd.append("postgradInfo", form.postgradInfo.trim());
+      if (form.lastEmployer.trim()) fd.append("lastEmployer", form.lastEmployer.trim());
+      if (form.lastActivity.trim()) fd.append("lastActivity", form.lastActivity.trim());
+      if (form.performanceEvaluation.trim())
+        fd.append("performanceEvaluation", form.performanceEvaluation.trim());
+      if (form.otherExperience.trim()) fd.append("otherExperience", form.otherExperience.trim());
+      if (form.alternativeQualification.trim())
+        fd.append("alternativeQualification", form.alternativeQualification.trim());
+      if (form.selectionMethodsWanted.length)
+        fd.append("selectionMethods", form.selectionMethodsWanted.join(", "));
+      if (form.employmentSituation.trim())
+        fd.append("employmentSituation", form.employmentSituation.trim());
       fd.append("relevantExperience", form.motivation.trim());
       fd.append("hasDisability", String(form.deficiencia));
       if (form.specialConditions.trim())
