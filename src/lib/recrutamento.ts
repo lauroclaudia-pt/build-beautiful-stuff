@@ -123,11 +123,18 @@ export const DOC_STATE_LABEL: Record<DocState, string> = {
   MISSING: "Em falta",
 };
 
+export interface DocumentUpload {
+  name: string;
+  description?: string;
+}
+
 export interface CandidateDocument {
   id: string;
   label: string;
   state: DocState;
   note?: string;
+  /** Ficheiros entregues para este documento (pode ser mais do que um). */
+  uploads?: DocumentUpload[];
 }
 
 export const DEFAULT_DOCUMENTS: CandidateDocument[] = [
