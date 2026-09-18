@@ -41,9 +41,8 @@ function SiteTheme() {
 export function Backdrop() {
   return (
     <div className="pointer-events-none fixed inset-0 -z-10 print:hidden">
-      <div className="absolute -top-40 right-[-10%] size-[520px] rounded-full bg-atmosfera/25 blur-3xl" />
-      <div className="absolute bottom-[-20%] left-[-10%] size-[560px] rounded-full bg-primary/20 blur-3xl" />
-      <div className="absolute top-1/3 left-1/3 size-[360px] rounded-full bg-subsolo/15 blur-3xl" />
+      <div className="absolute inset-x-0 top-0 h-px bg-atmosfera/70" />
+      <div className="absolute inset-x-0 top-px h-24 bg-linear-to-b from-atmosfera/5 to-transparent" />
     </div>
   );
 }
@@ -54,23 +53,23 @@ export function SiteHeader() {
   const podeVerDashboard = hasActiveRole(currentUser, ...BACKOFFICE_ROLES);
   return (
     <header className="glass-2 sticky top-0 z-40 border-x-0 border-t-0 print:hidden">
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center gap-6 px-6">
+      <div className="mx-auto flex h-[68px] max-w-[1440px] items-center gap-6 px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-3">
           <img
             src={site.logoUrl ?? logo.url}
             alt="IPMA — Instituto Português do Mar e da Atmosfera"
-            className="h-9 w-auto"
+            className="h-10 w-auto"
           />
           <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:block">
             Recrutamento
           </span>
         </Link>
-        <nav className="ml-6 hidden items-center gap-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground md:flex">
+        <nav className="ml-4 hidden items-center gap-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground md:flex">
           <Link
             to="/"
             activeOptions={{ exact: true }}
             activeProps={{ className: "bg-foreground/5 text-foreground" }}
-            className="rounded-md px-3 py-2 hover:bg-foreground/5"
+            className="rounded-md px-3 py-2 hover:bg-secondary hover:text-foreground"
           >
             Home
           </Link>
@@ -78,7 +77,7 @@ export function SiteHeader() {
             <Link
               to="/backoffice/dashboard"
               activeProps={{ className: "bg-foreground/5 text-foreground" }}
-              className="rounded-md px-3 py-2 hover:bg-foreground/5"
+              className="rounded-md px-3 py-2 hover:bg-secondary hover:text-foreground"
             >
               Dashboard
             </Link>
@@ -87,14 +86,14 @@ export function SiteHeader() {
             to="/backoffice"
             activeOptions={{ exact: true }}
             activeProps={{ className: "bg-foreground/5 text-foreground" }}
-            className="rounded-md px-3 py-2 hover:bg-foreground/5"
+            className="rounded-md px-3 py-2 hover:bg-secondary hover:text-foreground"
           >
             Procedimentos
           </Link>
           <Link
             to="/candidato"
             activeProps={{ className: "bg-foreground/5 text-foreground" }}
-            className="rounded-md px-3 py-2 hover:bg-foreground/5"
+            className="rounded-md px-3 py-2 hover:bg-secondary hover:text-foreground"
           >
             Candidato
           </Link>
@@ -102,7 +101,7 @@ export function SiteHeader() {
             <Link
               to="/backoffice/admin"
               activeProps={{ className: "bg-foreground/5 text-foreground" }}
-              className="rounded-md px-3 py-2 hover:bg-foreground/5"
+              className="rounded-md px-3 py-2 hover:bg-secondary hover:text-foreground"
             >
               Administração
             </Link>
@@ -110,7 +109,7 @@ export function SiteHeader() {
           <Link
             to="/apoio"
             activeProps={{ className: "bg-foreground/5 text-foreground" }}
-            className="rounded-md px-3 py-2 hover:bg-foreground/5"
+            className="rounded-md px-3 py-2 hover:bg-secondary hover:text-foreground"
           >
             Apoio
           </Link>
