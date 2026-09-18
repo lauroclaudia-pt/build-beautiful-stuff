@@ -157,9 +157,12 @@ function VagaDetalhe() {
         fd.append("specialNeedsDesc", form.specialConditions.trim());
       fd.append("publicEmployment", String(form.rjep));
       fd.append("declarationTrue", "true");
-      if (anexos[0]) fd.append("cv", anexos[0], anexos[0].name);
-      if (anexos[1]) fd.append("attachment_habilit", anexos[1], anexos[1].name);
-      if (anexos[2]) fd.append("attachment_decservico", anexos[2], anexos[2].name);
+      const cv = docFiles["cv"]?.[0]?.file;
+      const habilit = docFiles["habilit"]?.[0]?.file;
+      const decservico = docFiles["decservico"]?.[0]?.file;
+      if (cv) fd.append("cv", cv, cv.name);
+      if (habilit) fd.append("attachment_habilit", habilit, habilit.name);
+      if (decservico) fd.append("attachment_decservico", decservico, decservico.name);
       if (declaracaoIncap) fd.append("attachment_disability", declaracaoIncap, declaracaoIncap.name);
       const java = await applyJava(javaBase(site.apiUrl), vaga!.javaId, fd);
       if (!java.ok) {
@@ -183,11 +186,27 @@ function VagaDetalhe() {
       rjep: form.rjep,
       specialConditions: form.specialConditions.trim(),
       truthDeclaration: true,
-      attachments: [...anexos.map((f) => f.name), ...(declaracaoIncap ? [declaracaoIncap.name] : [])],
+      attachments: [
+        ...Object.values(docFiles).flat().map((u) =>
+          u.description.trim() ? `${u.file.name} — ${u.description.trim()}` : u.file.name,
+        ),
+        ...(declaracaoIncap ? [declaracaoIncap.name] : []),
+      ],
+      documents: DEFAULT_DOCUMENTS.map((d) => {
+        const ups = docFiles[d.id] ?? [];
+        return {
+          ...d,
+          state: ups.length > 0 ? ("RECEIVED" as const) : d.state,
+          uploads: ups.map((u) => ({
+            name: u.file.name,
+            description: u.description.trim() || undefined,
+          })),
+        };
+      }),
     });
     setDone(a.id);
     setForm(emptyForm);
-    setAnexos([]);
+    setDocFiles({});
     setDeclaracaoIncap(null);
     toast.success("Candidatura submetida e registada.");
     void enviarConfirmacaoCandidatura({
