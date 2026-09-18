@@ -13,6 +13,8 @@ import {
 } from "@/lib/recrutamento";
 import { applyJava, javaBase } from "@/lib/java-api";
 import { enviarConfirmacaoCandidatura } from "@/lib/emails.functions";
+import { FilePickButton, UploadList, type UploadItem } from "@/components/file-upload";
+import { DEFAULT_DOCUMENTS } from "@/lib/recrutamento";
 
 export const Route = createFileRoute("/vagas/$vagaId")({
   head: () => ({
@@ -58,8 +60,27 @@ function VagaDetalhe() {
   const situacoes = opcoesDe("SITUACAO_PROFISSIONAL");
   const vaga = vagas.find((v) => v.id === vagaId);
   const [form, setForm] = useState(emptyForm);
-  const [anexos, setAnexos] = useState<File[]>([]);
+  const [docFiles, setDocFiles] = useState<Record<string, UploadItem[]>>({});
   const [declaracaoIncap, setDeclaracaoIncap] = useState<File | null>(null);
+
+  function addDocFiles(docId: string, files: File[]) {
+    setDocFiles((prev) => ({
+      ...prev,
+      [docId]: [...(prev[docId] ?? []), ...files.map((file) => ({ file, description: "" }))],
+    }));
+  }
+  function setDocFileDesc(docId: string, index: number, description: string) {
+    setDocFiles((prev) => ({
+      ...prev,
+      [docId]: (prev[docId] ?? []).map((it, i) => (i === index ? { ...it, description } : it)),
+    }));
+  }
+  function removeDocFile(docId: string, index: number) {
+    setDocFiles((prev) => ({
+      ...prev,
+      [docId]: (prev[docId] ?? []).filter((_, i) => i !== index),
+    }));
+  }
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState<string | null>(null);
 
