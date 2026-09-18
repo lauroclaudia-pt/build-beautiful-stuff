@@ -4,6 +4,7 @@ import { Eye } from "lucide-react";
 import { toast } from "sonner";
 import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/components/shell";
 import { finalGrade, useStore } from "@/lib/store";
+import { hasActiveRole } from "@/lib/pessoas";
 import {
   APPLICANT_STATE_LABEL,
   EMPTY_TRIAGEM,
@@ -89,8 +90,12 @@ function GestaoVaga() {
     addNotificacoes,
     notificacoes,
     site,
+    currentUser,
   } = useStore();
   const vaga = vagas.find((v) => v.id === vagaId);
+  const podeGerirVaga =
+    hasActiveRole(currentUser, "ADMIN", "GESTAO") ||
+    (hasActiveRole(currentUser, "GESTOR_RH") && vaga?.hrManagerId === currentUser?.id);
   const [filtro, setFiltro] = useState<ApplicantState | "">("");
   const [aberto, setAberto] = useState<string | null>(null);
   const [ata, setAta] = useState<string | null>(null);
