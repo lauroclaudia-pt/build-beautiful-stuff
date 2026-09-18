@@ -12,6 +12,7 @@ import {
   SEED_APPLICANTS,
   SEED_VAGAS,
   newStagesFor,
+  offerTypeRules,
   STAGE_LABEL,
   type Applicant,
   type ApplicantState,
@@ -146,12 +147,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [data, hydrated]);
 
   const addVaga: StoreValue["addVaga"] = useCallback((input) => {
+    const r = offerTypeRules(input.offerType);
+    const hasPc = r.pc ?? input.hasPc ?? r.defaults.pc;
+    const hasAc = r.ac ?? input.hasAc ?? r.defaults.ac;
+    const hasEac = r.eac ?? input.hasEac ?? r.defaults.eac;
     const vaga: Vaga = {
       ...input,
+      hasPc,
+      hasAc,
+      hasEac,
+      positions: r.singlePosition ? 1 : input.positions,
       id: crypto.randomUUID(),
       state: "DRAFT",
       publishedAt: null,
-      stages: newStagesFor(input.offerType, { hasEac: input.hasEac ?? true, activeIndex: 0 }),
+      stages: newStagesFor(input.offerType, { hasAc, hasEac, activeIndex: 0 }),
     };
     setData((d) => ({ ...d, vagas: [vaga, ...d.vagas] }));
     return vaga;
@@ -178,7 +187,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           };
           return v;
         }
-        const stages = newStagesFor(v.offerType, { hasEac: v.hasEac ?? true, activeIndex: 1 }).map(
+        const stages = newStagesFor(v.offerType, { hasAc: v.hasAc, hasEac: v.hasEac, activeIndex: 1 }).map(
           (s, i) =>
             i === 0
               ? { ...s, startedAt: hoje, endedAt: hoje }
@@ -215,13 +224,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             ),
           };
         }
-        const stages = v.stages.map((s, i) =>
-          i === idx
-            ? { ...s, state: "completed" as const, endedAt: hoje }
-            : i === idx + 1
-              ? { ...s, state: "active" as const, startedAt: hoje }
-              : s,
+        // A recolha de requisitos em falta só é ativada se existir pelo menos
+        // um candidato excluído; caso contrário é saltada.
+        const temExcluidos = d.applicants.some(
+          (a) => a.vagaId === v.id && (a.state === "EXCLUDED" || a.state === "UNDER_APPEAL"),
         );
+        let next = idx + 1;
+        while (
+          next < v.stages.length - 1 &&
+          v.stages[next]!.code === "MISSING_REQUIREMENTS" &&
+          !temExcluidos
+        ) {
+          next += 1;
+        }
+        const stages = v.stages.map((s, i) => {
+          if (i === idx) return { ...s, state: "completed" as const, endedAt: hoje };
+          if (i > idx && i < next) return { ...s, state: "skipped" as const };
+          if (i === next) return { ...s, state: "active" as const, startedAt: hoje };
+          return s;
+        });
         return { ...v, state: "RUNNING" as const, stages };
       }),
     }));
