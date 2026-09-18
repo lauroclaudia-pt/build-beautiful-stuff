@@ -411,18 +411,97 @@ export function newStages(activeIndex = 0): JobStage[] {
 }
 
 /**
+ * Regras de tramitação por tipo de oferta.
+ * `null` significa que o Gestor de RH pode alterar o campo; um booleano significa
+ * que o valor é imposto pela lei/tipo de oferta e fica bloqueado.
+ */
+export interface OfferTypeRules {
+  pc: boolean | null;
+  ac: boolean | null;
+  eac: boolean | null;
+  /** Valores por omissão dos campos editáveis. */
+  defaults: { pc: boolean; ac: boolean; eac: boolean };
+  /** Tem a fase «Recolha de requisitos em falta» (só se houver excluídos). */
+  missingRequirements: boolean;
+  /** Número de vagas fixo (cargos de direção = 1). */
+  singlePosition: boolean;
+  nota: string;
+}
+
+export function offerTypeRules(offerType: OfferType): OfferTypeRules {
+  switch (offerType) {
+    case "CARGOS_DIRECAO":
+      return {
+        pc: false,
+        ac: true,
+        eac: true,
+        defaults: { pc: false, ac: true, eac: true },
+        missingRequirements: false,
+        singlePosition: true,
+        nota: "Avaliação curricular e entrevista pública obrigatórias; uma só vaga por cargo.",
+      };
+    case "MOBILIDADE_INTERNA":
+    case "MOBILIDADE_INTERCARREIRAS":
+      return {
+        pc: false,
+        ac: null,
+        eac: null,
+        defaults: { pc: false, ac: false, eac: false },
+        missingRequirements: false,
+        singlePosition: false,
+        nota: "Sem prova de conhecimentos e sem recolha de requisitos em falta; avaliação curricular e entrevista são opcionais.",
+      };
+    case "BOLSA_INVESTIGACAO_CIENTIFICA":
+      return {
+        pc: false,
+        ac: true,
+        eac: null,
+        defaults: { pc: false, ac: true, eac: false },
+        missingRequirements: false,
+        singlePosition: false,
+        nota: "Avaliação curricular obrigatória; entrevista apenas se prevista no edital.",
+      };
+    default:
+      return {
+        pc: true,
+        ac: true,
+        eac: null,
+        defaults: { pc: true, ac: true, eac: false },
+        missingRequirements: true,
+        singlePosition: false,
+        nota: "Prova de conhecimentos e avaliação curricular obrigatórias; entrevista opcional.",
+      };
+  }
+}
+
+/** Fases efetivas de um procedimento, aplicando as regras condicionais. */
+export function stageCodesFor(
+  offerType: OfferType,
+  opts: { hasAc?: boolean; hasEac?: boolean } = {},
+): StageCode[] {
+  const rules = offerTypeRules(offerType);
+  const hasAc = rules.ac ?? opts.hasAc ?? rules.defaults.ac;
+  const hasEac = rules.eac ?? opts.hasEac ?? rules.defaults.eac;
+  const hasPc = rules.pc ?? rules.defaults.pc;
+  return (WORKFLOW_TEMPLATES[offerType] ?? DEFAULT_STAGES).filter((c) => {
+    if (c === "INTERVIEW") return hasEac;
+    if (c === "EVALUATION") return hasAc || hasPc;
+    return true;
+  });
+}
+
+/**
  * Cria o pipeline de uma vaga a partir do modelo do tipo de oferta.
- * A entrevista só entra quando a vaga tem EAC; a recolha de requisitos em falta
- * fica sempre presente mas só é ativada quando existirem candidatos excluídos.
+ * A entrevista só entra quando a vaga tem EAC; a avaliação só entra quando
+ * existir PC ou AC; a recolha de requisitos em falta fica presente mas só é
+ * ativada quando existirem candidatos excluídos.
  */
 export function newStagesFor(
   offerType: OfferType,
-  opts: { hasEac?: boolean; activeIndex?: number } = {},
+  opts: { hasAc?: boolean; hasEac?: boolean; activeIndex?: number } = {},
 ): JobStage[] {
-  const { hasEac = true, activeIndex = 0 } = opts;
-  const codes = (WORKFLOW_TEMPLATES[offerType] ?? DEFAULT_STAGES).filter(
-    (c) => c !== "INTERVIEW" || hasEac,
-  );
+  const { activeIndex = 0 } = opts;
+  const codes = stageCodesFor(offerType, opts);
   return codes.map((code, i) => ({
     code,
     state: i < activeIndex ? "completed" : i === activeIndex ? "active" : "draft",
