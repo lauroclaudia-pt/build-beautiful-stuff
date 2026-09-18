@@ -284,7 +284,28 @@ function NovaVaga({
     juryMembers: "",
     bepCode: "",
     deadline: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
+    hasPc: true,
+    hasAc: true,
+    hasEac: false,
   });
+
+  const rules = offerTypeRules(f.offerType);
+  const hasPc = rules.pc ?? f.hasPc;
+  const hasAc = rules.ac ?? f.hasAc;
+  const hasEac = rules.eac ?? f.hasEac;
+  const fases = stageCodesFor(f.offerType, { hasAc, hasEac });
+
+  function mudarTipo(t: OfferType) {
+    const r = offerTypeRules(t);
+    setF((prev) => ({
+      ...prev,
+      offerType: t,
+      hasPc: r.pc ?? r.defaults.pc,
+      hasAc: r.ac ?? r.defaults.ac,
+      hasEac: r.eac ?? r.defaults.eac,
+      positions: r.singlePosition ? 1 : prev.positions,
+    }));
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
