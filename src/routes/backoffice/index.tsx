@@ -254,7 +254,8 @@ function NovaVaga({
   onCreate: ReturnType<typeof useStore>["addVaga"];
   onDone: () => void;
 }) {
-  const { opcoesDe } = useStore();
+  const { opcoesDe, pessoas, currentUser } = useStore();
+  const gestores = pessoas.filter((p) => hasActiveRole(p, "GESTOR_RH"));
   const departamentos = opcoesDe("DEPARTAMENTO");
   const locais = opcoesDe("LOCAL");
   const carreiras = opcoesDe("CARREIRA");
@@ -279,6 +280,7 @@ function NovaVaga({
     description: "",
     selectionMethods: metodos[1] ? [metodos[1]] : metodos.slice(0, 1),
     juryPresident: "",
+    hrManagerId: gestores.find((g) => g.id === currentUser?.id)?.id ?? gestores[0]?.id ?? "",
     juryMembers: "",
     bepCode: "",
     deadline: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
@@ -415,6 +417,19 @@ function NovaVaga({
       </L>
       <L label="Código BEP/Edital">
         <input value={f.bepCode} onChange={(e) => setF({ ...f, bepCode: e.target.value })} className="input-ipma" />
+      </L>
+      <L label="Gestor de RH responsável">
+        <select
+          value={f.hrManagerId}
+          onChange={(e) => setF({ ...f, hrManagerId: e.target.value })}
+          className="input-ipma"
+        >
+          {gestores.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </select>
       </L>
       <L label="Presidente do júri">
         <input
