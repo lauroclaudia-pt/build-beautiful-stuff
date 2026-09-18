@@ -15,6 +15,7 @@ import { applyJava, javaBase } from "@/lib/java-api";
 import { enviarConfirmacaoCandidatura } from "@/lib/emails.functions";
 import { FilePickButton, UploadList, type UploadItem } from "@/components/file-upload";
 import { DEFAULT_DOCUMENTS } from "@/lib/recrutamento";
+import { Req } from "@/components/req";
 
 export const Route = createFileRoute("/vagas/$vagaId")({
   head: () => ({
