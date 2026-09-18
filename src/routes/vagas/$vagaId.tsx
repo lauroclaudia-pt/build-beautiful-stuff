@@ -68,6 +68,7 @@ function VagaDetalhe() {
       ...prev,
       [docId]: [...(prev[docId] ?? []), ...files.map((file) => ({ file, description: "" }))],
     }));
+    setErrors((e) => ({ ...e, [`doc:${docId}`]: "" }));
   }
   function setDocFileDesc(docId: string, index: number, description: string) {
     setDocFiles((prev) => ({
