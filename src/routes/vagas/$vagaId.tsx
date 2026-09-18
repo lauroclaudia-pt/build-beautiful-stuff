@@ -955,19 +955,30 @@ function VagaDetalhe() {
   );
 }
 
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="mt-2 border-b border-border pb-1 font-mono text-[11px] uppercase tracking-[0.16em] text-primary sm:col-span-2">
+      {children}
+    </h3>
+  );
+}
+
 function Field({
   label,
   error,
+  req,
   children,
 }: {
   label: string;
   error?: string | undefined;
+  req?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <label className="block">
       <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
         {label}
+        {req && <Req />}
       </span>
       <div className="mt-1.5">{children}</div>
       {error && <span className="mt-1 block text-[11px] text-destructive">{error}</span>}
