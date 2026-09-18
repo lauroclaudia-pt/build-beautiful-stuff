@@ -165,6 +165,12 @@ export interface Applicant {
   pcGrade?: number | null;
   acGrade?: number | null;
   eacGrade?: number | null;
+  /** Classificações por critério da grelha de Avaliação Curricular (0–20). */
+  acScores?: Record<string, number | null>;
+  /** Menção qualitativa da avaliação de desempenho (convertida pela tabela). */
+  acDesempenho?: string | null;
+  /** Classificações por critério da grelha de Entrevista (escala 4–20). */
+  eacScores?: Record<string, number | null>;
   createdAt: string;
   appeal?: { text: string; createdAt: string; channel?: AppealChannel } | null;
   documents?: CandidateDocument[];
@@ -213,6 +219,87 @@ export interface TriagemCriterios {
   documentos: boolean | null;
   experiencia: boolean | null;
   motivo?: string;
+}
+
+/** Critério de avaliação com peso percentual (a soma dos pesos = 100). */
+export interface EvalCriterion {
+  id: string;
+  label: string;
+  weight: number;
+}
+
+/** Grelha da Avaliação Curricular (cap. 8 da especificação). */
+export const AC_CRITERIA: EvalCriterion[] = [
+  { id: "habilitacao", label: "Habilitação académica", weight: 25 },
+  { id: "formacao", label: "Formação complementar", weight: 25 },
+  { id: "experiencia", label: "Experiência profissional", weight: 30 },
+  { id: "desempenho", label: "Avaliação de desempenho", weight: 20 },
+];
+
+/** Grelha da Entrevista de Avaliação de Competências (escala 4–20). */
+export const EAC_CRITERIA: EvalCriterion[] = [
+  { id: "conhecimentos", label: "Conhecimentos técnicos", weight: 30 },
+  { id: "analise", label: "Capacidade de análise e resolução de problemas", weight: 25 },
+  { id: "comunicacao", label: "Comunicação e relacionamento interpessoal", weight: 20 },
+  { id: "motivacao", label: "Motivação e orientação para o serviço público", weight: 25 },
+];
+export const EAC_MIN = 4;
+export const EAC_MAX = 20;
+
+/** Tabela de conversão da avaliação de desempenho (menção → 0–20). */
+export const DESEMPENHO_CONVERSION = [
+  { label: "Excelente", grade: 20 },
+  { label: "Muito Bom", grade: 18 },
+  { label: "Bom", grade: 15 },
+  { label: "Suficiente", grade: 12 },
+  { label: "Insuficiente", grade: 8 },
+  { label: "Sem avaliação", grade: 10 },
+] as const;
+
+export function desempenhoGrade(label: string | null | undefined): number | null {
+  if (!label) return null;
+  return DESEMPENHO_CONVERSION.find((d) => d.label === label)?.grade ?? null;
+}
+
+/** Nota ponderada da Avaliação Curricular a partir das classificações por critério. */
+export function calcAcGrade(
+  scores: Record<string, number | null> | undefined,
+  desempenho: string | null | undefined,
+): number | null {
+  if (!scores) return null;
+  let sum = 0;
+  for (const c of AC_CRITERIA) {
+    const v = c.id === "desempenho" ? desempenhoGrade(desempenho) : scores[c.id];
+    if (typeof v !== "number") return null;
+    sum += v * c.weight;
+  }
+  return Math.round((sum / 100) * 100) / 100;
+}
+
+/** Nota ponderada da Entrevista (todos os critérios obrigatórios, escala 4–20). */
+export function calcEacGrade(scores: Record<string, number | null> | undefined): number | null {
+  if (!scores) return null;
+  let sum = 0;
+  for (const c of EAC_CRITERIA) {
+    const v = scores[c.id];
+    if (typeof v !== "number" || v < EAC_MIN || v > EAC_MAX) return null;
+    sum += v * c.weight;
+  }
+  return Math.round((sum / 100) * 100) / 100;
+}
+
+/** Pesos da nota final por combinação de métodos de seleção (cap. 9). */
+export function methodWeights(has: { pc: boolean; ac: boolean; eac: boolean }): {
+  pc: number;
+  ac: number;
+  eac: number;
+} {
+  const { pc, ac, eac } = has;
+  if (pc && ac && eac) return { pc: 0.4, ac: 0.3, eac: 0.3 };
+  if (pc && eac) return { pc: 0.6, ac: 0, eac: 0.4 };
+  if (ac && eac) return { pc: 0, ac: 0.7, eac: 0.3 };
+  if (pc && ac) return { pc: 0.5, ac: 0.5, eac: 0 };
+  return { pc: pc ? 1 : 0, ac: ac ? 1 : 0, eac: eac ? 1 : 0 };
 }
 
 export const TRIAGEM_CRITERIOS: { key: keyof Omit<TriagemCriterios, "motivo">; label: string }[] = [
