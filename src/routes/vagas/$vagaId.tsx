@@ -419,17 +419,18 @@ function VagaDetalhe() {
                         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                           Declaração de incapacidade (obrigatória)
                         </p>
-                        <input
-                          type="file"
-                          accept=".pdf,image/*"
-                          onChange={(e) => setDeclaracaoIncap(e.target.files?.[0] ?? null)}
-                          className="mt-2 text-[12px]"
-                        />
-                        {declaracaoIncap && (
-                          <p className="mt-1 font-mono text-[11px] text-success">
-                            {declaracaoIncap.name}
-                          </p>
-                        )}
+                        <div className="mt-2 flex flex-wrap items-center gap-3">
+                          <FilePickButton
+                            accept=".pdf,image/*"
+                            label="Escolher ficheiro"
+                            onPick={(files) => setDeclaracaoIncap(files[0] ?? null)}
+                          />
+                          {declaracaoIncap && (
+                            <span className="font-mono text-[11px] text-success">
+                              {declaracaoIncap.name}
+                            </span>
+                          )}
+                        </div>
                         {errors["deficiencia"] && (
                           <p className="mt-1 text-[11px] text-destructive">
                             {errors["deficiencia"]}
@@ -451,24 +452,32 @@ function VagaDetalhe() {
                     </label>
                   </div>
 
-                  <div className="sm:col-span-2 rounded-lg border border-border bg-white/40 p-3">
+                  <div className="space-y-3 sm:col-span-2">
                     <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                      Documentos a anexar (CV, certificado de habilitações, identificação)
+                      Documentos a anexar — pode juntar vários ficheiros por documento e uma
+                      descrição a cada um
                     </p>
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,image/*"
-                      onChange={(e) => setAnexos(Array.from(e.target.files ?? []))}
-                      className="mt-2 text-[12px]"
-                    />
-                    {anexos.length > 0 && (
-                      <ul className="mt-2 list-inside list-disc font-mono text-[11px] text-muted-foreground">
-                        {anexos.map((f) => (
-                          <li key={f.name}>{f.name}</li>
-                        ))}
-                      </ul>
-                    )}
+                    {DEFAULT_DOCUMENTS.map((d) => (
+                      <div
+                        key={d.id}
+                        className="rounded-lg border border-border bg-white/40 p-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-[13px] font-medium">{d.label}</p>
+                          <FilePickButton
+                            multiple
+                            accept=".pdf,.doc,.docx,image/*"
+                            label="Escolher ficheiros"
+                            onPick={(files) => addDocFiles(d.id, files)}
+                          />
+                        </div>
+                        <UploadList
+                          items={docFiles[d.id] ?? []}
+                          onDescription={(i, desc) => setDocFileDesc(d.id, i, desc)}
+                          onRemove={(i) => removeDocFile(d.id, i)}
+                        />
+                      </div>
+                    ))}
                   </div>
 
                   <div className="sm:col-span-2">
