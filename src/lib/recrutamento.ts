@@ -179,6 +179,28 @@ export interface Applicant {
   attachments?: string[];
   /** Resultado da triagem por critério. */
   triagem?: TriagemCriterios;
+  /** Secção A — identificação. */
+  gender?: string;
+  nationality?: string;
+  idNumber?: string;
+  address?: string;
+  postalCode?: string;
+  locality?: string;
+  municipality?: string;
+  mobile?: string;
+  /** Secção B — requisitos de admissão. */
+  postgradInfo?: string;
+  employmentSituation?: string;
+  lastEmployer?: string;
+  lastActivity?: string;
+  performanceEvaluation?: string;
+  otherExperience?: string;
+  alternativeQualification?: string;
+  /** Secção C — métodos de seleção pretendidos. */
+  selectionMethodsWanted?: string[];
+  /** Secção E — declarações condicionais. */
+  mobDeclaration?: boolean;
+  grantDeclaration?: boolean;
 }
 
 /** Critérios booleanos verificados na triagem da candidatura. */
