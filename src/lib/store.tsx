@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -7,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { StoreContext } from "./store-context";
 import {
   DEFAULT_DOCUMENTS,
   SEED_APPLICANTS,
@@ -48,7 +48,7 @@ interface Data {
   notificacoes: Notificacao[];
 }
 
-interface StoreValue extends Data {
+export interface StoreValue extends Data {
   hydrated: boolean;
   currentUser: Pessoa | null;
   addVaga: (vaga: Omit<Vaga, "id" | "stages" | "state" | "publishedAt">) => Vaga;
@@ -94,8 +94,6 @@ interface StoreValue extends Data {
   addNotificacoes: (novas: Omit<Notificacao, "id" | "sentAt">[]) => void;
   reset: () => void;
 }
-
-const StoreContext = createContext<StoreValue | null>(null);
 
 function seed(): Data {
   return {
