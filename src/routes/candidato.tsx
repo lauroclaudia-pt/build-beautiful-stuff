@@ -226,33 +226,77 @@ function PortalCandidato() {
                       Documentos
                     </p>
                     <ul className="mt-2 space-y-2">
-                      {docs.map((d) => (
-                        <li
-                          key={d.id}
-                          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-white/50 px-3 py-2"
-                        >
-                          <span className="text-[13px]">{d.label}</span>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`rounded px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] ${docTone[d.state]}`}
-                            >
-                              {DOC_STATE_LABEL[d.state]}
-                            </span>
-                            {(d.state === "PENDING" || d.state === "MISSING") && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setDocumentState(a.id, d.id, "RECEIVED");
-                                  toast.success(`${d.label} entregue.`);
-                                }}
-                                className="rounded-md border border-border px-2 py-1 font-mono text-[10px] uppercase tracking-[0.1em] hover:bg-foreground/5"
+                      {docs.map((d) => {
+                        const descKey = `${a.id}:${d.id}`;
+                        return (
+                          <li
+                            key={d.id}
+                            className="rounded-lg border border-border bg-white/50 px-3 py-2"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <span className="text-[13px]">{d.label}</span>
+                              <span
+                                className={`rounded px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] ${docTone[d.state]}`}
                               >
-                                Entregar
-                              </button>
+                                {DOC_STATE_LABEL[d.state]}
+                              </span>
+                            </div>
+                            {(d.uploads ?? []).length > 0 && (
+                              <ul className="mt-2 space-y-1">
+                                {(d.uploads ?? []).map((u, i) => (
+                                  <li
+                                    key={`${u.name}-${i}`}
+                                    className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground"
+                                  >
+                                    <FileText className="size-3 shrink-0 text-primary" />
+                                    <span className="truncate">{u.name}</span>
+                                    {u.description && (
+                                      <span className="truncate text-[10px] uppercase tracking-[0.08em]">
+                                        · {u.description}
+                                      </span>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
                             )}
-                          </div>
-                        </li>
-                      ))}
+                            {(d.state === "PENDING" || d.state === "MISSING") && (
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <input
+                                  value={docDesc[descKey] ?? ""}
+                                  maxLength={120}
+                                  placeholder="Descrição do documento (opcional)"
+                                  onChange={(e) =>
+                                    setDocDesc((prev) => ({
+                                      ...prev,
+                                      [descKey]: e.target.value,
+                                    }))
+                                  }
+                                  className="input-ipma min-w-40 flex-1 !py-1 text-[12px]"
+                                />
+                                <FilePickButton
+                                  small
+                                  multiple
+                                  accept=".pdf,.doc,.docx,image/*"
+                                  label="Escolher ficheiros"
+                                  onPick={(files) => {
+                                    const desc = (docDesc[descKey] ?? "").trim();
+                                    addDocumentUploads(
+                                      a.id,
+                                      d.id,
+                                      files.map((f) => ({
+                                        name: f.name,
+                                        description: desc || undefined,
+                                      })),
+                                    );
+                                    setDocDesc((prev) => ({ ...prev, [descKey]: "" }));
+                                    toast.success(`${d.label} entregue.`);
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
 
