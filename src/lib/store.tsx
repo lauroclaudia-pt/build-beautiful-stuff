@@ -17,6 +17,7 @@ import {
   type ApplicantState,
   type CandidateDocument,
   type DocState,
+  type DocumentUpload,
   type Vaga,
   type TriagemCriterios,
   type VagaRegistro,
@@ -56,6 +57,11 @@ interface StoreValue extends Data {
   setTriagem: (id: string, triagem: TriagemCriterios) => void;
   addAppeal: (id: string, text: string) => void;
   setDocumentState: (applicantId: string, docId: string, state: DocState) => void;
+  addDocumentUploads: (
+    applicantId: string,
+    docId: string,
+    uploads: DocumentUpload[],
+  ) => void;
   login: (email: string, password: string) => { ok: boolean; message: string; pessoa?: Pessoa };
   /** Define a sessão ativa para uma pessoa existente (ex.: login no servidor de recrutamento). */
   setSession: (pessoaId: string) => void;
@@ -319,6 +325,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const addDocumentUploads: StoreValue["addDocumentUploads"] = useCallback(
+    (applicantId, docId, uploads) => {
+      if (uploads.length === 0) return;
+      setData((d) => ({
+        ...d,
+        applicants: d.applicants.map((a) =>
+          a.id === applicantId
+            ? {
+                ...a,
+                documents: (a.documents ?? DEFAULT_DOCUMENTS).map((doc) =>
+                  doc.id === docId
+                    ? {
+                        ...doc,
+                        state: "RECEIVED" as DocState,
+                        uploads: [...(doc.uploads ?? []), ...uploads],
+                      }
+                    : doc,
+                ),
+              }
+            : a,
+        ),
+      }));
+    },
+    [],
+  );
+
   const login: StoreValue["login"] = useCallback(
     (email, password) => {
       const pessoa = data.pessoas.find(
@@ -525,6 +557,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTriagem,
       addAppeal,
       setDocumentState,
+      addDocumentUploads,
       login,
       logout,
       setSession,
@@ -558,6 +591,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTriagem,
       addAppeal,
       setDocumentState,
+      addDocumentUploads,
       login,
       logout,
       setSession,

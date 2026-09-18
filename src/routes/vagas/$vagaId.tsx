@@ -13,6 +13,8 @@ import {
 } from "@/lib/recrutamento";
 import { applyJava, javaBase } from "@/lib/java-api";
 import { enviarConfirmacaoCandidatura } from "@/lib/emails.functions";
+import { FilePickButton, UploadList, type UploadItem } from "@/components/file-upload";
+import { DEFAULT_DOCUMENTS } from "@/lib/recrutamento";
 
 export const Route = createFileRoute("/vagas/$vagaId")({
   head: () => ({
@@ -58,8 +60,27 @@ function VagaDetalhe() {
   const situacoes = opcoesDe("SITUACAO_PROFISSIONAL");
   const vaga = vagas.find((v) => v.id === vagaId);
   const [form, setForm] = useState(emptyForm);
-  const [anexos, setAnexos] = useState<File[]>([]);
+  const [docFiles, setDocFiles] = useState<Record<string, UploadItem[]>>({});
   const [declaracaoIncap, setDeclaracaoIncap] = useState<File | null>(null);
+
+  function addDocFiles(docId: string, files: File[]) {
+    setDocFiles((prev) => ({
+      ...prev,
+      [docId]: [...(prev[docId] ?? []), ...files.map((file) => ({ file, description: "" }))],
+    }));
+  }
+  function setDocFileDesc(docId: string, index: number, description: string) {
+    setDocFiles((prev) => ({
+      ...prev,
+      [docId]: (prev[docId] ?? []).map((it, i) => (i === index ? { ...it, description } : it)),
+    }));
+  }
+  function removeDocFile(docId: string, index: number) {
+    setDocFiles((prev) => ({
+      ...prev,
+      [docId]: (prev[docId] ?? []).filter((_, i) => i !== index),
+    }));
+  }
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState<string | null>(null);
 
@@ -136,9 +157,12 @@ function VagaDetalhe() {
         fd.append("specialNeedsDesc", form.specialConditions.trim());
       fd.append("publicEmployment", String(form.rjep));
       fd.append("declarationTrue", "true");
-      if (anexos[0]) fd.append("cv", anexos[0], anexos[0].name);
-      if (anexos[1]) fd.append("attachment_habilit", anexos[1], anexos[1].name);
-      if (anexos[2]) fd.append("attachment_decservico", anexos[2], anexos[2].name);
+      const cv = docFiles["cv"]?.[0]?.file;
+      const habilit = docFiles["habilit"]?.[0]?.file;
+      const decservico = docFiles["decservico"]?.[0]?.file;
+      if (cv) fd.append("cv", cv, cv.name);
+      if (habilit) fd.append("attachment_habilit", habilit, habilit.name);
+      if (decservico) fd.append("attachment_decservico", decservico, decservico.name);
       if (declaracaoIncap) fd.append("attachment_disability", declaracaoIncap, declaracaoIncap.name);
       const java = await applyJava(javaBase(site.apiUrl), vaga!.javaId, fd);
       if (!java.ok) {
@@ -162,11 +186,27 @@ function VagaDetalhe() {
       rjep: form.rjep,
       specialConditions: form.specialConditions.trim(),
       truthDeclaration: true,
-      attachments: [...anexos.map((f) => f.name), ...(declaracaoIncap ? [declaracaoIncap.name] : [])],
+      attachments: [
+        ...Object.values(docFiles).flat().map((u) =>
+          u.description.trim() ? `${u.file.name} — ${u.description.trim()}` : u.file.name,
+        ),
+        ...(declaracaoIncap ? [declaracaoIncap.name] : []),
+      ],
+      documents: DEFAULT_DOCUMENTS.map((d) => {
+        const ups = docFiles[d.id] ?? [];
+        return {
+          ...d,
+          state: ups.length > 0 ? ("RECEIVED" as const) : d.state,
+          uploads: ups.map((u) => ({
+            name: u.file.name,
+            description: u.description.trim() || undefined,
+          })),
+        };
+      }),
     });
     setDone(a.id);
     setForm(emptyForm);
-    setAnexos([]);
+    setDocFiles({});
     setDeclaracaoIncap(null);
     toast.success("Candidatura submetida e registada.");
     void enviarConfirmacaoCandidatura({
@@ -379,17 +419,18 @@ function VagaDetalhe() {
                         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                           Declaração de incapacidade (obrigatória)
                         </p>
-                        <input
-                          type="file"
-                          accept=".pdf,image/*"
-                          onChange={(e) => setDeclaracaoIncap(e.target.files?.[0] ?? null)}
-                          className="mt-2 text-[12px]"
-                        />
-                        {declaracaoIncap && (
-                          <p className="mt-1 font-mono text-[11px] text-success">
-                            {declaracaoIncap.name}
-                          </p>
-                        )}
+                        <div className="mt-2 flex flex-wrap items-center gap-3">
+                          <FilePickButton
+                            accept=".pdf,image/*"
+                            label="Escolher ficheiro"
+                            onPick={(files) => setDeclaracaoIncap(files[0] ?? null)}
+                          />
+                          {declaracaoIncap && (
+                            <span className="font-mono text-[11px] text-success">
+                              {declaracaoIncap.name}
+                            </span>
+                          )}
+                        </div>
                         {errors["deficiencia"] && (
                           <p className="mt-1 text-[11px] text-destructive">
                             {errors["deficiencia"]}
@@ -411,24 +452,32 @@ function VagaDetalhe() {
                     </label>
                   </div>
 
-                  <div className="sm:col-span-2 rounded-lg border border-border bg-white/40 p-3">
+                  <div className="space-y-3 sm:col-span-2">
                     <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                      Documentos a anexar (CV, certificado de habilitações, identificação)
+                      Documentos a anexar — pode juntar vários ficheiros por documento e uma
+                      descrição a cada um
                     </p>
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,image/*"
-                      onChange={(e) => setAnexos(Array.from(e.target.files ?? []))}
-                      className="mt-2 text-[12px]"
-                    />
-                    {anexos.length > 0 && (
-                      <ul className="mt-2 list-inside list-disc font-mono text-[11px] text-muted-foreground">
-                        {anexos.map((f) => (
-                          <li key={f.name}>{f.name}</li>
-                        ))}
-                      </ul>
-                    )}
+                    {DEFAULT_DOCUMENTS.map((d) => (
+                      <div
+                        key={d.id}
+                        className="rounded-lg border border-border bg-white/40 p-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-[13px] font-medium">{d.label}</p>
+                          <FilePickButton
+                            multiple
+                            accept=".pdf,.doc,.docx,image/*"
+                            label="Escolher ficheiros"
+                            onPick={(files) => addDocFiles(d.id, files)}
+                          />
+                        </div>
+                        <UploadList
+                          items={docFiles[d.id] ?? []}
+                          onDescription={(i, desc) => setDocFileDesc(d.id, i, desc)}
+                          onRemove={(i) => removeDocFile(d.id, i)}
+                        />
+                      </div>
+                    ))}
                   </div>
 
                   <div className="sm:col-span-2">
