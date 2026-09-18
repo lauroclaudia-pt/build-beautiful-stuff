@@ -155,7 +155,7 @@ function Backoffice() {
                     <td className="px-4 py-3 font-mono text-[11px]">{v.ref}</td>
                     <td className="px-4 py-3">
                       <Link
-                        to="/backoffice/$vagaId"
+                        to={podeGerir(v) ? "/backoffice/$vagaId" : "/vagas/$vagaId"}
                         params={{ vagaId: v.id }}
                         className="font-medium hover:text-primary"
                       >
