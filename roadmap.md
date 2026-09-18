@@ -50,3 +50,9 @@
 - [x] Gestão de dados: botões de ação com ícone de lápis (editar) e caixote (remover)
 - [x] Método de seleção no formulário de candidatura: escolha única (radio)
 - [x] Grelhas de avaliação e fórmulas (cap. 8 e 9): critérios com pesos (habilitação, formação, experiência, desempenho), tabela de conversão da avaliação de desempenho, grelha de entrevista com escala 4–20, nota final ponderada por combinação de métodos
+
+## Dashboard (2026-09-18)
+- [x] /backoffice/dashboard — KPIs, candidaturas por mês, estado das candidaturas, procedimentos por estado/unidade/tipo, fase atual, requer atenção (prazos ≤ 7 dias e candidaturas por analisar), classificação média por método, documentos e notificações recentes
+- [x] Gestor de RH vê por omissão apenas os seus procedimentos (alternável para «Todos»); Administrador e Gestão veem tudo
+- [x] Ligação no menu («Dashboard») e cartão em Administração
+- [x] Dashboard: filtros por período (30 dias / 90 dias / 12 meses) e por procedimento; exportação para CSV (separador «;», UTF-8 com BOM) e PDF (impressão A4 do browser)

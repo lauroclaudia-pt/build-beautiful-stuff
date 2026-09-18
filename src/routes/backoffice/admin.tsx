@@ -64,6 +64,12 @@ function Admin() {
 
         <div className="mt-8 grid animate-rise gap-4 [animation-delay:120ms] md:grid-cols-2 xl:grid-cols-4">
           <Cartao
+            to="/backoffice/dashboard"
+            titulo="Dashboard"
+            desc="Indicadores dos procedimentos e das candidaturas: evolução mensal, estados, prazos a terminar, fases em curso e classificações médias."
+            accao="Ver dashboard"
+          />
+          <Cartao
             to="/backoffice/pessoas"
             titulo="Pessoas e responsabilidades"
             desc="Criar pessoas, atribuir logins e gerir responsabilidades (Gestor de RH, Gestão, Administrador, Candidato, Júri) com datas de início, fim e estado."
@@ -135,6 +141,7 @@ function Cartao({
   accao,
 }: {
   to:
+    | "/backoffice/dashboard"
     | "/backoffice/pessoas"
     | "/backoffice/site"
     | "/backoffice/dados"

@@ -18,6 +18,7 @@ import { Route as BackofficeVagaIdRouteImport } from './routes/backoffice/$vagaI
 import { Route as BackofficeAdminRouteImport } from './routes/backoffice/admin'
 import { Route as BackofficeContactosRouteImport } from './routes/backoffice/contactos'
 import { Route as BackofficeDadosRouteImport } from './routes/backoffice/dados'
+import { Route as BackofficeDashboardRouteImport } from './routes/backoffice/dashboard'
 import { Route as BackofficeDocumentosRouteImport } from './routes/backoffice/documentos'
 import { Route as BackofficeEmailRouteImport } from './routes/backoffice/email'
 import { Route as BackofficeFaqRouteImport } from './routes/backoffice/faq'
@@ -71,6 +72,11 @@ const BackofficeContactosRoute = BackofficeContactosRouteImport.update({
 const BackofficeDadosRoute = BackofficeDadosRouteImport.update({
   id: '/backoffice/dados',
   path: '/backoffice/dados',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BackofficeDashboardRoute = BackofficeDashboardRouteImport.update({
+  id: '/backoffice/dashboard',
+  path: '/backoffice/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BackofficeDocumentosRoute = BackofficeDocumentosRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/contactos': typeof BackofficeContactosRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
+  '/backoffice/dashboard': typeof BackofficeDashboardRoute
   '/backoffice/documentos': typeof BackofficeDocumentosRoute
   '/backoffice/email': typeof BackofficeEmailRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/contactos': typeof BackofficeContactosRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
+  '/backoffice/dashboard': typeof BackofficeDashboardRoute
   '/backoffice/documentos': typeof BackofficeDocumentosRoute
   '/backoffice/email': typeof BackofficeEmailRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/contactos': typeof BackofficeContactosRoute
   '/backoffice/dados': typeof BackofficeDadosRoute
+  '/backoffice/dashboard': typeof BackofficeDashboardRoute
   '/backoffice/documentos': typeof BackofficeDocumentosRoute
   '/backoffice/email': typeof BackofficeEmailRoute
   '/backoffice/faq': typeof BackofficeFaqRoute
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/backoffice/admin'
     | '/backoffice/contactos'
     | '/backoffice/dados'
+    | '/backoffice/dashboard'
     | '/backoffice/documentos'
     | '/backoffice/email'
     | '/backoffice/faq'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/backoffice/admin'
     | '/backoffice/contactos'
     | '/backoffice/dados'
+    | '/backoffice/dashboard'
     | '/backoffice/documentos'
     | '/backoffice/email'
     | '/backoffice/faq'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/backoffice/admin'
     | '/backoffice/contactos'
     | '/backoffice/dados'
+    | '/backoffice/dashboard'
     | '/backoffice/documentos'
     | '/backoffice/email'
     | '/backoffice/faq'
@@ -253,6 +265,7 @@ export interface RootRouteChildren {
   BackofficeAdminRoute: typeof BackofficeAdminRoute
   BackofficeContactosRoute: typeof BackofficeContactosRoute
   BackofficeDadosRoute: typeof BackofficeDadosRoute
+  BackofficeDashboardRoute: typeof BackofficeDashboardRoute
   BackofficeDocumentosRoute: typeof BackofficeDocumentosRoute
   BackofficeEmailRoute: typeof BackofficeEmailRoute
   BackofficeFaqRoute: typeof BackofficeFaqRoute
@@ -330,6 +343,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BackofficeDadosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/backoffice/dashboard': {
+      id: '/backoffice/dashboard'
+      path: '/backoffice/dashboard'
+      fullPath: '/backoffice/dashboard'
+      preLoaderRoute: typeof BackofficeDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/backoffice/documentos': {
       id: '/backoffice/documentos'
       path: '/backoffice/documentos'
@@ -405,6 +425,7 @@ const rootRouteChildren: RootRouteChildren = {
   BackofficeAdminRoute: BackofficeAdminRoute,
   BackofficeContactosRoute: BackofficeContactosRoute,
   BackofficeDadosRoute: BackofficeDadosRoute,
+  BackofficeDashboardRoute: BackofficeDashboardRoute,
   BackofficeDocumentosRoute: BackofficeDocumentosRoute,
   BackofficeEmailRoute: BackofficeEmailRoute,
   BackofficeFaqRoute: BackofficeFaqRoute,
