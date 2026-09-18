@@ -467,7 +467,16 @@ function VagaDetalhe() {
                         className="rounded-lg border border-border bg-white/40 p-3"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <p className="text-[13px] font-medium">{d.label}</p>
+                          <p className="text-[13px] font-medium">
+                            {d.label}
+                            {d.optional ? (
+                              <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                                (facultativo)
+                              </span>
+                            ) : (
+                              <Req />
+                            )}
+                          </p>
                           <FilePickButton
                             multiple
                             accept=".pdf,.doc,.docx,image/*"
@@ -480,6 +489,11 @@ function VagaDetalhe() {
                           onDescription={(i, desc) => setDocFileDesc(d.id, i, desc)}
                           onRemove={(i) => removeDocFile(d.id, i)}
                         />
+                        {errors[`doc:${d.id}`] && (
+                          <p className="mt-1 text-[11px] text-destructive">
+                            {errors[`doc:${d.id}`]}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
