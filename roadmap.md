@@ -49,4 +49,4 @@
 - [x] Publicar o código atualizado no GitHub (branch lovable/ipma-recrutamento)
 - [x] Gestão de dados: botões de ação com ícone de lápis (editar) e caixote (remover)
 - [x] Método de seleção no formulário de candidatura: escolha única (radio)
-- [ ] Grelhas de avaliação e fórmulas (cap. 8 e 9): critérios com pesos (habilitação, formação, experiência, desempenho), tabela de conversão da avaliação de desempenho, grelha de entrevista com escala 4–20, nota final ponderada por combinação de métodos
+- [x] Grelhas de avaliação e fórmulas (cap. 8 e 9): critérios com pesos (habilitação, formação, experiência, desempenho), tabela de conversão da avaliação de desempenho, grelha de entrevista com escala 4–20, nota final ponderada por combinação de métodos
