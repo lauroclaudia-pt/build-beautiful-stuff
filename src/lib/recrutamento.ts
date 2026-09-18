@@ -165,6 +165,12 @@ export interface Applicant {
   pcGrade?: number | null;
   acGrade?: number | null;
   eacGrade?: number | null;
+  /** Classificações por critério da grelha de Avaliação Curricular (0–20). */
+  acScores?: Record<string, number | null>;
+  /** Menção qualitativa da avaliação de desempenho (convertida pela tabela). */
+  acDesempenho?: string | null;
+  /** Classificações por critério da grelha de Entrevista (escala 4–20). */
+  eacScores?: Record<string, number | null>;
   createdAt: string;
   appeal?: { text: string; createdAt: string; channel?: AppealChannel } | null;
   documents?: CandidateDocument[];
