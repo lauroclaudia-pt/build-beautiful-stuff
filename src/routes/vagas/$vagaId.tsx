@@ -128,6 +128,10 @@ function VagaDetalhe() {
     else if (ageFrom(form.birthDate) < 18) err["birthDate"] = "É necessário ter 18 anos ou mais.";
     if (form.motivation.trim().length < 20) err["motivation"] = "Escreva pelo menos 20 caracteres.";
     if (form.motivation.length > 1500) err["motivation"] = "Máximo de 1500 caracteres.";
+    for (const d of DEFAULT_DOCUMENTS) {
+      if (!d.optional && (docFiles[d.id] ?? []).length === 0)
+        err[`doc:${d.id}`] = `Anexe pelo menos um ficheiro: ${d.label}.`;
+    }
     if (form.deficiencia && !declaracaoIncap)
       err["deficiencia"] = "Anexe a declaração de incapacidade.";
     if (!form.truthDeclaration)
