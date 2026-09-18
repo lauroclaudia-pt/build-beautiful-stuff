@@ -135,13 +135,16 @@ export interface CandidateDocument {
   note?: string;
   /** Ficheiros entregues para este documento (pode ser mais do que um). */
   uploads?: DocumentUpload[];
+  /** Documento facultativo — não bloqueia a submissão da candidatura. */
+  optional?: boolean;
 }
 
 export const DEFAULT_DOCUMENTS: CandidateDocument[] = [
-  { id: "cv", label: "Curriculum vitae", state: "RECEIVED" },
+  { id: "cv", label: "Curriculum vitae", state: "PENDING" },
   { id: "habilit", label: "Certificado de habilitações", state: "PENDING" },
-  { id: "bi", label: "Documento de identificação", state: "RECEIVED" },
+  { id: "bi", label: "Documento de identificação", state: "PENDING" },
   { id: "decservico", label: "Declaração da entidade empregadora", state: "PENDING" },
+  { id: "outros", label: "Outros documentos", state: "RECEIVED", optional: true },
 ];
 
 export interface Applicant {

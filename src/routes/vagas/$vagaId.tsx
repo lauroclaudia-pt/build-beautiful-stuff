@@ -15,6 +15,7 @@ import { applyJava, javaBase } from "@/lib/java-api";
 import { enviarConfirmacaoCandidatura } from "@/lib/emails.functions";
 import { FilePickButton, UploadList, type UploadItem } from "@/components/file-upload";
 import { DEFAULT_DOCUMENTS } from "@/lib/recrutamento";
+import { Req } from "@/components/req";
 
 export const Route = createFileRoute("/vagas/$vagaId")({
   head: () => ({
@@ -68,6 +69,7 @@ function VagaDetalhe() {
       ...prev,
       [docId]: [...(prev[docId] ?? []), ...files.map((file) => ({ file, description: "" }))],
     }));
+    setErrors((e) => ({ ...e, [`doc:${docId}`]: "" }));
   }
   function setDocFileDesc(docId: string, index: number, description: string) {
     setDocFiles((prev) => ({
@@ -128,6 +130,10 @@ function VagaDetalhe() {
     else if (ageFrom(form.birthDate) < 18) err["birthDate"] = "É necessário ter 18 anos ou mais.";
     if (form.motivation.trim().length < 20) err["motivation"] = "Escreva pelo menos 20 caracteres.";
     if (form.motivation.length > 1500) err["motivation"] = "Máximo de 1500 caracteres.";
+    for (const d of DEFAULT_DOCUMENTS) {
+      if (!d.optional && (docFiles[d.id] ?? []).length === 0)
+        err[`doc:${d.id}`] = `Anexe pelo menos um ficheiro: ${d.label}.`;
+    }
     if (form.deficiencia && !declaracaoIncap)
       err["deficiencia"] = "Anexe a declaração de incapacidade.";
     if (!form.truthDeclaration)
@@ -463,7 +469,16 @@ function VagaDetalhe() {
                         className="rounded-lg border border-border bg-white/40 p-3"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <p className="text-[13px] font-medium">{d.label}</p>
+                          <p className="text-[13px] font-medium">
+                            {d.label}
+                            {d.optional ? (
+                              <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                                (facultativo)
+                              </span>
+                            ) : (
+                              <Req />
+                            )}
+                          </p>
                           <FilePickButton
                             multiple
                             accept=".pdf,.doc,.docx,image/*"
@@ -476,6 +491,11 @@ function VagaDetalhe() {
                           onDescription={(i, desc) => setDocFileDesc(d.id, i, desc)}
                           onRemove={(i) => removeDocFile(d.id, i)}
                         />
+                        {errors[`doc:${d.id}`] && (
+                          <p className="mt-1 text-[11px] text-destructive">
+                            {errors[`doc:${d.id}`]}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
