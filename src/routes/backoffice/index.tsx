@@ -40,7 +40,11 @@ export const Route = createFileRoute("/backoffice/")({
 const STATES: JobState[] = ["DRAFT", "PUBLISHED", "RUNNING", "FINISHED", "CANCELLED", "DESERT"];
 
 function Backoffice() {
-  const { vagas, applicants, publishVaga, addVaga } = useStore();
+  const { vagas, applicants, publishVaga, addVaga, currentUser } = useStore();
+  const podeTudo = hasActiveRole(currentUser, "ADMIN", "GESTAO");
+  const ehGestorRh = hasActiveRole(currentUser, "GESTOR_RH");
+  const podeGerir = (v: (typeof vagas)[number]) =>
+    podeTudo || (ehGestorRh && v.hrManagerId === currentUser?.id);
   const [filtro, setFiltro] = useState<JobState | "">("");
   const [q, setQ] = useState("");
   const [novo, setNovo] = useState(false);
