@@ -379,7 +379,6 @@ export const WORKFLOW_TEMPLATES: Record<OfferType, StageCode[]> = {
     "ADMISSION",
     "EVALUATION",
     "INTERVIEW",
-    "APPEAL",
     "MOBILITY",
   ],
   MOBILIDADE_INTERCARREIRAS: [
@@ -388,7 +387,6 @@ export const WORKFLOW_TEMPLATES: Record<OfferType, StageCode[]> = {
     "ADMISSION",
     "EVALUATION",
     "INTERVIEW",
-    "APPEAL",
     "MOBILITY",
   ],
   BOLSA_INVESTIGACAO_CIENTIFICA: [
