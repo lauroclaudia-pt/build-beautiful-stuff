@@ -591,6 +591,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTriagem,
       addAppeal,
       setDocumentState,
+      addDocumentUploads,
       login,
       logout,
       setSession,
