@@ -397,6 +397,24 @@ function VagaDetalhe() {
 
             <section id="candidatura" className="glass animate-rise rounded-xl p-6 [animation-delay:120ms]">
               <h2 className="text-xl font-semibold tracking-tight">Formulário de candidatura</h2>
+              <dl className="mt-4 grid gap-3 rounded-lg border border-border bg-white/40 p-4 sm:grid-cols-2">
+                {[
+                  ["Procedimento concursal", `${vaga.title} · ${vaga.ref}`],
+                  ["Data de publicação", vaga.publishedAt ? formatDate(vaga.publishedAt) : "—"],
+                  ["Carreira", vaga.career],
+                  ["Categoria", vaga.educationLevel],
+                  ["Função", vaga.description],
+                  ["Data-limite de candidatura", formatDate(vaga.deadline)],
+                  ["N.º de vagas", String(vaga.positions)],
+                ].map(([k, v]) => (
+                  <div key={k}>
+                    <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      {k}
+                    </dt>
+                    <dd className="text-[13px]">{v}</dd>
+                  </div>
+                ))}
+              </dl>
               {done ? (
                 <div className="mt-4 rounded-lg border border-success/40 bg-success/10 p-5">
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-success">
