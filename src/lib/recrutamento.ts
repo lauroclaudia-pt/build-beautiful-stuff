@@ -30,7 +30,8 @@ export type StageCode =
   | "APPEAL"
   | "CONTRACT"
   | "MOBILITY"
-  | "APPOINTMENT";
+  | "APPOINTMENT"
+  | "PROBATION";
 
 export type StageState = "draft" | "active" | "completed" | "skipped" | "cancelled";
 
