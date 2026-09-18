@@ -344,6 +344,7 @@ export const WORKFLOW_TEMPLATES: Record<OfferType, StageCode[]> = {
     "INTERVIEW",
     "APPEAL",
     "CONTRACT",
+    "PROBATION",
   ],
   PROCEDIMENTO_CONCURSAL_RESERVA: [
     "OPENING",
@@ -354,6 +355,7 @@ export const WORKFLOW_TEMPLATES: Record<OfferType, StageCode[]> = {
     "INTERVIEW",
     "APPEAL",
     "CONTRACT",
+    "PROBATION",
   ],
   SELECAO_INTERNACIONAL: [
     "OPENING",
@@ -364,6 +366,7 @@ export const WORKFLOW_TEMPLATES: Record<OfferType, StageCode[]> = {
     "INTERVIEW",
     "APPEAL",
     "CONTRACT",
+    "PROBATION",
   ],
   CARGOS_DIRECAO: [
     "OPENING",
