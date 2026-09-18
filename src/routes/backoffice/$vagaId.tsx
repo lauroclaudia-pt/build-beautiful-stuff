@@ -160,6 +160,32 @@ function GestaoVaga() {
     );
   }
 
+  if (!podeGerirVaga) {
+    return (
+      <PageShell>
+        <main className="mx-auto max-w-[900px] px-6 py-20 text-center">
+          <h1 className="text-2xl font-semibold">Sem permissão para gerir este procedimento</h1>
+          <p className="mt-3 text-muted-foreground">
+            Só o Gestor de RH responsável por este procedimento o pode gerir. Pode consultá-lo na
+            página pública.
+          </p>
+          <div className="mt-6 flex justify-center gap-3">
+            <Link
+              to="/vagas/$vagaId"
+              params={{ vagaId: vaga.id }}
+              className="rounded-md bg-primary px-4 py-2.5 text-[13px] font-medium text-primary-foreground"
+            >
+              Consultar procedimento
+            </Link>
+            <Link to="/backoffice" className="rounded-md border border-border px-4 py-2.5 text-[13px]">
+              Voltar ao painel
+            </Link>
+          </div>
+        </main>
+      </PageShell>
+    );
+  }
+
   const todos = applicants.filter((a) => a.vagaId === vaga.id);
   const etapaAtiva = vaga.stages.find((s) => s.state === "active");
 
