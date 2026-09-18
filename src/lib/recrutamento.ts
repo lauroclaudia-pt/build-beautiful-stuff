@@ -282,6 +282,7 @@ export const STAGE_LABEL: Record<StageCode, string> = {
   CONTRACT: "Contratação",
   MOBILITY: "Acordo de mobilidade",
   APPOINTMENT: "Nomeação / designação",
+  PROBATION: "Período experimental",
 };
 
 export const DEPARTMENTS = [
