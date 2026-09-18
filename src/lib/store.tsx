@@ -14,6 +14,9 @@ import {
   newStagesFor,
   offerTypeRules,
   STAGE_LABEL,
+  calcAcGrade,
+  calcEacGrade,
+  methodWeights,
   type Applicant,
   type ApplicantState,
   type CandidateDocument,
@@ -54,7 +57,12 @@ interface StoreValue extends Data {
   advanceStage: (id: string) => void;
   addApplicant: (a: Omit<Applicant, "id" | "state" | "createdAt">) => Applicant;
   setApplicantState: (id: string, state: ApplicantState, reason?: string) => void;
-  setGrades: (id: string, grades: Pick<Applicant, "pcGrade" | "acGrade" | "eacGrade">) => void;
+  setGrades: (
+    id: string,
+    grades: Partial<
+      Pick<Applicant, "pcGrade" | "acGrade" | "eacGrade" | "acScores" | "acDesempenho" | "eacScores">
+    >,
+  ) => void;
   setTriagem: (id: string, triagem: TriagemCriterios) => void;
   addAppeal: (id: string, text: string) => void;
   setDocumentState: (applicantId: string, docId: string, state: DocState) => void;
@@ -643,10 +651,14 @@ export function useStore() {
   return ctx;
 }
 
+/** Classificação final ponderada pela combinação de métodos de seleção (cap. 9). */
 export function finalGrade(a: Applicant): number | null {
-  const parts = [a.pcGrade, a.acGrade, a.eacGrade].filter(
-    (n): n is number => typeof n === "number",
-  );
-  if (!parts.length) return null;
-  return Math.round((parts.reduce((s, n) => s + n, 0) / parts.length) * 100) / 100;
+  const pc = typeof a.pcGrade === "number" ? a.pcGrade : null;
+  const ac = typeof a.acGrade === "number" ? a.acGrade : calcAcGrade(a.acScores, a.acDesempenho);
+  const eac = typeof a.eacGrade === "number" ? a.eacGrade : calcEacGrade(a.eacScores);
+  const has = { pc: pc != null, ac: ac != null, eac: eac != null };
+  if (!has.pc && !has.ac && !has.eac) return null;
+  const w = methodWeights(has);
+  const total = (pc ?? 0) * w.pc + (ac ?? 0) * w.ac + (eac ?? 0) * w.eac;
+  return Math.round(total * 100) / 100;
 }
