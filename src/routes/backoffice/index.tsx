@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageShell, JobStateBadge, RequireRole } from "@/components/shell";
 import { useStore } from "@/lib/store";
+import { hasActiveRole } from "@/lib/pessoas";
+import { Eye } from "lucide-react";
 import {
   JOB_STATE_LABEL,
   OFFER_TYPE_LABEL,
