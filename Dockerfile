@@ -17,6 +17,9 @@ RUN git clone --depth 1 --branch "$JAVA_BRANCH" "$JAVA_REPO" /source
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
 COPY --from=source /source ./
+# A configuração de produção deste pacote substitui os valores locais do
+# repositório Java antes de o JAR ser criado.
+COPY application-prod.properties ./src/main/resources/application-prod.properties
 RUN mvn -B -DskipTests clean package
 
 # ---------- 3) Execução ----------
@@ -25,11 +28,14 @@ WORKDIR /app
 
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=build /build/target/*.jar /app/app.jar
+COPY railway-entrypoint.sh /app/railway-entrypoint.sh
+RUN chmod +x /app/railway-entrypoint.sh && chown app:app /app/railway-entrypoint.sh
 USER app
 
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -Djava.security.egd=file:/dev/./urandom"
+ENV SPRING_PROFILES_ACTIVE=prod
 ENV PORT=8080
 EXPOSE 8080
 
-# O Railway injeta a variável PORT
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${PORT} -jar /app/app.jar"]
+# Valida e converte a ligação PostgreSQL antes de iniciar o Spring Boot.
+ENTRYPOINT ["/app/railway-entrypoint.sh"]

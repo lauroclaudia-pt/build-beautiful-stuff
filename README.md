@@ -22,10 +22,19 @@ Este pacote contém tudo o que é preciso para pôr o servidor de recrutamento
    Abrir a consola de SQL e correr `initdb/01-extensions.sql`.
 3. **Serviço da API**: *Add service → GitHub Repo* e escolher o repositório do
    backend Java (com o `Dockerfile` e o `railway.json` na raiz).
-4. **Variáveis**: em *Variables* do serviço da API, colar o conteúdo de
-   `.env.example` (modo *Raw Editor*) e corrigir os valores de correio e do
-   administrador. As referências `${{Postgres.*}}` ligam-se sozinhas à base de dados.
-5. **Domínio**: *Settings → Networking → Generate Domain*. Guardar o endereço.
+4. **Variáveis**: abrir *Variables* **no serviço Java** e adicionar referências ao
+   serviço PostgreSQL (o Railway não as copia automaticamente):
+   - `PGHOST` = `${{Postgres.PGHOST}}`
+   - `PGPORT` = `${{Postgres.PGPORT}}`
+   - `PGDATABASE` = `${{Postgres.PGDATABASE}}`
+   - `PGUSER` = `${{Postgres.PGUSER}}`
+   - `PGPASSWORD` = `${{Postgres.PGPASSWORD}}`
+
+   Em alternativa, adicionar `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`.
+   O pacote transforma qualquer uma destas opções na ligação exigida pelo Java.
+   Não definir `PGHOST=localhost`: cada serviço Railway corre isoladamente.
+5. **Domínio**: o endereço público atual da API é
+   `https://build-beautiful-stuff-production.up.railway.app`.
 6. **Ligar ao portal**: no portal, Administração → Gestão do site → campo
    «Servidor de recrutamento (endereço da API)», colar esse endereço.
 7. **Confirmar**: `https://<dominio>/actuator/health` deve devolver `{"status":"UP"}`
@@ -34,6 +43,8 @@ Este pacote contém tudo o que é preciso para pôr o servidor de recrutamento
 ## Notas
 
 - As migrações da base de dados correm sozinhas no arranque (Flyway).
+- Se as referências da base de dados estiverem ausentes, o arranque termina com
+  uma mensagem de configuração clara em vez de tentar `localhost:5432`.
 - O volume do PostgreSQL tem de ficar ativo para os dados não se perderem entre instalações.
 - Em `APP_CORS_ALLOWED_ORIGINS` deve constar o endereço publicado do portal.
 - O portal também fala com a API através de um reencaminhamento interno, por isso

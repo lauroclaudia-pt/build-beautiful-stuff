@@ -5,7 +5,6 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "java $JAVA_OPTS -Dserver.port=${PORT} -jar /app/app.jar",
     "healthcheckPath": "/actuator/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
