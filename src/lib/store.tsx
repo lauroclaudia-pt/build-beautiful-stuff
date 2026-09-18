@@ -224,13 +224,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             ),
           };
         }
-        const stages = v.stages.map((s, i) =>
-          i === idx
-            ? { ...s, state: "completed" as const, endedAt: hoje }
-            : i === idx + 1
-              ? { ...s, state: "active" as const, startedAt: hoje }
-              : s,
+        // A recolha de requisitos em falta só é ativada se existir pelo menos
+        // um candidato excluído; caso contrário é saltada.
+        const temExcluidos = d.applicants.some(
+          (a) => a.vagaId === v.id && (a.state === "EXCLUDED" || a.state === "UNDER_APPEAL"),
         );
+        let next = idx + 1;
+        while (
+          next < v.stages.length - 1 &&
+          v.stages[next]!.code === "MISSING_REQUIREMENTS" &&
+          !temExcluidos
+        ) {
+          next += 1;
+        }
+        const stages = v.stages.map((s, i) => {
+          if (i === idx) return { ...s, state: "completed" as const, endedAt: hoje };
+          if (i > idx && i < next) return { ...s, state: "skipped" as const };
+          if (i === next) return { ...s, state: "active" as const, startedAt: hoje };
+          return s;
+        });
         return { ...v, state: "RUNNING" as const, stages };
       }),
     }));
