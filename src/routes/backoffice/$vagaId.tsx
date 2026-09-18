@@ -4,6 +4,7 @@ import { Eye } from "lucide-react";
 import { toast } from "sonner";
 import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/components/shell";
 import { finalGrade, useStore } from "@/lib/store";
+import { hasActiveRole } from "@/lib/pessoas";
 import {
   APPLICANT_STATE_LABEL,
   EMPTY_TRIAGEM,
@@ -89,8 +90,12 @@ function GestaoVaga() {
     addNotificacoes,
     notificacoes,
     site,
+    currentUser,
   } = useStore();
   const vaga = vagas.find((v) => v.id === vagaId);
+  const podeGerirVaga =
+    hasActiveRole(currentUser, "ADMIN", "GESTAO") ||
+    (hasActiveRole(currentUser, "GESTOR_RH") && vaga?.hrManagerId === currentUser?.id);
   const [filtro, setFiltro] = useState<ApplicantState | "">("");
   const [aberto, setAberto] = useState<string | null>(null);
   const [ata, setAta] = useState<string | null>(null);
@@ -150,6 +155,32 @@ function GestaoVaga() {
           <Link to="/backoffice" className="mt-6 inline-block text-primary underline">
             Voltar ao painel
           </Link>
+        </main>
+      </PageShell>
+    );
+  }
+
+  if (!podeGerirVaga) {
+    return (
+      <PageShell>
+        <main className="mx-auto max-w-[900px] px-6 py-20 text-center">
+          <h1 className="text-2xl font-semibold">Sem permissão para gerir este procedimento</h1>
+          <p className="mt-3 text-muted-foreground">
+            Só o Gestor de RH responsável por este procedimento o pode gerir. Pode consultá-lo na
+            página pública.
+          </p>
+          <div className="mt-6 flex justify-center gap-3">
+            <Link
+              to="/vagas/$vagaId"
+              params={{ vagaId: vaga.id }}
+              className="rounded-md bg-primary px-4 py-2.5 text-[13px] font-medium text-primary-foreground"
+            >
+              Consultar procedimento
+            </Link>
+            <Link to="/backoffice" className="rounded-md border border-border px-4 py-2.5 text-[13px]">
+              Voltar ao painel
+            </Link>
+          </div>
         </main>
       </PageShell>
     );

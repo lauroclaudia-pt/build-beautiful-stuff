@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageShell, JobStateBadge, RequireRole } from "@/components/shell";
 import { useStore } from "@/lib/store";
+import { hasActiveRole } from "@/lib/pessoas";
+import { Eye } from "lucide-react";
 import {
   JOB_STATE_LABEL,
   OFFER_TYPE_LABEL,
@@ -40,7 +42,11 @@ export const Route = createFileRoute("/backoffice/")({
 const STATES: JobState[] = ["DRAFT", "PUBLISHED", "RUNNING", "FINISHED", "CANCELLED", "DESERT"];
 
 function Backoffice() {
-  const { vagas, applicants, publishVaga, addVaga } = useStore();
+  const { vagas, applicants, publishVaga, addVaga, currentUser } = useStore();
+  const podeTudo = hasActiveRole(currentUser, "ADMIN", "GESTAO");
+  const ehGestorRh = hasActiveRole(currentUser, "GESTOR_RH");
+  const podeGerir = (v: (typeof vagas)[number]) =>
+    podeTudo || (ehGestorRh && v.hrManagerId === currentUser?.id);
   const [filtro, setFiltro] = useState<JobState | "">("");
   const [q, setQ] = useState("");
   const [novo, setNovo] = useState(false);
@@ -149,7 +155,7 @@ function Backoffice() {
                     <td className="px-4 py-3 font-mono text-[11px]">{v.ref}</td>
                     <td className="px-4 py-3">
                       <Link
-                        to="/backoffice/$vagaId"
+                        to={podeGerir(v) ? "/backoffice/$vagaId" : "/vagas/$vagaId"}
                         params={{ vagaId: v.id }}
                         className="font-medium hover:text-primary"
                       >
@@ -171,7 +177,7 @@ function Backoffice() {
                     <td className="px-4 py-3 font-mono">{n}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
-                        {v.state === "DRAFT" && (
+                        {v.state === "DRAFT" && podeGerir(v) && (
                           <button
                             onClick={() => publicar(v.id)}
                             className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground hover:bg-primary/90"
@@ -180,12 +186,24 @@ function Backoffice() {
                           </button>
                         )}
                         <Link
-                          to="/backoffice/$vagaId"
+                          to="/vagas/$vagaId"
                           params={{ vagaId: v.id }}
-                          className="rounded-md border border-border bg-white/60 px-3 py-1.5 text-[12px] font-medium"
+                          title="Consultar"
+                          aria-label="Consultar"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white/60 px-3 py-1.5 text-[12px] font-medium"
                         >
-                          Gerir
+                          <Eye size={14} />
+                          Consultar
                         </Link>
+                        {podeGerir(v) && (
+                          <Link
+                            to="/backoffice/$vagaId"
+                            params={{ vagaId: v.id }}
+                            className="rounded-md border border-border bg-white/60 px-3 py-1.5 text-[12px] font-medium"
+                          >
+                            Gerir
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -236,7 +254,8 @@ function NovaVaga({
   onCreate: ReturnType<typeof useStore>["addVaga"];
   onDone: () => void;
 }) {
-  const { opcoesDe } = useStore();
+  const { opcoesDe, pessoas, currentUser } = useStore();
+  const gestores = pessoas.filter((p) => hasActiveRole(p, "GESTOR_RH"));
   const departamentos = opcoesDe("DEPARTAMENTO");
   const locais = opcoesDe("LOCAL");
   const carreiras = opcoesDe("CARREIRA");
@@ -261,6 +280,7 @@ function NovaVaga({
     description: "",
     selectionMethods: metodos[1] ? [metodos[1]] : metodos.slice(0, 1),
     juryPresident: "",
+    hrManagerId: gestores.find((g) => g.id === currentUser?.id)?.id ?? gestores[0]?.id ?? "",
     juryMembers: "",
     bepCode: "",
     deadline: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
@@ -397,6 +417,19 @@ function NovaVaga({
       </L>
       <L label="Código BEP/Edital">
         <input value={f.bepCode} onChange={(e) => setF({ ...f, bepCode: e.target.value })} className="input-ipma" />
+      </L>
+      <L label="Gestor de RH responsável">
+        <select
+          value={f.hrManagerId}
+          onChange={(e) => setF({ ...f, hrManagerId: e.target.value })}
+          className="input-ipma"
+        >
+          {gestores.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </select>
       </L>
       <L label="Presidente do júri">
         <input
