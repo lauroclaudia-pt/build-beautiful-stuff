@@ -56,6 +56,11 @@ interface StoreValue extends Data {
   setTriagem: (id: string, triagem: TriagemCriterios) => void;
   addAppeal: (id: string, text: string) => void;
   setDocumentState: (applicantId: string, docId: string, state: DocState) => void;
+  addDocumentUploads: (
+    applicantId: string,
+    docId: string,
+    uploads: DocumentUpload[],
+  ) => void;
   login: (email: string, password: string) => { ok: boolean; message: string; pessoa?: Pessoa };
   /** Define a sessão ativa para uma pessoa existente (ex.: login no servidor de recrutamento). */
   setSession: (pessoaId: string) => void;
@@ -310,6 +315,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 ...a,
                 documents: (a.documents ?? DEFAULT_DOCUMENTS).map((doc) =>
                   doc.id === docId ? { ...doc, state } : doc,
+                ),
+              }
+            : a,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const addDocumentUploads: StoreValue["addDocumentUploads"] = useCallback(
+    (applicantId, docId, uploads) => {
+      if (uploads.length === 0) return;
+      setData((d) => ({
+        ...d,
+        applicants: d.applicants.map((a) =>
+          a.id === applicantId
+            ? {
+                ...a,
+                documents: (a.documents ?? DEFAULT_DOCUMENTS).map((doc) =>
+                  doc.id === docId
+                    ? {
+                        ...doc,
+                        state: "RECEIVED" as DocState,
+                        uploads: [...(doc.uploads ?? []), ...uploads],
+                      }
+                    : doc,
                 ),
               }
             : a,
