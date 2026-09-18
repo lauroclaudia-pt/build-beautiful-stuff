@@ -477,7 +477,7 @@ export function offerTypeRules(offerType: OfferType): OfferTypeRules {
 /** Fases efetivas de um procedimento, aplicando as regras condicionais. */
 export function stageCodesFor(
   offerType: OfferType,
-  opts: { hasAc?: boolean; hasEac?: boolean } = {},
+  opts: { hasAc?: boolean | undefined; hasEac?: boolean | undefined } = {},
 ): StageCode[] {
   const rules = offerTypeRules(offerType);
   const hasAc = rules.ac ?? opts.hasAc ?? rules.defaults.ac;
@@ -498,7 +498,7 @@ export function stageCodesFor(
  */
 export function newStagesFor(
   offerType: OfferType,
-  opts: { hasAc?: boolean; hasEac?: boolean; activeIndex?: number } = {},
+  opts: { hasAc?: boolean | undefined; hasEac?: boolean | undefined; activeIndex?: number } = {},
 ): JobStage[] {
   const { activeIndex = 0 } = opts;
   const codes = stageCodesFor(offerType, opts);
