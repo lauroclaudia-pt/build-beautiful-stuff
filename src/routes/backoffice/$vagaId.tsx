@@ -6,11 +6,18 @@ import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/co
 import { finalGrade, useStore } from "@/lib/store";
 import { hasActiveRole } from "@/lib/pessoas";
 import {
+  AC_CRITERIA,
   APPLICANT_STATE_LABEL,
+  DESEMPENHO_CONVERSION,
+  EAC_CRITERIA,
+  EAC_MAX,
+  EAC_MIN,
   EMPTY_TRIAGEM,
   OFFER_TYPE_LABEL,
   STAGE_LABEL,
   TRIAGEM_CRITERIOS,
+  calcAcGrade,
+  calcEacGrade,
   formatDate,
   type Applicant,
   type ApplicantState,
