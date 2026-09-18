@@ -47,6 +47,12 @@
   --color-atmosfera: var(--atmosfera);
   --color-subsolo: var(--subsolo);
 
+  --shadow-xs: 0 1px 2px color-mix(in oklab, var(--foreground) 5%, transparent);
+  --shadow-sm: 0 1px 3px color-mix(in oklab, var(--foreground) 8%, transparent),
+    0 1px 2px color-mix(in oklab, var(--foreground) 4%, transparent);
+  --shadow-md: 0 8px 24px -12px color-mix(in oklab, var(--primary) 22%, transparent),
+    0 2px 6px color-mix(in oklab, var(--foreground) 5%, transparent);
+
   --ease-stamp: cubic-bezier(0.32, 0.72, 0, 1);
   --animate-rise: rise 0.55s cubic-bezier(0.32, 0.72, 0, 1) both;
   --animate-stamp: stamp 0.6s cubic-bezier(0.32, 0.72, 0, 1) both;
@@ -77,27 +83,27 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
 
-  --background: oklch(0.971 0.007 247.9);
-  --foreground: oklch(0.214 0.039 269.6);
-  --card: oklch(0.995 0.002 247.9);
+  --background: oklch(0.978 0.004 247.9);
+  --foreground: oklch(0.235 0.033 257.5);
+  --card: oklch(1 0 0);
   --card-foreground: oklch(0.214 0.039 269.6);
-  --popover: oklch(0.995 0.002 247.9);
+  --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.214 0.039 269.6);
 
   /* Mar */
-  --primary: oklch(0.382 0.131 271.6);
+  --primary: oklch(0.35 0.095 252.5);
   --primary-foreground: oklch(0.99 0.004 247.9);
 
-  --secondary: oklch(0.945 0.014 247.9);
-  --secondary-foreground: oklch(0.317 0.114 270);
+  --secondary: oklch(0.955 0.009 247.9);
+  --secondary-foreground: oklch(0.35 0.095 252.5);
 
-  --muted: oklch(0.945 0.014 247.9);
-  --muted-foreground: oklch(0.511 0.032 260.3);
+  --muted: oklch(0.958 0.007 247.9);
+  --muted-foreground: oklch(0.49 0.026 257.5);
 
   /* Atmosfera */
-  --accent: oklch(0.764 0.139 224.6);
+  --accent: oklch(0.735 0.135 223.5);
   --accent-foreground: oklch(0.214 0.039 269.6);
   --atmosfera: oklch(0.764 0.139 224.6);
 
@@ -111,45 +117,146 @@
   --success: oklch(0.515 0.11 156.8);
   --neutral: oklch(0.58 0.025 262);
 
-  --border: oklch(0.214 0.039 269.6 / 14%);
-  --input: oklch(0.214 0.039 269.6 / 16%);
-  --ring: oklch(0.382 0.131 271.6);
+  --border: oklch(0.72 0.025 252 / 32%);
+  --input: oklch(0.65 0.03 252 / 42%);
+  --ring: oklch(0.54 0.13 242);
 
-  --surface: oklch(1 0 0 / 60%);
-  --surface-2: oklch(1 0 0 / 82%);
+  --surface: oklch(1 0 0 / 94%);
+  --surface-2: oklch(1 0 0);
 
   /* Cor dos títulos principais — editável no painel de administração. */
   --heading: var(--foreground);
 }
 
 @layer base {
+  html {
+    min-width: 320px;
+    scroll-behavior: smooth;
+    background-color: var(--background);
+  }
+
   * {
     border-color: var(--color-border);
   }
 
   body {
+    min-height: 100vh;
+    margin: 0;
     background-color: var(--color-background);
+    background-image: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--atmosfera) 5%, transparent) 0,
+      transparent 22rem
+    );
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   h1,
   h2,
   h3 {
     color: var(--heading);
+    letter-spacing: 0;
+  }
+
+  a,
+  button,
+  input,
+  select,
+  textarea {
+    transition-duration: 160ms;
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-timing-function: ease-out;
+  }
+
+  button,
+  select,
+  input[type="checkbox"],
+  input[type="radio"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+
+  :where(a, button, input, select, textarea):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--atmosfera) 28%, transparent);
+    color: var(--foreground);
+  }
+
+  select {
+    appearance: none;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+      linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+    background-position:
+      calc(100% - 16px) 50%,
+      calc(100% - 11px) 50%;
+    background-repeat: no-repeat;
+    background-size: 5px 5px, 5px 5px;
+    padding-right: 2.25rem;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--primary);
+  }
+
+  table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  thead {
+    background: var(--muted);
+  }
+
+  th {
+    color: var(--muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  tbody tr {
+    transition: background-color 140ms ease;
+  }
+
+  tbody tr:hover {
+    background: color-mix(in oklab, var(--atmosfera) 5%, transparent);
+  }
+
+  hr {
+    border-color: var(--border);
   }
 }
 
 @utility glass {
   background-color: var(--surface);
-  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-sm);
   border: 1px solid var(--border);
 }
 
 @utility glass-2 {
   background-color: var(--surface-2);
-  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-xs);
   border: 1px solid var(--border);
 }
 
@@ -157,15 +264,53 @@
   width: 100%;
   border-radius: var(--radius-md);
   border: 1px solid var(--input);
-  background-color: oklch(1 0 0 / 70%);
-  padding: 0.55rem 0.75rem;
+  background-color: var(--card);
+  min-height: 2.5rem;
+  padding: 0.575rem 0.75rem;
   font-size: 13px;
   color: var(--foreground);
   outline: none;
 
+  &::placeholder {
+    color: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+  }
+
+  &:hover:not(:disabled) {
+    border-color: color-mix(in oklab, var(--primary) 42%, var(--input));
+  }
+
   &:focus {
     border-color: var(--ring);
-    box-shadow: 0 0 0 3px oklch(0.382 0.131 271.6 / 15%);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 16%, transparent);
+  }
+}
+
+@media (max-width: 767px) {
+  body {
+    font-size: 0.875rem;
+  }
+
+  main {
+    overflow-x: hidden;
+  }
+
+  table {
+    min-width: 680px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
