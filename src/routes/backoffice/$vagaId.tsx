@@ -939,7 +939,105 @@ function CandidatoLinha({
               className="input-ipma"
             />
           </Campo>
-          <Campo label="Avaliação Curricular (0-20)">
+          <div className="sm:col-span-3 rounded-lg border border-border bg-white/60 p-4">
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Grelha de Avaliação Curricular — critérios com pesos
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {AC_CRITERIA.map((c) => (
+                <div key={c.id}>
+                  <label className="flex items-baseline justify-between text-[12px] font-medium">
+                    <span>{c.label}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground">{c.weight}%</span>
+                  </label>
+                  {c.id === "desempenho" ? (
+                    <select
+                      value={a.acDesempenho ?? ""}
+                      onChange={(e) => onGrades(a.id, { acDesempenho: e.target.value || null })}
+                      className="input-ipma mt-1"
+                    >
+                      <option value="">— escolher menção —</option>
+                      {DESEMPENHO_CONVERSION.map((d) => (
+                        <option key={d.label} value={d.label}>
+                          {d.label} ({d.grade} valores)
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="number"
+                      step="0.1"
+                      min={0}
+                      max={20}
+                      value={a.acScores?.[c.id] ?? ""}
+                      onChange={(e) =>
+                        onGrades(a.id, {
+                          acScores: {
+                            ...(a.acScores ?? {}),
+                            [c.id]: e.target.value === "" ? null : Math.max(0, Math.min(20, Number(e.target.value))),
+                          },
+                        })
+                      }
+                      className="input-ipma mt-1"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-[13px]">
+              Nota AC ponderada:{" "}
+              <strong className="text-primary">
+                {(() => {
+                  const n = calcAcGrade(a.acScores, a.acDesempenho);
+                  return n != null ? n.toFixed(2) : "— (preencha todos os critérios)";
+                })()}
+              </strong>
+            </p>
+          </div>
+          <div className="sm:col-span-3 rounded-lg border border-border bg-white/60 p-4">
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Grelha de Entrevista (EAC) — escala {EAC_MIN}–{EAC_MAX}
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {EAC_CRITERIA.map((c) => (
+                <div key={c.id}>
+                  <label className="flex items-baseline justify-between text-[12px] font-medium">
+                    <span>{c.label}</span>
+                    <span className="font-mono text-[10px] text-muted-foreground">{c.weight}%</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min={EAC_MIN}
+                    max={EAC_MAX}
+                    value={a.eacScores?.[c.id] ?? ""}
+                    onChange={(e) =>
+                      onGrades(a.id, {
+                        eacScores: {
+                          ...(a.eacScores ?? {}),
+                          [c.id]:
+                            e.target.value === ""
+                              ? null
+                              : Math.max(EAC_MIN, Math.min(EAC_MAX, Number(e.target.value))),
+                        },
+                      })
+                    }
+                    className="input-ipma mt-1"
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-[13px]">
+              Nota da entrevista ponderada:{" "}
+              <strong className="text-primary">
+                {(() => {
+                  const n = calcEacGrade(a.eacScores);
+                  return n != null ? n.toFixed(2) : `— (preencha todos os critérios, ${EAC_MIN}–${EAC_MAX})`;
+                })()}
+              </strong>
+            </p>
+          </div>
+          <Campo label="Avaliação Curricular — nota manual (opcional)">
             <input
               type="number"
               step="0.1"
@@ -950,7 +1048,7 @@ function CandidatoLinha({
               className="input-ipma"
             />
           </Campo>
-          <Campo label="Entrevista EAC (0-20)">
+          <Campo label="Entrevista EAC — nota manual (opcional)">
             <input
               type="number"
               step="0.1"
