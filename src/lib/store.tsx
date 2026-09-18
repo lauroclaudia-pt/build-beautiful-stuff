@@ -146,12 +146,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [data, hydrated]);
 
   const addVaga: StoreValue["addVaga"] = useCallback((input) => {
+    const r = offerTypeRules(input.offerType);
+    const hasPc = r.pc ?? input.hasPc ?? r.defaults.pc;
+    const hasAc = r.ac ?? input.hasAc ?? r.defaults.ac;
+    const hasEac = r.eac ?? input.hasEac ?? r.defaults.eac;
     const vaga: Vaga = {
       ...input,
+      hasPc,
+      hasAc,
+      hasEac,
+      positions: r.singlePosition ? 1 : input.positions,
       id: crypto.randomUUID(),
       state: "DRAFT",
       publishedAt: null,
-      stages: newStagesFor(input.offerType, { hasEac: input.hasEac ?? true, activeIndex: 0 }),
+      stages: newStagesFor(input.offerType, { hasAc, hasEac, activeIndex: 0 }),
     };
     setData((d) => ({ ...d, vagas: [vaga, ...d.vagas] }));
     return vaga;
