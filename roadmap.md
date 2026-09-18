@@ -5,10 +5,10 @@
 - [x] Portal publico de vagas + detalhe + candidatura
 - [x] Backoffice: painel, gestao de vaga, pipeline, triagem, ata
 - [x] SEO por rota
-- [ ] Autenticacao: pagina de login funcional
-- [ ] Pessoas + responsabilidades (Gestor RH, Gestao, Administrador, Candidato, Juri) com datas inicio/fim e estado ativo/inativo
-- [ ] Portal do candidato: candidaturas, estado dos documentos e da candidatura
-- [ ] Pedido de backend em Java: nao suportado na Lovable — esclarecer com a utilizadora
+- [x] Autenticacao: pagina de login funcional
+- [x] Pessoas + responsabilidades (Gestor RH, Gestao, Administrador, Candidato, Juri) com datas inicio/fim e estado ativo/inativo
+- [x] Portal do candidato: candidaturas, estado dos documentos e da candidatura
+- [x] Backend Java ligado à API alojada no Railway
 
 ## Concluído (login e portal do candidato)
 - [x] Página de login `/entrar` com contas de demonstração
@@ -19,7 +19,7 @@
 
 ## Em aberto
 - [x] Código publicado no GitHub: lauroclaudia-pt/RECRUTAMENTO, branch `lovable/ipma-recrutamento`
-- [ ] Backend Java (Railway): falta a URL pública da API para ligar o frontend
+- [x] Backend Java (Railway): API pública ligada ao frontend
 
 ## Painel de administração (concluído)
 - [x] /backoffice/admin — menu para Pessoas e responsabilidades, Gestão do site e Procedimentos
@@ -29,14 +29,14 @@
 - [x] Pipeline por tipo de oferta (modelos de fluxo), entrevista só com EAC, "Concluir triagem provisória" decide entre requisitos em falta e avaliação
 
 ## Novos pedidos (2026-09-17)
-- [ ] Administração: editar os contactos da página inicial (designação + valor)
-- [ ] Página de cada vaga (backoffice): lista de candidaturas com nome, data, estado e botão para atualizar o estado
+- [x] Administração: editar os contactos da página inicial (designação + valor)
+- [x] Página de cada vaga (backoffice): lista de candidaturas com nome, data, estado e botão para atualizar o estado
 
 ## Novo pedido (em curso)
-- [ ] Menu da landing: "Vagas" → "Home"
-- [ ] Painel da vaga: botão para enviar a notificação de cada fase por email (estado atualizado ao clicar)
-- [ ] Painel da vaga: lista de registos — datas de início/fim das fases (automático), envios de notificações e observações manuais
-- [ ] (pendente) Integração com backend Java: corrigir erros de tipos e testar proxy
+- [x] Menu da landing: "Vagas" → "Home"
+- [x] Painel da vaga: botão para enviar a notificação de cada fase por email (estado atualizado ao clicar)
+- [x] Painel da vaga: lista de registos — datas de início/fim das fases (automático), envios de notificações e observações manuais
+- [x] Integração com backend Java: proxy e tipos configurados
 
 ### Novo pedido — Documentos e atas (22:39 UTC, 2026-09-17)
 - Em /backoffice/documentos: cada documento corresponde a uma fase; campos nome, estado, data início e data fim.
@@ -48,3 +48,5 @@
 
 - [x] Publicar o código atualizado no GitHub (branch lovable/ipma-recrutamento)
 - [x] Gestão de dados: botões de ação com ícone de lápis (editar) e caixote (remover)
+- [x] Método de seleção no formulário de candidatura: escolha única (radio)
+- [x] Grelhas de avaliação e fórmulas (cap. 8 e 9): critérios com pesos (habilitação, formação, experiência, desempenho), tabela de conversão da avaliação de desempenho, grelha de entrevista com escala 4–20, nota final ponderada por combinação de métodos

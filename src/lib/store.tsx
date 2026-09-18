@@ -1,5 +1,4 @@
 import {
-  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -7,16 +6,22 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { StoreContext } from "./store-context";
 import {
   DEFAULT_DOCUMENTS,
   SEED_APPLICANTS,
   SEED_VAGAS,
   newStagesFor,
+  offerTypeRules,
   STAGE_LABEL,
+  calcAcGrade,
+  calcEacGrade,
+  methodWeights,
   type Applicant,
   type ApplicantState,
   type CandidateDocument,
   type DocState,
+  type DocumentUpload,
   type Vaga,
   type TriagemCriterios,
   type VagaRegistro,
@@ -43,7 +48,7 @@ interface Data {
   notificacoes: Notificacao[];
 }
 
-interface StoreValue extends Data {
+export interface StoreValue extends Data {
   hydrated: boolean;
   currentUser: Pessoa | null;
   addVaga: (vaga: Omit<Vaga, "id" | "stages" | "state" | "publishedAt">) => Vaga;
@@ -52,10 +57,20 @@ interface StoreValue extends Data {
   advanceStage: (id: string) => void;
   addApplicant: (a: Omit<Applicant, "id" | "state" | "createdAt">) => Applicant;
   setApplicantState: (id: string, state: ApplicantState, reason?: string) => void;
-  setGrades: (id: string, grades: Pick<Applicant, "pcGrade" | "acGrade" | "eacGrade">) => void;
+  setGrades: (
+    id: string,
+    grades: Partial<
+      Pick<Applicant, "pcGrade" | "acGrade" | "eacGrade" | "acScores" | "acDesempenho" | "eacScores">
+    >,
+  ) => void;
   setTriagem: (id: string, triagem: TriagemCriterios) => void;
   addAppeal: (id: string, text: string) => void;
   setDocumentState: (applicantId: string, docId: string, state: DocState) => void;
+  addDocumentUploads: (
+    applicantId: string,
+    docId: string,
+    uploads: DocumentUpload[],
+  ) => void;
   login: (email: string, password: string) => { ok: boolean; message: string; pessoa?: Pessoa };
   /** Define a sessão ativa para uma pessoa existente (ex.: login no servidor de recrutamento). */
   setSession: (pessoaId: string) => void;
@@ -79,8 +94,6 @@ interface StoreValue extends Data {
   addNotificacoes: (novas: Omit<Notificacao, "id" | "sentAt">[]) => void;
   reset: () => void;
 }
-
-const StoreContext = createContext<StoreValue | null>(null);
 
 function seed(): Data {
   return {
@@ -140,12 +153,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [data, hydrated]);
 
   const addVaga: StoreValue["addVaga"] = useCallback((input) => {
+    const r = offerTypeRules(input.offerType);
+    const hasPc = r.pc ?? input.hasPc ?? r.defaults.pc;
+    const hasAc = r.ac ?? input.hasAc ?? r.defaults.ac;
+    const hasEac = r.eac ?? input.hasEac ?? r.defaults.eac;
     const vaga: Vaga = {
       ...input,
+      hasPc,
+      hasAc,
+      hasEac,
+      positions: r.singlePosition ? 1 : input.positions,
       id: crypto.randomUUID(),
       state: "DRAFT",
       publishedAt: null,
-      stages: newStagesFor(input.offerType, { hasEac: input.hasEac ?? true, activeIndex: 0 }),
+      stages: newStagesFor(input.offerType, { hasAc, hasEac, activeIndex: 0 }),
     };
     setData((d) => ({ ...d, vagas: [vaga, ...d.vagas] }));
     return vaga;
@@ -172,7 +193,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           };
           return v;
         }
-        const stages = newStagesFor(v.offerType, { hasEac: v.hasEac ?? true, activeIndex: 1 }).map(
+        const stages = newStagesFor(v.offerType, { hasAc: v.hasAc, hasEac: v.hasEac, activeIndex: 1 }).map(
           (s, i) =>
             i === 0
               ? { ...s, startedAt: hoje, endedAt: hoje }
@@ -209,13 +230,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             ),
           };
         }
-        const stages = v.stages.map((s, i) =>
-          i === idx
-            ? { ...s, state: "completed" as const, endedAt: hoje }
-            : i === idx + 1
-              ? { ...s, state: "active" as const, startedAt: hoje }
-              : s,
+        // A recolha de requisitos em falta só é ativada se existir pelo menos
+        // um candidato excluído; caso contrário é saltada.
+        const temExcluidos = d.applicants.some(
+          (a) => a.vagaId === v.id && (a.state === "EXCLUDED" || a.state === "UNDER_APPEAL"),
         );
+        let next = idx + 1;
+        while (
+          next < v.stages.length - 1 &&
+          v.stages[next]!.code === "MISSING_REQUIREMENTS" &&
+          !temExcluidos
+        ) {
+          next += 1;
+        }
+        const stages = v.stages.map((s, i) => {
+          if (i === idx) return { ...s, state: "completed" as const, endedAt: hoje };
+          if (i > idx && i < next) return { ...s, state: "skipped" as const };
+          if (i === next) return { ...s, state: "active" as const, startedAt: hoje };
+          return s;
+        });
         return { ...v, state: "RUNNING" as const, stages };
       }),
     }));
@@ -310,6 +343,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
                 ...a,
                 documents: (a.documents ?? DEFAULT_DOCUMENTS).map((doc) =>
                   doc.id === docId ? { ...doc, state } : doc,
+                ),
+              }
+            : a,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const addDocumentUploads: StoreValue["addDocumentUploads"] = useCallback(
+    (applicantId, docId, uploads) => {
+      if (uploads.length === 0) return;
+      setData((d) => ({
+        ...d,
+        applicants: d.applicants.map((a) =>
+          a.id === applicantId
+            ? {
+                ...a,
+                documents: (a.documents ?? DEFAULT_DOCUMENTS).map((doc) =>
+                  doc.id === docId
+                    ? {
+                        ...doc,
+                        state: "RECEIVED" as DocState,
+                        uploads: [...(doc.uploads ?? []), ...uploads],
+                      }
+                    : doc,
                 ),
               }
             : a,
@@ -525,6 +584,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTriagem,
       addAppeal,
       setDocumentState,
+      addDocumentUploads,
       login,
       logout,
       setSession,
@@ -558,6 +618,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTriagem,
       addAppeal,
       setDocumentState,
+      addDocumentUploads,
       login,
       logout,
       setSession,
@@ -588,10 +649,14 @@ export function useStore() {
   return ctx;
 }
 
+/** Classificação final ponderada pela combinação de métodos de seleção (cap. 9). */
 export function finalGrade(a: Applicant): number | null {
-  const parts = [a.pcGrade, a.acGrade, a.eacGrade].filter(
-    (n): n is number => typeof n === "number",
-  );
-  if (!parts.length) return null;
-  return Math.round((parts.reduce((s, n) => s + n, 0) / parts.length) * 100) / 100;
+  const pc = typeof a.pcGrade === "number" ? a.pcGrade : null;
+  const ac = typeof a.acGrade === "number" ? a.acGrade : calcAcGrade(a.acScores, a.acDesempenho);
+  const eac = typeof a.eacGrade === "number" ? a.eacGrade : calcEacGrade(a.eacScores);
+  const has = { pc: pc != null, ac: ac != null, eac: eac != null };
+  if (!has.pc && !has.ac && !has.eac) return null;
+  const w = methodWeights(has);
+  const total = (pc ?? 0) * w.pc + (ac ?? 0) * w.ac + (eac ?? 0) * w.eac;
+  return Math.round(total * 100) / 100;
 }

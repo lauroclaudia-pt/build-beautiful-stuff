@@ -30,7 +30,8 @@ export type StageCode =
   | "APPEAL"
   | "CONTRACT"
   | "MOBILITY"
-  | "APPOINTMENT";
+  | "APPOINTMENT"
+  | "PROBATION";
 
 export type StageState = "draft" | "active" | "completed" | "skipped" | "cancelled";
 
@@ -95,6 +96,8 @@ export interface Vaga {
   description: string;
   selectionMethods: string[];
   juryPresident: string;
+  /** Pessoa (id) responsável pela gestão do procedimento — Gestor de RH. */
+  hrManagerId?: string;
   juryMembers: string[];
   bepCode: string;
   publishedAt: string | null;
@@ -123,18 +126,28 @@ export const DOC_STATE_LABEL: Record<DocState, string> = {
   MISSING: "Em falta",
 };
 
+export interface DocumentUpload {
+  name: string;
+  description?: string | undefined;
+}
+
 export interface CandidateDocument {
   id: string;
   label: string;
   state: DocState;
   note?: string;
+  /** Ficheiros entregues para este documento (pode ser mais do que um). */
+  uploads?: DocumentUpload[];
+  /** Documento facultativo — não bloqueia a submissão da candidatura. */
+  optional?: boolean;
 }
 
 export const DEFAULT_DOCUMENTS: CandidateDocument[] = [
-  { id: "cv", label: "Curriculum vitae", state: "RECEIVED" },
+  { id: "cv", label: "Curriculum vitae", state: "PENDING" },
   { id: "habilit", label: "Certificado de habilitações", state: "PENDING" },
-  { id: "bi", label: "Documento de identificação", state: "RECEIVED" },
+  { id: "bi", label: "Documento de identificação", state: "PENDING" },
   { id: "decservico", label: "Declaração da entidade empregadora", state: "PENDING" },
+  { id: "outros", label: "Outros documentos", state: "RECEIVED", optional: true },
 ];
 
 export interface Applicant {
@@ -152,6 +165,12 @@ export interface Applicant {
   pcGrade?: number | null;
   acGrade?: number | null;
   eacGrade?: number | null;
+  /** Classificações por critério da grelha de Avaliação Curricular (0–20). */
+  acScores?: Record<string, number | null>;
+  /** Menção qualitativa da avaliação de desempenho (convertida pela tabela). */
+  acDesempenho?: string | null;
+  /** Classificações por critério da grelha de Entrevista (escala 4–20). */
+  eacScores?: Record<string, number | null>;
   createdAt: string;
   appeal?: { text: string; createdAt: string; channel?: AppealChannel } | null;
   documents?: CandidateDocument[];
@@ -169,6 +188,28 @@ export interface Applicant {
   attachments?: string[];
   /** Resultado da triagem por critério. */
   triagem?: TriagemCriterios;
+  /** Secção A — identificação. */
+  gender?: string;
+  nationality?: string;
+  idNumber?: string;
+  address?: string;
+  postalCode?: string;
+  locality?: string;
+  municipality?: string;
+  mobile?: string;
+  /** Secção B — requisitos de admissão. */
+  postgradInfo?: string;
+  employmentSituation?: string;
+  lastEmployer?: string;
+  lastActivity?: string;
+  performanceEvaluation?: string;
+  otherExperience?: string;
+  alternativeQualification?: string;
+  /** Secção C — métodos de seleção pretendidos. */
+  selectionMethodsWanted?: string[];
+  /** Secção E — declarações condicionais. */
+  mobDeclaration?: boolean;
+  grantDeclaration?: boolean;
 }
 
 /** Critérios booleanos verificados na triagem da candidatura. */
@@ -178,6 +219,87 @@ export interface TriagemCriterios {
   documentos: boolean | null;
   experiencia: boolean | null;
   motivo?: string;
+}
+
+/** Critério de avaliação com peso percentual (a soma dos pesos = 100). */
+export interface EvalCriterion {
+  id: string;
+  label: string;
+  weight: number;
+}
+
+/** Grelha da Avaliação Curricular (cap. 8 da especificação). */
+export const AC_CRITERIA: EvalCriterion[] = [
+  { id: "habilitacao", label: "Habilitação académica", weight: 25 },
+  { id: "formacao", label: "Formação complementar", weight: 25 },
+  { id: "experiencia", label: "Experiência profissional", weight: 30 },
+  { id: "desempenho", label: "Avaliação de desempenho", weight: 20 },
+];
+
+/** Grelha da Entrevista de Avaliação de Competências (escala 4–20). */
+export const EAC_CRITERIA: EvalCriterion[] = [
+  { id: "conhecimentos", label: "Conhecimentos técnicos", weight: 30 },
+  { id: "analise", label: "Capacidade de análise e resolução de problemas", weight: 25 },
+  { id: "comunicacao", label: "Comunicação e relacionamento interpessoal", weight: 20 },
+  { id: "motivacao", label: "Motivação e orientação para o serviço público", weight: 25 },
+];
+export const EAC_MIN = 4;
+export const EAC_MAX = 20;
+
+/** Tabela de conversão da avaliação de desempenho (menção → 0–20). */
+export const DESEMPENHO_CONVERSION = [
+  { label: "Excelente", grade: 20 },
+  { label: "Muito Bom", grade: 18 },
+  { label: "Bom", grade: 15 },
+  { label: "Suficiente", grade: 12 },
+  { label: "Insuficiente", grade: 8 },
+  { label: "Sem avaliação", grade: 10 },
+] as const;
+
+export function desempenhoGrade(label: string | null | undefined): number | null {
+  if (!label) return null;
+  return DESEMPENHO_CONVERSION.find((d) => d.label === label)?.grade ?? null;
+}
+
+/** Nota ponderada da Avaliação Curricular a partir das classificações por critério. */
+export function calcAcGrade(
+  scores: Record<string, number | null> | undefined,
+  desempenho: string | null | undefined,
+): number | null {
+  if (!scores) return null;
+  let sum = 0;
+  for (const c of AC_CRITERIA) {
+    const v = c.id === "desempenho" ? desempenhoGrade(desempenho) : scores[c.id];
+    if (typeof v !== "number") return null;
+    sum += v * c.weight;
+  }
+  return Math.round((sum / 100) * 100) / 100;
+}
+
+/** Nota ponderada da Entrevista (todos os critérios obrigatórios, escala 4–20). */
+export function calcEacGrade(scores: Record<string, number | null> | undefined): number | null {
+  if (!scores) return null;
+  let sum = 0;
+  for (const c of EAC_CRITERIA) {
+    const v = scores[c.id];
+    if (typeof v !== "number" || v < EAC_MIN || v > EAC_MAX) return null;
+    sum += v * c.weight;
+  }
+  return Math.round((sum / 100) * 100) / 100;
+}
+
+/** Pesos da nota final por combinação de métodos de seleção (cap. 9). */
+export function methodWeights(has: { pc: boolean; ac: boolean; eac: boolean }): {
+  pc: number;
+  ac: number;
+  eac: number;
+} {
+  const { pc, ac, eac } = has;
+  if (pc && ac && eac) return { pc: 0.4, ac: 0.3, eac: 0.3 };
+  if (pc && eac) return { pc: 0.6, ac: 0, eac: 0.4 };
+  if (ac && eac) return { pc: 0, ac: 0.7, eac: 0.3 };
+  if (pc && ac) return { pc: 0.5, ac: 0.5, eac: 0 };
+  return { pc: pc ? 1 : 0, ac: ac ? 1 : 0, eac: eac ? 1 : 0 };
 }
 
 export const TRIAGEM_CRITERIOS: { key: keyof Omit<TriagemCriterios, "motivo">; label: string }[] = [
@@ -247,6 +369,7 @@ export const STAGE_LABEL: Record<StageCode, string> = {
   CONTRACT: "Contratação",
   MOBILITY: "Acordo de mobilidade",
   APPOINTMENT: "Nomeação / designação",
+  PROBATION: "Período experimental",
 };
 
 export const DEPARTMENTS = [
@@ -308,6 +431,7 @@ export const WORKFLOW_TEMPLATES: Record<OfferType, StageCode[]> = {
     "INTERVIEW",
     "APPEAL",
     "CONTRACT",
+    "PROBATION",
   ],
   PROCEDIMENTO_CONCURSAL_RESERVA: [
     "OPENING",
@@ -318,6 +442,7 @@ export const WORKFLOW_TEMPLATES: Record<OfferType, StageCode[]> = {
     "INTERVIEW",
     "APPEAL",
     "CONTRACT",
+    "PROBATION",
   ],
   SELECAO_INTERNACIONAL: [
     "OPENING",
@@ -328,6 +453,7 @@ export const WORKFLOW_TEMPLATES: Record<OfferType, StageCode[]> = {
     "INTERVIEW",
     "APPEAL",
     "CONTRACT",
+    "PROBATION",
   ],
   CARGOS_DIRECAO: [
     "OPENING",
@@ -343,7 +469,6 @@ export const WORKFLOW_TEMPLATES: Record<OfferType, StageCode[]> = {
     "ADMISSION",
     "EVALUATION",
     "INTERVIEW",
-    "APPEAL",
     "MOBILITY",
   ],
   MOBILIDADE_INTERCARREIRAS: [
@@ -352,7 +477,6 @@ export const WORKFLOW_TEMPLATES: Record<OfferType, StageCode[]> = {
     "ADMISSION",
     "EVALUATION",
     "INTERVIEW",
-    "APPEAL",
     "MOBILITY",
   ],
   BOLSA_INVESTIGACAO_CIENTIFICA: [
@@ -374,18 +498,97 @@ export function newStages(activeIndex = 0): JobStage[] {
 }
 
 /**
+ * Regras de tramitação por tipo de oferta.
+ * `null` significa que o Gestor de RH pode alterar o campo; um booleano significa
+ * que o valor é imposto pela lei/tipo de oferta e fica bloqueado.
+ */
+export interface OfferTypeRules {
+  pc: boolean | null;
+  ac: boolean | null;
+  eac: boolean | null;
+  /** Valores por omissão dos campos editáveis. */
+  defaults: { pc: boolean; ac: boolean; eac: boolean };
+  /** Tem a fase «Recolha de requisitos em falta» (só se houver excluídos). */
+  missingRequirements: boolean;
+  /** Número de vagas fixo (cargos de direção = 1). */
+  singlePosition: boolean;
+  nota: string;
+}
+
+export function offerTypeRules(offerType: OfferType): OfferTypeRules {
+  switch (offerType) {
+    case "CARGOS_DIRECAO":
+      return {
+        pc: false,
+        ac: true,
+        eac: true,
+        defaults: { pc: false, ac: true, eac: true },
+        missingRequirements: false,
+        singlePosition: true,
+        nota: "Avaliação curricular e entrevista pública obrigatórias; uma só vaga por cargo.",
+      };
+    case "MOBILIDADE_INTERNA":
+    case "MOBILIDADE_INTERCARREIRAS":
+      return {
+        pc: false,
+        ac: null,
+        eac: null,
+        defaults: { pc: false, ac: false, eac: false },
+        missingRequirements: false,
+        singlePosition: false,
+        nota: "Sem prova de conhecimentos e sem recolha de requisitos em falta; avaliação curricular e entrevista são opcionais.",
+      };
+    case "BOLSA_INVESTIGACAO_CIENTIFICA":
+      return {
+        pc: false,
+        ac: true,
+        eac: null,
+        defaults: { pc: false, ac: true, eac: false },
+        missingRequirements: false,
+        singlePosition: false,
+        nota: "Avaliação curricular obrigatória; entrevista apenas se prevista no edital.",
+      };
+    default:
+      return {
+        pc: true,
+        ac: true,
+        eac: null,
+        defaults: { pc: true, ac: true, eac: false },
+        missingRequirements: true,
+        singlePosition: false,
+        nota: "Prova de conhecimentos e avaliação curricular obrigatórias; entrevista opcional.",
+      };
+  }
+}
+
+/** Fases efetivas de um procedimento, aplicando as regras condicionais. */
+export function stageCodesFor(
+  offerType: OfferType,
+  opts: { hasAc?: boolean | undefined; hasEac?: boolean | undefined } = {},
+): StageCode[] {
+  const rules = offerTypeRules(offerType);
+  const hasAc = rules.ac ?? opts.hasAc ?? rules.defaults.ac;
+  const hasEac = rules.eac ?? opts.hasEac ?? rules.defaults.eac;
+  const hasPc = rules.pc ?? rules.defaults.pc;
+  return (WORKFLOW_TEMPLATES[offerType] ?? DEFAULT_STAGES).filter((c) => {
+    if (c === "INTERVIEW") return hasEac;
+    if (c === "EVALUATION") return hasAc || hasPc;
+    return true;
+  });
+}
+
+/**
  * Cria o pipeline de uma vaga a partir do modelo do tipo de oferta.
- * A entrevista só entra quando a vaga tem EAC; a recolha de requisitos em falta
- * fica sempre presente mas só é ativada quando existirem candidatos excluídos.
+ * A entrevista só entra quando a vaga tem EAC; a avaliação só entra quando
+ * existir PC ou AC; a recolha de requisitos em falta fica presente mas só é
+ * ativada quando existirem candidatos excluídos.
  */
 export function newStagesFor(
   offerType: OfferType,
-  opts: { hasEac?: boolean; activeIndex?: number } = {},
+  opts: { hasAc?: boolean | undefined; hasEac?: boolean | undefined; activeIndex?: number } = {},
 ): JobStage[] {
-  const { hasEac = true, activeIndex = 0 } = opts;
-  const codes = (WORKFLOW_TEMPLATES[offerType] ?? DEFAULT_STAGES).filter(
-    (c) => c !== "INTERVIEW" || hasEac,
-  );
+  const { activeIndex = 0 } = opts;
+  const codes = stageCodesFor(offerType, opts);
   return codes.map((code, i) => ({
     code,
     state: i < activeIndex ? "completed" : i === activeIndex ? "active" : "draft",
@@ -436,6 +639,7 @@ function iso(offsetDays: number) {
 export const SEED_VAGAS: Vaga[] = [
   {
     id: "v1",
+    hrManagerId: "p1",
     ref: "014/2026",
     title: "Técnico Superior — Oceanografia Costeira",
     offerType: "PROCEDIMENTO_CONCURSAL_COMUM",
@@ -462,6 +666,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v2",
+    hrManagerId: "p2",
     ref: "021/2026",
     title: "Engenheiro de Sistemas de Previsão",
     offerType: "MOBILIDADE_INTERNA",
@@ -488,6 +693,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v3",
+    hrManagerId: "p1",
     ref: "009/2026",
     title: "Técnico de Observação Climática",
     offerType: "PROCEDIMENTO_CONCURSAL_RESERVA",
@@ -514,6 +720,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v4",
+    hrManagerId: "p2",
     ref: "027/2026",
     title: "Bolsa de Investigação — Dinâmica Atmosférica",
     offerType: "BOLSA_INVESTIGACAO_CIENTIFICA",
@@ -539,6 +746,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v5",
+    hrManagerId: "p1",
     ref: "031/2026",
     title: "Especialista em Análise de Vento",
     offerType: "PROCEDIMENTO_CONCURSAL_COMUM",
@@ -563,6 +771,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v6",
+    hrManagerId: "p2",
     ref: "004/2026",
     title: "Técnico Superior de Sismologia",
     offerType: "PROCEDIMENTO_CONCURSAL_COMUM",
@@ -588,6 +797,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v7",
+    hrManagerId: "p1",
     ref: "012/2026",
     title: "Assistente Técnico de Apoio Administrativo",
     offerType: "PROCEDIMENTO_CONCURSAL_COMUM",
@@ -612,6 +822,7 @@ export const SEED_VAGAS: Vaga[] = [
   },
   {
     id: "v8",
+    hrManagerId: "p2",
     ref: "035/2026",
     title: "Coordenador de Mobilidade Interna — Rede de Estações",
     offerType: "MOBILIDADE_INTERNA",

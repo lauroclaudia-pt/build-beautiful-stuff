@@ -46,8 +46,17 @@ async function handle({ request, params }: { request: Request; params: Record<st
     ? undefined
     : await request.arrayBuffer();
 
+  // Leituras públicas (GET) não devem rebentar a aplicação quando o servidor de
+  // recrutamento está em baixo: devolvemos 200 com um marcador e o cliente ignora.
+  const isRead = request.method === "GET" || request.method === "HEAD";
+  const unavailable = () =>
+    isRead
+      ? Response.json({ javaUnavailable: true })
+      : Response.json({ error: "Servidor de recrutamento indisponível." }, { status: 502 });
+
   try {
     const res = await fetch(target, { method: request.method, headers, body: body ?? null, redirect: "manual" });
+    if (isRead && res.status >= 500) return unavailable();
     const resHeaders = new Headers();
     for (const key of ["content-type", "content-disposition"]) {
       const v = res.headers.get(key);
@@ -55,6 +64,6 @@ async function handle({ request, params }: { request: Request; params: Record<st
     }
     return new Response(res.body, { status: res.status, headers: resHeaders });
   } catch {
-    return Response.json({ error: "Servidor de recrutamento indisponível." }, { status: 502 });
+    return unavailable();
   }
 }

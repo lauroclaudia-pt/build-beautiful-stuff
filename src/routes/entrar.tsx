@@ -38,6 +38,7 @@ function Entrar() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [aEntrar, setAEntrar] = useState(false);
 
   function destinoPara(p: Pessoa) {
     const roles = activeRoles(p);
@@ -47,48 +48,56 @@ function Entrar() {
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
+    if (aEntrar) return;
     setErro(null);
-    // 1) Servidor de recrutamento (backend Java, HTTP Basic).
-    const java = await loginJava(javaBase(site.apiUrl), email.trim(), password);
-    if (java.ok && java.me) {
-      saveJavaAuth(email.trim(), password);
-      const emailNorm = java.me.email.trim().toLowerCase();
-      let pessoa = pessoas.find((p) => p.email.trim().toLowerCase() === emailNorm);
-      if (!pessoa) {
-        const hoje = new Date().toISOString().slice(0, 10);
-        pessoa = addPessoa({
-          name: java.me.name || emailNorm,
-          email: java.me.email,
-          phone: "",
-          nif: "",
-          hasLogin: false,
-          password: null,
-          responsabilidades: mapJavaRoles(java.me.roles).map((role) => ({
-            id: crypto.randomUUID(),
-            role,
-            startDate: hoje,
-            endDate: null,
-          })),
-        });
+    setAEntrar(true);
+    try {
+      // As contas de demonstração são locais e devem entrar de imediato, sem depender da API.
+      const local = login(email, password);
+      if (local.ok && local.pessoa) {
+        toast.success(local.message);
+        await navigate({ to: destinoPara(local.pessoa) });
+        return;
       }
-      setSession(pessoa.id);
-      toast.success(java.message);
-      navigate({ to: destinoPara(pessoa) });
-      return;
-    }
-    // 2) Alternativa: contas locais (demonstração) quando o servidor recusa ou não responde.
-    const res = login(email, password);
-    if (!res.ok || !res.pessoa) {
+
+      // As restantes contas são validadas pelo servidor de recrutamento.
+      const java = await loginJava(javaBase(site.apiUrl), email.trim(), password);
+      if (java.ok && java.me) {
+        saveJavaAuth(email.trim(), password);
+        const emailNorm = java.me.email.trim().toLowerCase();
+        let pessoa = pessoas.find((p) => p.email.trim().toLowerCase() === emailNorm);
+        if (!pessoa) {
+          const hoje = new Date().toISOString().slice(0, 10);
+          pessoa = addPessoa({
+            name: java.me.name || emailNorm,
+            email: java.me.email,
+            phone: "",
+            nif: "",
+            hasLogin: false,
+            password: null,
+            responsabilidades: mapJavaRoles(java.me.roles).map((role) => ({
+              id: crypto.randomUUID(),
+              role,
+              startDate: hoje,
+              endDate: null,
+            })),
+          });
+        }
+        setSession(pessoa.id);
+        toast.success(java.message);
+        await navigate({ to: destinoPara(pessoa) });
+        return;
+      }
+
       const msg =
         java.failure === "unreachable"
-          ? res.message
-          : `${res.message} (Servidor de recrutamento: ${java.message})`;
+          ? local.message
+          : `${local.message} (Servidor de recrutamento: ${java.message})`;
       setErro(msg);
-      toast.error(res.message);
-      return;
+      toast.error(local.message);
+    } finally {
+      setAEntrar(false);
     }
-    toast.success(res.message);
-    navigate({ to: destinoPara(res.pessoa) });
   }
 
   function entrarComo(p: Pessoa) {
@@ -186,9 +195,10 @@ function Entrar() {
               )}
               <button
                 type="submit"
+                disabled={aEntrar}
                 className="w-full rounded-md bg-primary px-4 py-2.5 text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
               >
-                Entrar
+                {aEntrar ? "A entrar…" : "Entrar"}
               </button>
               <p className="text-xs text-muted-foreground">
                 Ainda não se candidatou? Consulte as{" "}

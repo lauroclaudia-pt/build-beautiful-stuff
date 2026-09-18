@@ -3,11 +3,16 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageShell, JobStateBadge, RequireRole } from "@/components/shell";
 import { useStore } from "@/lib/store";
+import { hasActiveRole } from "@/lib/pessoas";
+import { Eye } from "lucide-react";
 import {
   JOB_STATE_LABEL,
   OFFER_TYPE_LABEL,
   daysUntil,
   formatDate,
+  offerTypeRules,
+  stageCodesFor,
+  STAGE_LABEL,
   type JobState,
   type OfferType,
 } from "@/lib/recrutamento";
@@ -40,7 +45,11 @@ export const Route = createFileRoute("/backoffice/")({
 const STATES: JobState[] = ["DRAFT", "PUBLISHED", "RUNNING", "FINISHED", "CANCELLED", "DESERT"];
 
 function Backoffice() {
-  const { vagas, applicants, publishVaga, addVaga } = useStore();
+  const { vagas, applicants, publishVaga, addVaga, currentUser } = useStore();
+  const podeTudo = hasActiveRole(currentUser, "ADMIN", "GESTAO");
+  const ehGestorRh = hasActiveRole(currentUser, "GESTOR_RH");
+  const podeGerir = (v: (typeof vagas)[number]) =>
+    podeTudo || (ehGestorRh && v.hrManagerId === currentUser?.id);
   const [filtro, setFiltro] = useState<JobState | "">("");
   const [q, setQ] = useState("");
   const [novo, setNovo] = useState(false);
@@ -149,7 +158,7 @@ function Backoffice() {
                     <td className="px-4 py-3 font-mono text-[11px]">{v.ref}</td>
                     <td className="px-4 py-3">
                       <Link
-                        to="/backoffice/$vagaId"
+                        to={podeGerir(v) ? "/backoffice/$vagaId" : "/vagas/$vagaId"}
                         params={{ vagaId: v.id }}
                         className="font-medium hover:text-primary"
                       >
@@ -171,7 +180,7 @@ function Backoffice() {
                     <td className="px-4 py-3 font-mono">{n}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
-                        {v.state === "DRAFT" && (
+                        {v.state === "DRAFT" && podeGerir(v) && (
                           <button
                             onClick={() => publicar(v.id)}
                             className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground hover:bg-primary/90"
@@ -180,12 +189,24 @@ function Backoffice() {
                           </button>
                         )}
                         <Link
-                          to="/backoffice/$vagaId"
+                          to="/vagas/$vagaId"
                           params={{ vagaId: v.id }}
-                          className="rounded-md border border-border bg-white/60 px-3 py-1.5 text-[12px] font-medium"
+                          title="Consultar"
+                          aria-label="Consultar"
+                          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-white/60 px-3 py-1.5 text-[12px] font-medium"
                         >
-                          Gerir
+                          <Eye size={14} />
+                          Consultar
                         </Link>
+                        {podeGerir(v) && (
+                          <Link
+                            to="/backoffice/$vagaId"
+                            params={{ vagaId: v.id }}
+                            className="rounded-md border border-border bg-white/60 px-3 py-1.5 text-[12px] font-medium"
+                          >
+                            Gerir
+                          </Link>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -236,7 +257,8 @@ function NovaVaga({
   onCreate: ReturnType<typeof useStore>["addVaga"];
   onDone: () => void;
 }) {
-  const { opcoesDe } = useStore();
+  const { opcoesDe, pessoas, currentUser } = useStore();
+  const gestores = pessoas.filter((p) => hasActiveRole(p, "GESTOR_RH"));
   const departamentos = opcoesDe("DEPARTAMENTO");
   const locais = opcoesDe("LOCAL");
   const carreiras = opcoesDe("CARREIRA");
@@ -261,10 +283,32 @@ function NovaVaga({
     description: "",
     selectionMethods: metodos[1] ? [metodos[1]] : metodos.slice(0, 1),
     juryPresident: "",
+    hrManagerId: gestores.find((g) => g.id === currentUser?.id)?.id ?? gestores[0]?.id ?? "",
     juryMembers: "",
     bepCode: "",
     deadline: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
+    hasPc: true,
+    hasAc: true,
+    hasEac: false,
   });
+
+  const rules = offerTypeRules(f.offerType);
+  const hasPc = rules.pc ?? f.hasPc;
+  const hasAc = rules.ac ?? f.hasAc;
+  const hasEac = rules.eac ?? f.hasEac;
+  const fases = stageCodesFor(f.offerType, { hasAc, hasEac });
+
+  function mudarTipo(t: OfferType) {
+    const r = offerTypeRules(t);
+    setF((prev) => ({
+      ...prev,
+      offerType: t,
+      hasPc: r.pc ?? r.defaults.pc,
+      hasAc: r.ac ?? r.defaults.ac,
+      hasEac: r.eac ?? r.defaults.eac,
+      positions: r.singlePosition ? 1 : prev.positions,
+    }));
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -274,6 +318,9 @@ function NovaVaga({
     }
     onCreate({
       ...f,
+      hasPc,
+      hasAc,
+      hasEac,
       ref: f.ref.trim(),
       title: f.title.trim(),
       positions: Number(f.positions) || 1,
@@ -299,7 +346,7 @@ function NovaVaga({
       <L label="Tipo de oferta">
         <select
           value={f.offerType}
-          onChange={(e) => setF({ ...f, offerType: e.target.value as OfferType })}
+          onChange={(e) => mudarTipo(e.target.value as OfferType)}
           className="input-ipma"
         >
           {Object.entries(OFFER_TYPE_LABEL).map(([k, v]) => (
@@ -364,9 +411,10 @@ function NovaVaga({
         <input
           type="number"
           min={1}
-          value={f.positions}
+          value={rules.singlePosition ? 1 : f.positions}
+          disabled={rules.singlePosition}
           onChange={(e) => setF({ ...f, positions: Number(e.target.value) })}
-          className="input-ipma"
+          className="input-ipma disabled:opacity-60"
         />
       </L>
       <L label="Habilitação mínima">
@@ -398,6 +446,19 @@ function NovaVaga({
       <L label="Código BEP/Edital">
         <input value={f.bepCode} onChange={(e) => setF({ ...f, bepCode: e.target.value })} className="input-ipma" />
       </L>
+      <L label="Gestor de RH responsável">
+        <select
+          value={f.hrManagerId}
+          onChange={(e) => setF({ ...f, hrManagerId: e.target.value })}
+          className="input-ipma"
+        >
+          {gestores.map((g) => (
+            <option key={g.id} value={g.id}>
+              {g.name}
+            </option>
+          ))}
+        </select>
+      </L>
       <L label="Presidente do júri">
         <input
           value={f.juryPresident}
@@ -412,6 +473,42 @@ function NovaVaga({
           className="input-ipma"
         />
       </L>
+      <div className="sm:col-span-3 rounded-lg border border-border bg-white/50 p-4">
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          Tramitação deste tipo de oferta
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {fases.map((c, i) => (
+            <span key={c} className="flex items-center gap-1.5">
+              {i > 0 && <span className="text-muted-foreground">›</span>}
+              <span className="rounded-md bg-primary/10 px-2 py-1 text-[12px] text-primary">
+                {STAGE_LABEL[c]}
+              </span>
+            </span>
+          ))}
+        </div>
+        <p className="mt-2 text-[12px] text-muted-foreground">{rules.nota}</p>
+        <div className="mt-3 flex flex-wrap gap-4">
+          {([
+            ["Prova de conhecimentos (PC)", hasPc, rules.pc !== null, (v: boolean) => setF({ ...f, hasPc: v })],
+            ["Avaliação curricular (AC)", hasAc, rules.ac !== null, (v: boolean) => setF({ ...f, hasAc: v })],
+            ["Entrevista (EAC)", hasEac, rules.eac !== null, (v: boolean) => setF({ ...f, hasEac: v })],
+          ] as const).map(([label, val, locked, set]) => (
+            <label key={label} className="flex items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={val}
+                disabled={locked}
+                onChange={(e) => set(e.target.checked)}
+              />
+              <span className={locked ? "text-muted-foreground" : ""}>
+                {label}
+                {locked ? " (imposto)" : ""}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
       <div className="sm:col-span-3">
         <L label="Métodos de seleção">
           <div className="flex flex-wrap gap-2">

@@ -13,6 +13,9 @@ import {
 } from "@/lib/recrutamento";
 import { applyJava, javaBase } from "@/lib/java-api";
 import { enviarConfirmacaoCandidatura } from "@/lib/emails.functions";
+import { FilePickButton, UploadList, type UploadItem } from "@/components/file-upload";
+import { DEFAULT_DOCUMENTS } from "@/lib/recrutamento";
+import { Req } from "@/components/req";
 
 export const Route = createFileRoute("/vagas/$vagaId")({
   head: () => ({
@@ -35,19 +38,57 @@ export const Route = createFileRoute("/vagas/$vagaId")({
   component: VagaDetalhe,
 });
 
+const NACIONALIDADES = [
+  "Portuguesa",
+  "Espanhola",
+  "Brasileira",
+  "Francesa",
+  "Alemã",
+  "Italiana",
+  "Cabo-verdiana",
+  "Angolana",
+  "Moçambicana",
+  "Outra",
+];
+
+const METODOS_PRETENDIDOS = ["Avaliação Curricular (AC)", "Prova de Conhecimentos (PC)"];
+
 const emptyForm = {
+  // Secção A
   name: "",
+  birthDate: "",
+  gender: "",
+  nationality: "",
+  idNumber: "",
+  nif: "",
+  address: "",
+  postalCode: "",
+  locality: "",
+  municipality: "",
   email: "",
   phone: "",
-  nif: "",
-  birthDate: "",
+  mobile: "",
+  // Secção B
   education: "",
-  professionalSituation: "",
-  motivation: "",
-  deficiencia: false,
+  postgradInfo: "",
   rjep: false,
+  employmentSituation: "",
+  lastEmployer: "",
+  lastActivity: "",
+  performanceEvaluation: "",
+  motivation: "",
+  otherExperience: "",
+  alternativeQualification: "",
+  professionalSituation: "",
+  // Secção C
+  selectionMethodsWanted: [] as string[],
+  // Secção D
+  deficiencia: false,
   specialConditions: "",
+  // Secção E
   truthDeclaration: false,
+  mobDeclaration: false,
+  grantDeclaration: false,
 };
 
 function VagaDetalhe() {
@@ -58,8 +99,28 @@ function VagaDetalhe() {
   const situacoes = opcoesDe("SITUACAO_PROFISSIONAL");
   const vaga = vagas.find((v) => v.id === vagaId);
   const [form, setForm] = useState(emptyForm);
-  const [anexos, setAnexos] = useState<File[]>([]);
+  const [docFiles, setDocFiles] = useState<Record<string, UploadItem[]>>({});
   const [declaracaoIncap, setDeclaracaoIncap] = useState<File | null>(null);
+
+  function addDocFiles(docId: string, files: File[]) {
+    setDocFiles((prev) => ({
+      ...prev,
+      [docId]: [...(prev[docId] ?? []), ...files.map((file) => ({ file, description: "" }))],
+    }));
+    setErrors((e) => ({ ...e, [`doc:${docId}`]: "" }));
+  }
+  function setDocFileDesc(docId: string, index: number, description: string) {
+    setDocFiles((prev) => ({
+      ...prev,
+      [docId]: (prev[docId] ?? []).map((it, i) => (i === index ? { ...it, description } : it)),
+    }));
+  }
+  function removeDocFile(docId: string, index: number) {
+    setDocFiles((prev) => ({
+      ...prev,
+      [docId]: (prev[docId] ?? []).filter((_, i) => i !== index),
+    }));
+  }
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [done, setDone] = useState<string | null>(null);
 
@@ -85,6 +146,13 @@ function VagaDetalhe() {
   const dias = daysUntil(vaga.deadline);
   const encerrado = dias <= 0 || vaga.state === "FINISHED" || vaga.state === "CANCELLED";
   const total = applicants.filter((a) => a.vagaId === vaga.id).length;
+  const ehConcursal =
+    vaga.offerType === "PROCEDIMENTO_CONCURSAL_COMUM" ||
+    vaga.offerType === "PROCEDIMENTO_CONCURSAL_RESERVA";
+  const ehMobilidade =
+    vaga.offerType === "MOBILIDADE_INTERNA" || vaga.offerType === "MOBILIDADE_INTERCARREIRAS";
+  const ehBolsa = vaga.offerType === "BOLSA_INVESTIGACAO_CIENTIFICA";
+  const mostraDeficiencia = (vaga.vagasDeficiencia ?? 0) > 0;
 
   function set<K extends keyof typeof emptyForm>(k: K, v: (typeof emptyForm)[K]) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -97,7 +165,23 @@ function VagaDetalhe() {
     const nif = form.nif.replace(/\s/g, "");
     if (!form.name.trim() || form.name.trim().length > 120) err["name"] = "Indique o nome completo.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) err["email"] = "Email inválido.";
-    if (form.phone.replace(/\D/g, "").length < 9) err["phone"] = "Telefone inválido.";
+    if (form.mobile.replace(/\D/g, "").length < 9) err["mobile"] = "Telemóvel inválido.";
+    if (!form.gender) err["gender"] = "Indique o sexo.";
+    if (!form.nationality) err["nationality"] = "Indique a nacionalidade.";
+    if (!form.idNumber.trim()) err["idNumber"] = "Indique o número de identificação civil.";
+    if (!form.address.trim()) err["address"] = "Indique o endereço postal.";
+    if (!/^\d{4}-\d{3}$/.test(form.postalCode.trim()))
+      err["postalCode"] = "Código postal no formato 0000-000.";
+    if (!form.locality.trim()) err["locality"] = "Indique a localidade.";
+    if (!form.municipality.trim()) err["municipality"] = "Indique o concelho de residência.";
+    if (!form.education.trim()) err["education"] = "Indique o nível habilitacional.";
+    if (form.rjep && !form.employmentSituation.trim())
+      err["employmentSituation"] = "Descreva a situação de RJEP.";
+    if (vaga!.allowNoDegree && !form.alternativeQualification.trim())
+      err["alternativeQualification"] =
+        "Descreva a formação ou experiência substitutiva do grau académico.";
+    if (ehConcursal && form.selectionMethodsWanted.length === 0)
+      err["selectionMethodsWanted"] = "Escolha um método de seleção.";
     if (!validateNif(nif)) err["nif"] = "NIF inválido (verificação do dígito de controlo).";
     else if (
       applicants.some((a) => a.vagaId === vaga!.id && a.nif.replace(/\s/g, "") === nif)
@@ -107,10 +191,21 @@ function VagaDetalhe() {
     else if (ageFrom(form.birthDate) < 18) err["birthDate"] = "É necessário ter 18 anos ou mais.";
     if (form.motivation.trim().length < 20) err["motivation"] = "Escreva pelo menos 20 caracteres.";
     if (form.motivation.length > 1500) err["motivation"] = "Máximo de 1500 caracteres.";
+    for (const d of DEFAULT_DOCUMENTS) {
+      if (!d.optional && (docFiles[d.id] ?? []).length === 0)
+        err[`doc:${d.id}`] = `Anexe pelo menos um ficheiro: ${d.label}.`;
+    }
     if (form.deficiencia && !declaracaoIncap)
       err["deficiencia"] = "Anexe a declaração de incapacidade.";
     if (!form.truthDeclaration)
-      err["truthDeclaration"] = "Tem de declarar a veracidade das informações.";
+      err["truthDeclaration"] =
+        "Não é possível submeter a candidatura sem confirmar a veracidade dos factos.";
+    if (ehMobilidade && !form.mobDeclaration)
+      err["mobDeclaration"] =
+        "Para concorrer tem de manifestar o seu interesse formalmente na mobilidade clicando na declaração.";
+    if (ehBolsa && !form.grantDeclaration)
+      err["grantDeclaration"] =
+        "Não é possível submeter a candidatura sem confirmar a veracidade dos factos.";
     setErrors(err);
     if (Object.keys(err).length) {
       toast.error("Verifique os campos assinalados.");
@@ -122,23 +217,42 @@ function VagaDetalhe() {
       const fd = new FormData();
       fd.append("partnerName", form.name.trim());
       fd.append("birthDate", form.birthDate);
-      fd.append("nationality", "Não indicada");
-      fd.append("idNumber", nif);
+      fd.append("nationality", form.nationality);
+      fd.append("idNumber", form.idNumber.trim());
       fd.append("idNif", nif);
       fd.append("emailFrom", form.email.trim());
       fd.append("partnerPhone", form.phone.trim());
-      fd.append("partnerMobile", form.phone.trim());
+      fd.append("partnerMobile", form.mobile.trim());
+      fd.append("address", form.address.trim());
+      fd.append("postalCode", form.postalCode.trim());
+      fd.append("locality", form.locality.trim());
+      fd.append("municipality", form.municipality.trim());
+      fd.append("gender", form.gender);
       if (form.education) fd.append("educationCourse", form.education);
-      if (form.professionalSituation) fd.append("employmentSituation", form.professionalSituation);
+      if (form.postgradInfo.trim()) fd.append("postgradInfo", form.postgradInfo.trim());
+      if (form.lastEmployer.trim()) fd.append("lastEmployer", form.lastEmployer.trim());
+      if (form.lastActivity.trim()) fd.append("lastActivity", form.lastActivity.trim());
+      if (form.performanceEvaluation.trim())
+        fd.append("performanceEvaluation", form.performanceEvaluation.trim());
+      if (form.otherExperience.trim()) fd.append("otherExperience", form.otherExperience.trim());
+      if (form.alternativeQualification.trim())
+        fd.append("alternativeQualification", form.alternativeQualification.trim());
+      if (form.selectionMethodsWanted.length)
+        fd.append("selectionMethods", form.selectionMethodsWanted.join(", "));
+      if (form.employmentSituation.trim())
+        fd.append("employmentSituation", form.employmentSituation.trim());
       fd.append("relevantExperience", form.motivation.trim());
       fd.append("hasDisability", String(form.deficiencia));
       if (form.specialConditions.trim())
         fd.append("specialNeedsDesc", form.specialConditions.trim());
       fd.append("publicEmployment", String(form.rjep));
       fd.append("declarationTrue", "true");
-      if (anexos[0]) fd.append("cv", anexos[0], anexos[0].name);
-      if (anexos[1]) fd.append("attachment_habilit", anexos[1], anexos[1].name);
-      if (anexos[2]) fd.append("attachment_decservico", anexos[2], anexos[2].name);
+      const cv = docFiles["cv"]?.[0]?.file;
+      const habilit = docFiles["habilit"]?.[0]?.file;
+      const decservico = docFiles["decservico"]?.[0]?.file;
+      if (cv) fd.append("cv", cv, cv.name);
+      if (habilit) fd.append("attachment_habilit", habilit, habilit.name);
+      if (decservico) fd.append("attachment_decservico", decservico, decservico.name);
       if (declaracaoIncap) fd.append("attachment_disability", declaracaoIncap, declaracaoIncap.name);
       const java = await applyJava(javaBase(site.apiUrl), vaga!.javaId, fd);
       if (!java.ok) {
@@ -162,11 +276,45 @@ function VagaDetalhe() {
       rjep: form.rjep,
       specialConditions: form.specialConditions.trim(),
       truthDeclaration: true,
-      attachments: [...anexos.map((f) => f.name), ...(declaracaoIncap ? [declaracaoIncap.name] : [])],
+      gender: form.gender,
+      nationality: form.nationality,
+      idNumber: form.idNumber.trim(),
+      address: form.address.trim(),
+      postalCode: form.postalCode.trim(),
+      locality: form.locality.trim(),
+      municipality: form.municipality.trim(),
+      mobile: form.mobile.trim(),
+      postgradInfo: form.postgradInfo.trim(),
+      employmentSituation: form.employmentSituation.trim(),
+      lastEmployer: form.lastEmployer.trim(),
+      lastActivity: form.lastActivity.trim(),
+      performanceEvaluation: form.performanceEvaluation.trim(),
+      otherExperience: form.otherExperience.trim(),
+      alternativeQualification: form.alternativeQualification.trim(),
+      selectionMethodsWanted: form.selectionMethodsWanted,
+      mobDeclaration: form.mobDeclaration,
+      grantDeclaration: form.grantDeclaration,
+      attachments: [
+        ...Object.values(docFiles).flat().map((u) =>
+          u.description.trim() ? `${u.file.name} — ${u.description.trim()}` : u.file.name,
+        ),
+        ...(declaracaoIncap ? [declaracaoIncap.name] : []),
+      ],
+      documents: DEFAULT_DOCUMENTS.map((d) => {
+        const ups = docFiles[d.id] ?? [];
+        return {
+          ...d,
+          state: ups.length > 0 ? ("RECEIVED" as const) : d.state,
+          uploads: ups.map((u) => ({
+            name: u.file.name,
+            description: u.description.trim() || undefined,
+          })),
+        };
+      }),
     });
     setDone(a.id);
     setForm(emptyForm);
-    setAnexos([]);
+    setDocFiles({});
     setDeclaracaoIncap(null);
     toast.success("Candidatura submetida e registada.");
     void enviarConfirmacaoCandidatura({
@@ -249,6 +397,24 @@ function VagaDetalhe() {
 
             <section id="candidatura" className="glass animate-rise rounded-xl p-6 [animation-delay:120ms]">
               <h2 className="text-xl font-semibold tracking-tight">Formulário de candidatura</h2>
+              <dl className="mt-4 grid gap-3 rounded-lg border border-border bg-white/40 p-4 sm:grid-cols-2">
+                {[
+                  ["Procedimento concursal", `${vaga.title} · ${vaga.ref}`],
+                  ["Data de publicação", vaga.publishedAt ? formatDate(vaga.publishedAt) : "—"],
+                  ["Carreira", vaga.career],
+                  ["Categoria", vaga.educationLevel],
+                  ["Função", vaga.description],
+                  ["Data-limite de candidatura", formatDate(vaga.deadline)],
+                  ["N.º de vagas", String(vaga.positions)],
+                ].map(([k, v]) => (
+                  <div key={k}>
+                    <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      {k}
+                    </dt>
+                    <dd className="text-[13px]">{v}</dd>
+                  </div>
+                ))}
+              </dl>
               {done ? (
                 <div className="mt-4 rounded-lg border border-success/40 bg-success/10 p-5">
                   <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-success">
@@ -272,7 +438,8 @@ function VagaDetalhe() {
                 </p>
               ) : (
                 <form onSubmit={submeter} className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <Field label="Nome completo" error={errors["name"]}>
+                  <SectionTitle>Secção A — Identificação do candidato</SectionTitle>
+                  <Field label="Nome completo" req error={errors["name"]}>
                     <input
                       value={form.name}
                       maxLength={120}
@@ -280,7 +447,93 @@ function VagaDetalhe() {
                       className="input-ipma"
                     />
                   </Field>
-                  <Field label="Email" error={errors["email"]}>
+                  <Field label="Data de nascimento" req error={errors["birthDate"]}>
+                    <input
+                      type="date"
+                      value={form.birthDate}
+                      onChange={(e) => set("birthDate", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <Field label="Sexo" req error={errors["gender"]}>
+                    <select
+                      value={form.gender}
+                      onChange={(e) => set("gender", e.target.value)}
+                      className="input-ipma"
+                    >
+                      <option value="">Selecione…</option>
+                      <option>Masculino</option>
+                      <option>Feminino</option>
+                    </select>
+                  </Field>
+                  <Field label="Nacionalidade" req error={errors["nationality"]}>
+                    <select
+                      value={form.nationality}
+                      onChange={(e) => set("nationality", e.target.value)}
+                      className="input-ipma"
+                    >
+                      <option value="">Selecione…</option>
+                      {NACIONALIDADES.map((n) => (
+                        <option key={n}>{n}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field
+                    label="N.º de identificação civil (CC/BI)"
+                    req
+                    error={errors["idNumber"]}
+                  >
+                    <input
+                      value={form.idNumber}
+                      maxLength={20}
+                      onChange={(e) => set("idNumber", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <Field label="NIF" req error={errors["nif"]}>
+                    <input
+                      value={form.nif}
+                      maxLength={11}
+                      onChange={(e) => set("nif", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <div className="sm:col-span-2">
+                    <Field label="Endereço postal (rua, n.º, andar)" req error={errors["address"]}>
+                      <input
+                        value={form.address}
+                        maxLength={200}
+                        onChange={(e) => set("address", e.target.value)}
+                        className="input-ipma"
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Código postal" req error={errors["postalCode"]}>
+                    <input
+                      value={form.postalCode}
+                      maxLength={8}
+                      placeholder="0000-000"
+                      onChange={(e) => set("postalCode", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <Field label="Localidade" req error={errors["locality"]}>
+                    <input
+                      value={form.locality}
+                      maxLength={80}
+                      onChange={(e) => set("locality", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <Field label="Concelho de residência" req error={errors["municipality"]}>
+                    <input
+                      value={form.municipality}
+                      maxLength={80}
+                      onChange={(e) => set("municipality", e.target.value)}
+                      className="input-ipma"
+                    />
+                  </Field>
+                  <Field label="Endereço eletrónico" req error={errors["email"]}>
                     <input
                       type="email"
                       value={form.email}
@@ -297,48 +550,113 @@ function VagaDetalhe() {
                       className="input-ipma"
                     />
                   </Field>
-                  <Field label="NIF" error={errors["nif"]}>
+                  <Field label="Telemóvel" req error={errors["mobile"]}>
                     <input
-                      value={form.nif}
-                      maxLength={11}
-                      onChange={(e) => set("nif", e.target.value)}
+                      value={form.mobile}
+                      maxLength={20}
+                      onChange={(e) => set("mobile", e.target.value)}
                       className="input-ipma"
                     />
                   </Field>
-                  <Field label="Data de nascimento" error={errors["birthDate"]}>
+
+                  <SectionTitle>
+                    Secção B — Situação perante os requisitos de admissão
+                  </SectionTitle>
+                  <div className="sm:col-span-2">
+                    <Field
+                      label="Nível habilitacional (curso e área de formação)"
+                      req
+                      error={errors["education"]}
+                    >
+                      <input
+                        list="habilitacoes-lista"
+                        value={form.education}
+                        maxLength={200}
+                        onChange={(e) => set("education", e.target.value)}
+                        className="input-ipma"
+                      />
+                      <datalist id="habilitacoes-lista">
+                        {habilitacoes.map((l) => (
+                          <option key={l} value={l} />
+                        ))}
+                      </datalist>
+                    </Field>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Field label="Pós-graduação, mestrado ou doutoramento">
+                      <textarea
+                        rows={2}
+                        value={form.postgradInfo}
+                        maxLength={600}
+                        onChange={(e) => set("postgradInfo", e.target.value)}
+                        className="input-ipma resize-y"
+                      />
+                    </Field>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                      <input
+                        type="checkbox"
+                        checked={form.rjep}
+                        onChange={(e) => set("rjep", e.target.checked)}
+                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                      />
+                      <span>
+                        Titular de vínculo de emprego público (RJEP)?
+                        <Req />
+                      </span>
+                    </label>
+                  </div>
+                  {form.rjep && (
+                    <div className="sm:col-span-2">
+                      <Field label="Situação de RJEP" req error={errors["employmentSituation"]}>
+                        <input
+                          list="situacoes-lista"
+                          value={form.employmentSituation}
+                          maxLength={200}
+                          onChange={(e) => set("employmentSituation", e.target.value)}
+                          className="input-ipma"
+                        />
+                        <datalist id="situacoes-lista">
+                          {situacoes.map((l) => (
+                            <option key={l} value={l} />
+                          ))}
+                        </datalist>
+                      </Field>
+                    </div>
+                  )}
+                  <Field label="Órgão/serviço onde exerce ou por último exerceu">
                     <input
-                      type="date"
-                      value={form.birthDate}
-                      onChange={(e) => set("birthDate", e.target.value)}
+                      value={form.lastEmployer}
+                      maxLength={200}
+                      onChange={(e) => set("lastEmployer", e.target.value)}
                       className="input-ipma"
                     />
                   </Field>
-                  <Field label="Habilitações">
-                    <select
-                      value={form.education}
-                      onChange={(e) => set("education", e.target.value)}
+                  <Field label="Atividade exercida ou que por último exerceu">
+                    <input
+                      value={form.lastActivity}
+                      maxLength={200}
+                      onChange={(e) => set("lastActivity", e.target.value)}
                       className="input-ipma"
-                    >
-                      <option value="">Selecione…</option>
-                      {habilitacoes.map((l) => (
-                        <option key={l}>{l}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Situação profissional">
-                    <select
-                      value={form.professionalSituation}
-                      onChange={(e) => set("professionalSituation", e.target.value)}
-                      className="input-ipma"
-                    >
-                      <option value="">Selecione…</option>
-                      {situacoes.map((l) => (
-                        <option key={l}>{l}</option>
-                      ))}
-                    </select>
+                    />
                   </Field>
                   <div className="sm:col-span-2">
-                    <Field label="Motivação e experiência relevante" error={errors["motivation"]}>
+                    <Field label="Avaliação de desempenho dos últimos 3 anos">
+                      <input
+                        value={form.performanceEvaluation}
+                        maxLength={200}
+                        onChange={(e) => set("performanceEvaluation", e.target.value)}
+                        className="input-ipma"
+                      />
+                    </Field>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Field
+                      label="Funções relacionadas com o posto de trabalho a que se candidata"
+                      req
+                      error={errors["motivation"]}
+                    >
                       <textarea
                         rows={5}
                         value={form.motivation}
@@ -348,90 +666,161 @@ function VagaDetalhe() {
                       />
                     </Field>
                   </div>
-
                   <div className="sm:col-span-2">
-                    <Field label="Condições especiais para a realização dos métodos de seleção">
-                      <input
-                        value={form.specialConditions}
-                        maxLength={200}
-                        placeholder="Opcional — ex.: apoio à mobilidade, tempo adicional"
-                        onChange={(e) => set("specialConditions", e.target.value)}
-                        className="input-ipma"
+                    <Field label="Outras funções e atividades exercidas">
+                      <textarea
+                        rows={3}
+                        value={form.otherExperience}
+                        maxLength={1000}
+                        onChange={(e) => set("otherExperience", e.target.value)}
+                        className="input-ipma resize-y"
                       />
                     </Field>
                   </div>
+                  {vaga.allowNoDegree && (
+                    <div className="sm:col-span-2">
+                      <Field
+                        label="Formação/experiência substitutiva de grau académico"
+                        req
+                        error={errors["alternativeQualification"]}
+                      >
+                        <textarea
+                          rows={3}
+                          value={form.alternativeQualification}
+                          maxLength={1000}
+                          onChange={(e) => set("alternativeQualification", e.target.value)}
+                          className="input-ipma resize-y"
+                        />
+                      </Field>
+                    </div>
+                  )}
+
+                  {ehConcursal && (
+                    <div className="sm:col-span-2">
+                      <SectionTitle>Secção C — Método de seleção</SectionTitle>
+                      <p className="text-[12px] text-muted-foreground">
+                        Método de seleção pretendido, nos termos do artigo 36.º, n.º 3 da LTFP.
+                        <Req />
+                      </p>
+                      <div className="mt-2 space-y-2">
+                        {METODOS_PRETENDIDOS.map((m) => (
+                          <label
+                            key={m}
+                            className="flex items-center gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]"
+                          >
+                            <input
+                              type="radio"
+                              name="metodo-selecao"
+                              checked={form.selectionMethodsWanted[0] === m}
+                              onChange={() => set("selectionMethodsWanted", [m])}
+                              className="size-4 rounded-full border-border accent-[var(--primary)]"
+                            />
+                            <span>{m}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {errors["selectionMethodsWanted"] && (
+                        <p className="mt-1 text-[11px] text-destructive">
+                          {errors["selectionMethodsWanted"]}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {mostraDeficiencia && (
+                    <div className="space-y-3 sm:col-span-2">
+                      <SectionTitle>Secção D — Candidatos com deficiência</SectionTitle>
+                      <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                        <input
+                          type="checkbox"
+                          checked={form.deficiencia}
+                          onChange={(e) => set("deficiencia", e.target.checked)}
+                          className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                        />
+                        <span>Tenho grau de incapacidade (Lei n.º 4/2019 — quota de emprego)</span>
+                      </label>
+                      {form.deficiencia && (
+                        <div className="rounded-lg border border-border bg-white/40 p-3">
+                          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                            Declaração de grau de incapacidade e tipo de deficiência
+                            <Req />
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-3">
+                            <FilePickButton
+                              accept=".pdf,image/*"
+                              label="Escolher ficheiro"
+                              onPick={(files) => setDeclaracaoIncap(files[0] ?? null)}
+                            />
+                            {declaracaoIncap && (
+                              <span className="font-mono text-[11px] text-success">
+                                {declaracaoIncap.name}
+                              </span>
+                            )}
+                          </div>
+                          {errors["deficiencia"] && (
+                            <p className="mt-1 text-[11px] text-destructive">
+                              {errors["deficiencia"]}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      <Field label="Condições especiais para a realização dos métodos de seleção">
+                        <input
+                          value={form.specialConditions}
+                          maxLength={200}
+                          placeholder="Opcional — ex.: apoio à mobilidade, tempo adicional"
+                          onChange={(e) => set("specialConditions", e.target.value)}
+                          className="input-ipma"
+                        />
+                      </Field>
+                    </div>
+                  )}
+
 
                   <div className="space-y-3 sm:col-span-2">
-                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
-                      <input
-                        type="checkbox"
-                        checked={form.deficiencia}
-                        onChange={(e) => set("deficiencia", e.target.checked)}
-                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
-                      />
-                      <span>
-                        Candidato(a) com grau de incapacidade igual ou superior a 60% (quota de
-                        emprego)
-                      </span>
-                    </label>
-                    {form.deficiencia && (
-                      <div className="rounded-lg border border-border bg-white/40 p-3">
-                        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                          Declaração de incapacidade (obrigatória)
-                        </p>
-                        <input
-                          type="file"
-                          accept=".pdf,image/*"
-                          onChange={(e) => setDeclaracaoIncap(e.target.files?.[0] ?? null)}
-                          className="mt-2 text-[12px]"
-                        />
-                        {declaracaoIncap && (
-                          <p className="mt-1 font-mono text-[11px] text-success">
-                            {declaracaoIncap.name}
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      Documentos a anexar — pode juntar vários ficheiros por documento e uma
+                      descrição a cada um
+                    </p>
+                    {DEFAULT_DOCUMENTS.map((d) => (
+                      <div
+                        key={d.id}
+                        className="rounded-lg border border-border bg-white/40 p-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-[13px] font-medium">
+                            {d.label}
+                            {d.optional ? (
+                              <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                                (facultativo)
+                              </span>
+                            ) : (
+                              <Req />
+                            )}
                           </p>
-                        )}
-                        {errors["deficiencia"] && (
+                          <FilePickButton
+                            multiple
+                            accept=".pdf,.doc,.docx,image/*"
+                            label="Escolher ficheiros"
+                            onPick={(files) => addDocFiles(d.id, files)}
+                          />
+                        </div>
+                        <UploadList
+                          items={docFiles[d.id] ?? []}
+                          onDescription={(i, desc) => setDocFileDesc(d.id, i, desc)}
+                          onRemove={(i) => removeDocFile(d.id, i)}
+                        />
+                        {errors[`doc:${d.id}`] && (
                           <p className="mt-1 text-[11px] text-destructive">
-                            {errors["deficiencia"]}
+                            {errors[`doc:${d.id}`]}
                           </p>
                         )}
                       </div>
-                    )}
-                    <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
-                      <input
-                        type="checkbox"
-                        checked={form.rjep}
-                        onChange={(e) => set("rjep", e.target.checked)}
-                        className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
-                      />
-                      <span>
-                        Detenho vínculo de emprego público (RJEP) — junto declaração da entidade
-                        empregadora
-                      </span>
-                    </label>
+                    ))}
                   </div>
 
-                  <div className="sm:col-span-2 rounded-lg border border-border bg-white/40 p-3">
-                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                      Documentos a anexar (CV, certificado de habilitações, identificação)
-                    </p>
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,image/*"
-                      onChange={(e) => setAnexos(Array.from(e.target.files ?? []))}
-                      className="mt-2 text-[12px]"
-                    />
-                    {anexos.length > 0 && (
-                      <ul className="mt-2 list-inside list-disc font-mono text-[11px] text-muted-foreground">
-                        {anexos.map((f) => (
-                          <li key={f.name}>{f.name}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  <div className="sm:col-span-2">
+                  <div className="space-y-3 sm:col-span-2">
+                    <SectionTitle>Secção E — Declaração de veracidade</SectionTitle>
                     <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
                       <input
                         type="checkbox"
@@ -440,14 +829,70 @@ function VagaDetalhe() {
                         className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
                       />
                       <span>
-                        Declaro, sob compromisso de honra, que as informações prestadas são
-                        verdadeiras e que reúno os requisitos de admissão.
+                        Declaro, para os devidos efeitos, sob compromisso de honra, que os dados,
+                        elementos e informações constantes do presente documento são verdadeiros,
+                        exatos, completos e correspondem fielmente à realidade.
+                        <Req />
                       </span>
                     </label>
                     {errors["truthDeclaration"] && (
-                      <p className="mt-1 text-[11px] text-destructive">
-                        {errors["truthDeclaration"]}
-                      </p>
+                      <p className="text-[11px] text-destructive">{errors["truthDeclaration"]}</p>
+                    )}
+                    {ehMobilidade && (
+                      <>
+                        <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                          <input
+                            type="checkbox"
+                            checked={form.mobDeclaration}
+                            onChange={(e) => set("mobDeclaration", e.target.checked)}
+                            className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                          />
+                          <span>
+                            Venho, pelo presente, manifestar o meu interesse em integrar o Instituto
+                            Português do Mar e da Atmosfera (IPMA), no âmbito de um processo de
+                            mobilidade, entendendo que esta oportunidade representa uma mais-valia
+                            para o meu percurso profissional e me permitirá contribuir para os
+                            objetivos e missão da instituição.
+                            <Req />
+                          </span>
+                        </label>
+                        {errors["mobDeclaration"] && (
+                          <p className="text-[11px] text-destructive">{errors["mobDeclaration"]}</p>
+                        )}
+                      </>
+                    )}
+                    {ehBolsa && (
+                      <>
+                        <label className="flex items-start gap-3 rounded-lg border border-border bg-white/50 p-3 text-[13px]">
+                          <input
+                            type="checkbox"
+                            checked={form.grantDeclaration}
+                            onChange={(e) => set("grantDeclaration", e.target.checked)}
+                            className="mt-0.5 size-4 rounded border-border accent-[var(--primary)]"
+                          />
+                          <span>
+                            Declaro, sob compromisso de honra, que reúno e preencho todos os
+                            requisitos de admissão ao presente concurso previstos na Lei, em
+                            especial no Regulamento de Bolsas de Investigação Científica do IPMA,
+                            I.P. e, subsidiariamente, no Regulamento de Bolsas de Investigação da
+                            Fundação para a Ciência e a Tecnologia, I.P. (FCT, I.P.), no Estatuto do
+                            Bolseiro de Investigação (EBI) e no Aviso de abertura do presente
+                            concurso. Declaro que não exerço qualquer atividade profissional ou de
+                            prestação de serviços que viole o dever de dedicação exclusiva. Declaro
+                            ter pleno conhecimento de que, sem prejuízo do disposto na lei penal, a
+                            prestação de falsas declarações sobre matérias relevantes para a
+                            concessão ou renovação da bolsa, nos termos do artigo 25.º do
+                            Regulamento de Bolsas de Investigação da FCT, I.P., implica o
+                            cancelamento da respetiva bolsa.
+                            <Req />
+                          </span>
+                        </label>
+                        {errors["grantDeclaration"] && (
+                          <p className="text-[11px] text-destructive">
+                            {errors["grantDeclaration"]}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
 
@@ -522,19 +967,30 @@ function VagaDetalhe() {
   );
 }
 
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="mt-2 border-b border-border pb-1 font-mono text-[11px] uppercase tracking-[0.16em] text-primary sm:col-span-2">
+      {children}
+    </h3>
+  );
+}
+
 function Field({
   label,
   error,
+  req,
   children,
 }: {
   label: string;
   error?: string | undefined;
+  req?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <label className="block">
       <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
         {label}
+        {req && <Req />}
       </span>
       <div className="mt-1.5">{children}</div>
       {error && <span className="mt-1 block text-[11px] text-destructive">{error}</span>}
