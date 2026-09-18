@@ -130,26 +130,26 @@ function Portal() {
                 </p>
               )}
             </div>
-            <div className="flex gap-3">
-              <div className="glass min-w-[120px] rounded-lg px-5 py-3">
+            <div className="grid w-full grid-cols-2 gap-3 sm:w-auto sm:grid-cols-4">
+              <div className="glass min-w-0 rounded-lg border-l-4 border-l-primary px-4 py-3 sm:min-w-[120px] sm:px-5">
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                   Abertas
                 </p>
                 <p className="mt-1 text-2xl font-bold tracking-tight">{publicas.length}</p>
               </div>
-              <div className="glass min-w-[120px] rounded-lg px-5 py-3">
+              <div className="glass min-w-0 rounded-lg border-l-4 border-l-subsolo px-4 py-3 sm:min-w-[120px] sm:px-5">
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                   Em análise
                 </p>
                 <p className="mt-1 text-2xl font-bold tracking-tight text-warn">{emAnalise}</p>
               </div>
-              <div className="glass min-w-[120px] rounded-lg px-5 py-3">
+              <div className="glass min-w-0 rounded-lg border-l-4 border-l-neutral px-4 py-3 sm:min-w-[120px] sm:px-5">
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                   Concluídos
                 </p>
                 <p className="mt-1 text-2xl font-bold tracking-tight">{concluidos}</p>
               </div>
-              <div className="glass min-w-[120px] rounded-lg px-5 py-3">
+              <div className="glass min-w-0 rounded-lg border-l-4 border-l-atmosfera px-4 py-3 sm:min-w-[120px] sm:px-5">
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                   A encerrar
                 </p>
