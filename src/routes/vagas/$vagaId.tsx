@@ -191,7 +191,14 @@ function VagaDetalhe() {
     if (form.deficiencia && !declaracaoIncap)
       err["deficiencia"] = "Anexe a declaração de incapacidade.";
     if (!form.truthDeclaration)
-      err["truthDeclaration"] = "Tem de declarar a veracidade das informações.";
+      err["truthDeclaration"] =
+        "Não é possível submeter a candidatura sem confirmar a veracidade dos factos.";
+    if (ehMobilidade && !form.mobDeclaration)
+      err["mobDeclaration"] =
+        "Para concorrer tem de manifestar o seu interesse formalmente na mobilidade clicando na declaração.";
+    if (ehBolsa && !form.grantDeclaration)
+      err["grantDeclaration"] =
+        "Não é possível submeter a candidatura sem confirmar a veracidade dos factos.";
     setErrors(err);
     if (Object.keys(err).length) {
       toast.error("Verifique os campos assinalados.");
