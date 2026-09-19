@@ -75,6 +75,21 @@ function resp(role: Role, start: number, end: number | null): Responsabilidade {
 
 export const SEED_PESSOAS: Pessoa[] = [
   {
+    id: "p0",
+    name: "Claudia",
+    email: "claudia.lauro@ipma.pt",
+    phone: "218 447 001",
+    nif: "200000001",
+    hasLogin: true,
+    password: "Claudia@1977",
+    responsabilidades: [
+      resp("ADMIN", -365, null),
+      resp("GESTOR_RH", -365, null),
+      resp("GESTAO", -365, null),
+      resp("JURI", -365, null),
+    ],
+  },
+  {
     id: "p1",
     name: "Helena Marques",
     email: "helena.marques@ipma.pt",
