@@ -12,6 +12,7 @@ Este pacote contém tudo o que é preciso para pôr o servidor de recrutamento
 | `application-prod.properties` | `src/main/resources/` | configuração do perfil de produção |
 | `.env.example` | referência | lista das variáveis a definir no Railway |
 | `initdb/01-extensions.sql` | consola SQL do Postgres | extensões e fuso horário |
+| `initdb/02-amostra-dados.sql` | consola SQL do Postgres (após o arranque do Java) | utilizador de demonstração `claudia.lauro@ipma.pt` |
 | `docker-compose.yml` | local | ambiente igual ao Railway, para testar no computador |
 
 ## Instalação passo a passo
