@@ -36,7 +36,7 @@ import {
   type OptionValue,
 } from "./opcoes";
 
-const STORAGE_KEY = "ipma-recrutamento-v7";
+const STORAGE_KEY = "ipma-recrutamento-v8";
 
 interface Data {
   vagas: Vaga[];
