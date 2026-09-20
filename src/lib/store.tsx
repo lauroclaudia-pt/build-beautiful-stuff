@@ -36,7 +36,7 @@ import {
   type OptionValue,
 } from "./opcoes";
 
-const STORAGE_KEY = "ipma-recrutamento-v6";
+const STORAGE_KEY = "ipma-recrutamento-v8";
 
 interface Data {
   vagas: Vaga[];
@@ -110,6 +110,14 @@ function seed(): Data {
   };
 }
 
+/** Mantém as pessoas guardadas e garante que as contas de origem existem sempre. */
+function mergePessoas(stored: Pessoa[] | undefined, base: Pessoa[]): Pessoa[] {
+  if (!stored?.length) return base;
+  const emails = new Set(stored.map((p) => p.email.trim().toLowerCase()));
+  const faltam = base.filter((p) => !emails.has(p.email.trim().toLowerCase()));
+  return faltam.length ? [...faltam, ...stored] : stored;
+}
+
 function load(): Data {
   const base = seed();
   if (typeof window === "undefined") return base;
@@ -123,7 +131,7 @@ function load(): Data {
           ...a,
           documents: a.documents ?? DEFAULT_DOCUMENTS.map((d) => ({ ...d })),
         })),
-        pessoas: parsed.pessoas ?? base.pessoas,
+        pessoas: mergePessoas(parsed.pessoas, base.pessoas),
         sessionId: parsed.sessionId ?? null,
         site: { ...DEFAULT_SITE, ...(parsed.site ?? {}) },
         opcoes: parsed.opcoes?.length ? parsed.opcoes : base.opcoes,
