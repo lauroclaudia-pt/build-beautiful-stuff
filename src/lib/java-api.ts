@@ -11,7 +11,7 @@ import type { Role } from "./pessoas";
 
 /** Endereço do servidor de recrutamento (pode ser alterado na Gestão do site). */
 export const DEFAULT_JAVA_API_URL =
-  "https://appjavarailway-lovablerecruitment.up.railway.app";
+  "https://build-beautiful-stuff-production.up.railway.app";
 
 const AUTH_KEY = "ipma-java-auth";
 
