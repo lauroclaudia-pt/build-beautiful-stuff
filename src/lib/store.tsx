@@ -110,6 +110,14 @@ function seed(): Data {
   };
 }
 
+/** Mantém as pessoas guardadas e garante que as contas de origem existem sempre. */
+function mergePessoas(stored: Pessoa[] | undefined, base: Pessoa[]): Pessoa[] {
+  if (!stored?.length) return base;
+  const emails = new Set(stored.map((p) => p.email.trim().toLowerCase()));
+  const faltam = base.filter((p) => !emails.has(p.email.trim().toLowerCase()));
+  return faltam.length ? [...faltam, ...stored] : stored;
+}
+
 function load(): Data {
   const base = seed();
   if (typeof window === "undefined") return base;
