@@ -123,7 +123,7 @@ function load(): Data {
           ...a,
           documents: a.documents ?? DEFAULT_DOCUMENTS.map((d) => ({ ...d })),
         })),
-        pessoas: parsed.pessoas ?? base.pessoas,
+        pessoas: mergePessoas(parsed.pessoas, base.pessoas),
         sessionId: parsed.sessionId ?? null,
         site: { ...DEFAULT_SITE, ...(parsed.site ?? {}) },
         opcoes: parsed.opcoes?.length ? parsed.opcoes : base.opcoes,
