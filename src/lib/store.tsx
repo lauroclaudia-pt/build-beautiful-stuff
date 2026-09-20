@@ -133,7 +133,16 @@ function load(): Data {
         })),
         pessoas: mergePessoas(parsed.pessoas, base.pessoas),
         sessionId: parsed.sessionId ?? null,
-        site: { ...DEFAULT_SITE, ...(parsed.site ?? {}) },
+        site: {
+          ...DEFAULT_SITE,
+          ...(parsed.site ?? {}),
+          // Migração: endereço antigo do servidor de recrutamento → endereço atual.
+          apiUrl:
+            !parsed.site?.apiUrl ||
+            parsed.site.apiUrl.includes("appjavarailway-lovablerecruitment")
+              ? DEFAULT_SITE.apiUrl
+              : parsed.site.apiUrl,
+        },
         opcoes: parsed.opcoes?.length ? parsed.opcoes : base.opcoes,
         notificacoes: parsed.notificacoes ?? [],
       };
