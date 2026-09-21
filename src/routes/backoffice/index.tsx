@@ -525,6 +525,15 @@ function NovaVaga({
           className="input-ipma"
         />
       </L>
+      <L label={<>Suplemento mensal{dirigente && <Req />}</>}>
+        <input
+          inputMode="decimal"
+          placeholder="0,00 €"
+          value={f.monthlySupplement}
+          onChange={(e) => setF({ ...f, monthlySupplement: e.target.value })}
+          className="input-ipma"
+        />
+      </L>
       <L label="Código BEP/Edital">
         <input value={f.bepCode} onChange={(e) => setF({ ...f, bepCode: e.target.value })} className="input-ipma" />
       </L>
