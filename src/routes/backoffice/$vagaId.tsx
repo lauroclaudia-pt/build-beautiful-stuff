@@ -198,6 +198,9 @@ function GestaoVaga() {
   }
 
   const todos = applicants.filter((a) => a.vagaId === vaga.id);
+  // Só se tramita para a fase seguinte quando todos estiverem admitidos/excluídos.
+  const porTriar = todos.filter((a) => a.state !== "ADMITTED" && a.state !== "EXCLUDED");
+
   const etapaAtiva = vaga.stages.find((s) => s.state === "active");
 
   function notificarFase(code: StageCode) {
@@ -628,7 +631,7 @@ function GestaoVaga() {
                     <th className="pb-2 pr-3">Nome</th>
                     <th className="pb-2 pr-3">Data</th>
                     <th className="pb-2 pr-3">Estado</th>
-                    <th className="pb-2">Atualizar estado</th>
+                    <th className="pb-2">Triagem</th>
                   </tr>
                 </thead>
                 <tbody>
