@@ -571,6 +571,7 @@ function GestaoVaga() {
           )}
         </section>
 
+        {tab === "candidato" && (
         {/* Atas de admitidos e excluídos */}
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:100ms]">
           <h2 className="text-lg font-semibold tracking-tight">
