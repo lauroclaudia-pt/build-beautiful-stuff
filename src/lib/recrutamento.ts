@@ -88,6 +88,8 @@ export interface Vaga {
   /** Unidades orgânicas (uma ou mais); o campo `department` guarda a principal. */
   departments?: string[];
   location: string;
+  /** Locais de trabalho (um ou mais, no máximo o n.º de postos); `location` guarda o principal. */
+  locations?: string[];
   positions: number;
   career: string;
   bond: string;
