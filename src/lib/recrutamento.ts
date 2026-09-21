@@ -219,9 +219,9 @@ export interface TriagemCriterios {
   habilitacao: boolean | null;
   vinculo: boolean | null;
   documentos: boolean | null;
-  experiencia: boolean | null;
   /** Experiência profissional mínima (4 ou 6 anos) — só em cargos de direção. */
-  experienciaDirigente?: boolean | null;
+  experiencia: boolean | null;
+
   /** Outros fatores de exclusão não cumpridos. */
   outrosFatores?: boolean | null;
   /** Motivos de exclusão pré-definidos selecionados (vários). */
