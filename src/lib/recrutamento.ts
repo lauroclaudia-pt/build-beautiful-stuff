@@ -222,7 +222,7 @@ export interface TriagemCriterios {
   /** Experiência profissional mínima (4 ou 6 anos) — só em cargos de direção. */
   experiencia: boolean | null;
 
-  /** Outros fatores de exclusão não cumpridos. */
+  /** Outros fatores de exclusão cumpridos. */
   outrosFatores?: boolean | null;
   /** Motivos de exclusão pré-definidos selecionados (vários). */
   motivos?: string[];
@@ -338,7 +338,7 @@ export const TRIAGEM_CRITERIOS: TriagemCriterioDef[] = [
       "Tem no mínimo 4 ou 6 anos de experiência profissional, respetivamente CD ou DS, na AP ou no setor privado depois de concluída a licenciatura?",
     apenasDirigente: true,
   },
-  { key: "outrosFatores", label: "Outros fatores de exclusão não cumpridos?" },
+  { key: "outrosFatores", label: "Outros fatores de exclusão cumpridos?" },
 ];
 
 /** Critérios aplicáveis a um tipo de oferta. */
