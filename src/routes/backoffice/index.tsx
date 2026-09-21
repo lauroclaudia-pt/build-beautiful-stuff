@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageShell, JobStateBadge, RequireRole } from "@/components/shell";
+import { Req } from "@/components/req";
 import { useStore } from "@/lib/store";
 import { hasActiveRole } from "@/lib/pessoas";
 import { Eye } from "lucide-react";
@@ -9,6 +10,7 @@ import {
   JOB_STATE_LABEL,
   OFFER_TYPE_LABEL,
   daysUntil,
+  defaultRemunerationNotes,
   departmentsOf,
   formatDate,
   nextRef,
@@ -280,7 +282,8 @@ function NovaVaga({
     bond: vinculos[0] ?? "",
     regime: regimes[0] ?? "",
     remuneration: "",
-    remunerationNotes: "",
+    monthlySupplement: "",
+    remunerationNotes: defaultRemunerationNotes("PROCEDIMENTO_CONCURSAL_COMUM"),
     educationLevel: habilitacoes[1] ?? habilitacoes[0] ?? "",
     requirements: "",
     description: "",
@@ -301,6 +304,7 @@ function NovaVaga({
   const fases = stageCodesFor(f.offerType, { hasAc, hasEac });
   const metodosSelecionados = selectionMethodsFrom({ hasPc, hasAc, hasEac });
   const maxLocais = Math.max(1, rules.singlePosition ? 1 : Number(f.positions) || 1);
+  const dirigente = f.offerType === "CARGOS_DIRECAO";
 
   function alternarLocal(d: string) {
     setF((prev) => {
@@ -313,14 +317,21 @@ function NovaVaga({
 
   function mudarTipo(t: OfferType) {
     const r = offerTypeRules(t);
-    setF((prev) => ({
-      ...prev,
-      offerType: t,
-      hasPc: r.pc ?? r.defaults.pc,
-      hasAc: r.ac ?? r.defaults.ac,
-      hasEac: r.eac ?? r.defaults.eac,
-      positions: r.singlePosition ? 1 : prev.positions,
-    }));
+    setF((prev) => {
+      // Mantém o texto se já foi editado; caso contrário, segue o predefinido do novo tipo.
+      const notes = !prev.remunerationNotes.trim() || prev.remunerationNotes === defaultRemunerationNotes(prev.offerType)
+        ? defaultRemunerationNotes(t)
+        : prev.remunerationNotes;
+      return {
+        ...prev,
+        offerType: t,
+        remunerationNotes: notes,
+        hasPc: r.pc ?? r.defaults.pc,
+        hasAc: r.ac ?? r.defaults.ac,
+        hasEac: r.eac ?? r.defaults.eac,
+        positions: r.singlePosition ? 1 : prev.positions,
+      };
+    });
   }
 
   function submit(e: React.FormEvent) {
@@ -340,6 +351,13 @@ function NovaVaga({
     if (f.locations.length > maxLocais) {
       toast.error(`Só pode escolher ${maxLocais} local(is) de trabalho.`);
       return;
+    }
+    if (dirigente) {
+      const valor = f.monthlySupplement.replace(/\s|€/g, "").replace(",", ".");
+      if (!valor || Number.isNaN(Number(valor)) || Number(valor) <= 0) {
+        toast.error("Indique o suplemento mensal (obrigatório em cargos de direção).");
+        return;
+      }
     }
     onCreate({
       ...f,
@@ -517,6 +535,15 @@ function NovaVaga({
           className="input-ipma"
         />
       </L>
+      <L label={<>Suplemento mensal{dirigente && <Req />}</>}>
+        <input
+          inputMode="decimal"
+          placeholder="0,00 €"
+          value={f.monthlySupplement}
+          onChange={(e) => setF({ ...f, monthlySupplement: e.target.value })}
+          className="input-ipma"
+        />
+      </L>
       <L label="Código BEP/Edital">
         <input value={f.bepCode} onChange={(e) => setF({ ...f, bepCode: e.target.value })} className="input-ipma" />
       </L>
@@ -642,7 +669,7 @@ function NovaVaga({
   );
 }
 
-function L({ label, children }: { label: string; children: React.ReactNode }) {
+function L({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">

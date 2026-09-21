@@ -95,6 +95,8 @@ export interface Vaga {
   bond: string;
   regime: string;
   remuneration: string;
+  /** Suplemento mensal (money) — obrigatório em cargos de direção (dirigentes). */
+  monthlySupplement?: string;
   /** Características da remuneração (texto livre). */
   remunerationNotes?: string;
   educationLevel: string;
@@ -529,6 +531,19 @@ export const EDUCATION_LEVELS = [
 export const BONDS = ["Contrato de trabalho em funções públicas", "Comissão de serviço", "Bolsa"];
 export const REGIMES = ["Tempo inteiro", "Tempo parcial"];
 export const SELECTION_METHODS = ["Prova de Conhecimentos (PC)", "Avaliação Curricular (AC)", "Entrevista de Avaliação de Competências (EAC)"];
+
+/** Texto predefinido das características da remuneração — procedimentos concursais (negociação do posicionamento remuneratório). */
+export const DEFAULT_REMUNERATION_NOTES_CONCURSAL = `- Havendo lugar à negociação do posicionamento remuneratório, aquela que o dirigente máximo do órgão ou serviço pondera vir a oferecer aos trabalhadores a recrutar, determinada em função das disponibilidades orçamentais, sem prejuízo da possibilidade de, fundamentadamente, poder vir a oferecer posição diferente nos termos e com observância dos limites legalmente definidos`;
+
+/** Texto predefinido das características da remuneração — bolsas de investigação (valores FCT). */
+export const DEFAULT_REMUNERATION_NOTES_BOLSA = `- O montante da bolsa consta da tabela de valores das bolsas, aprovada pela FCT, I.P. https://www.fct.pt/wp-content/uploads/2026/03/Tabela-de-Valores-SMM-2026.pdf . O bolseiro tem ainda direito ao reembolso dos encargos relativos ao Seguro Social Voluntário (1.º escalão), caso se aplique, de acordo com as condições definidas no Estatuto do Bolseiro de Investigação. O bolseiro beneficiará de um seguro de acidentes pessoais no decurso da bolsa.
+
+O pagamento da bolsa será feito com periodicidade mensal, através de transferência bancária a efetuar pelos serviços do IPMA, I.P. para a conta indicada pelo bolseiro.`;
+
+/** Texto predefinido das características da remuneração, conforme o tipo de oferta. */
+export function defaultRemunerationNotes(t: OfferType): string {
+  return t === "BOLSA_INVESTIGACAO_CIENTIFICA" ? DEFAULT_REMUNERATION_NOTES_BOLSA : DEFAULT_REMUNERATION_NOTES_CONCURSAL;
+}
 
 /** Nome do método de seleção correspondente a cada fase de avaliação da tramitação. */
 export const METHOD_BY_FLAG = {
