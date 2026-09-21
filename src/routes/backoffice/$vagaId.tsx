@@ -857,6 +857,8 @@ function GestaoVaga() {
             </div>
           )}
         </section>
+        </>
+        )}
 
         {tab === "candidato" && (
         <>
