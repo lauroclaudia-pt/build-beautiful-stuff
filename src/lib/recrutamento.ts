@@ -552,6 +552,12 @@ export function departmentsOf(v: { departments?: string[]; department?: string }
   return v.department ? [v.department] : [];
 }
 
+/** Locais de trabalho de um procedimento (suporta o campo antigo com um só valor). */
+export function locationsOf(v: { locations?: string[]; location?: string }): string[] {
+  if (v.locations?.length) return v.locations;
+  return v.location ? [v.location] : [];
+}
+
 /** Próxima referência automática no formato AAAA/N.º sequencial (ex.: 2026/004). */
 export function nextRef(vagas: { ref: string }[], date = new Date()): string {
   const ano = date.getFullYear();
