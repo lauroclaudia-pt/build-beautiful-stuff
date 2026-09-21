@@ -403,13 +403,32 @@ function NovaVaga({
           ))}
         </select>
       </L>
-      <L label="Local">
-        <select value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} className="input-ipma">
-          {locais.map((d) => (
-            <option key={d}>{d}</option>
-          ))}
-        </select>
-      </L>
+      <div className="sm:col-span-3 rounded-lg border border-border bg-white/50 p-4">
+        <L label={`Local de trabalho (máx. ${maxLocais} — n.º de postos)`}>
+          <div className="flex flex-wrap gap-2">
+            {locais.map((d) => {
+              const on = f.locations.includes(d);
+              const cheio = !on && f.locations.length >= maxLocais;
+              return (
+                <button
+                  type="button"
+                  key={d}
+                  disabled={cheio}
+                  onClick={() => alternarLocal(d)}
+                  className={`rounded-md px-3 py-1.5 text-[12px] disabled:opacity-40 ${
+                    on ? "bg-primary text-primary-foreground" : "border border-border bg-white/60"
+                  }`}
+                >
+                  {d}
+                </button>
+              );
+            })}
+          </div>
+        </L>
+        <p className="mt-2 text-[12px] text-muted-foreground">
+          Selecionados {f.locations.length} de {maxLocais} locais permitidos.
+        </p>
+      </div>
       <L label="Postos">
         <input
           type="number"
