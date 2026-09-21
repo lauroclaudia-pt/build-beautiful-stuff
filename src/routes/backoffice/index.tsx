@@ -97,7 +97,7 @@ function Backoffice() {
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
               Backoffice · Divisão de Recursos Humanos
             </p>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight">Painel de vagas</h1>
+            <h1 className="mt-3 text-4xl font-bold tracking-tight">Painel de Recrutamento</h1>
           </div>
           <button
             onClick={() => setNovo((n) => !n)}

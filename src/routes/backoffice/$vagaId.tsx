@@ -387,7 +387,7 @@ function GestaoVaga() {
           to="/backoffice"
           className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground"
         >
-          ← Painel de vagas
+          ← Painel de Recrutamento
         </Link>
 
         <div className="mt-5 flex animate-rise flex-wrap items-start justify-between gap-4">
