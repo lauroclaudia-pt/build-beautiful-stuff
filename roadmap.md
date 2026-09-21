@@ -64,3 +64,5 @@
 - [ ] Métodos de seleção derivados das caixas da tramitação (PC/AC/EAC)
 - [ ] Campo memo "Características da remuneração"
 - [ ] Secção "Local de trabalho": vários locais, no máximo tantos quantos o n.º de vagas
+- [ ] "Painel de vagas" → "Painel de Recrutamento"
+- [ ] Ao abrir uma vaga no backoffice: mostrar apenas os dados da vaga (consulta); candidaturas só no separador Candidato
