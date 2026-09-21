@@ -18,7 +18,14 @@ Object.assign(process.env, serverEnv);
 const nitroPreset = process.env['NITRO_PRESET'];
 
 export default defineConfig({
-  ...(nitroPreset ? { nitro: { preset: nitroPreset } } : {}),
+  ...(nitroPreset
+    ? {
+        nitro: {
+          preset: nitroPreset,
+          output: { dir: ".output", serverDir: ".output/server", publicDir: ".output/public" },
+        },
+      }
+    : {}),
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
