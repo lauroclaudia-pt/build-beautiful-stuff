@@ -171,7 +171,7 @@ function Backoffice() {
                         {OFFER_TYPE_LABEL[v.offerType]}
                       </p>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{v.department}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{departmentsOf(v).join(" · ")}</td>
                     <td className="px-4 py-3">
                       <JobStateBadge state={v.state} />
                     </td>
