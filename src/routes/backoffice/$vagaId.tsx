@@ -5,25 +5,37 @@ import { toast } from "sonner";
 import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/components/shell";
 import { finalGrade, useStore } from "@/lib/store";
 import { hasActiveRole } from "@/lib/pessoas";
+import { FilePickButton } from "@/components/file-upload";
 import {
   AC_CRITERIA,
   APPLICANT_STATE_LABEL,
+  ATA_LABEL,
+  diasUteisApos,
+  diasUteisEntre,
+  type AtaTipo,
   DESEMPENHO_CONVERSION,
   EAC_CRITERIA,
   EAC_MAX,
   EAC_MIN,
   EMPTY_TRIAGEM,
+  MOTIVOS_EXCLUSAO,
+  JOB_STATE_LABEL,
   OFFER_TYPE_LABEL,
   STAGE_LABEL,
-  TRIAGEM_CRITERIOS,
+  departmentsOf,
+  locationsOf,
   calcAcGrade,
   calcEacGrade,
   formatDate,
+  triagemCriteriosDe,
+  triagemEstado,
   type Applicant,
   type ApplicantState,
+  type OfferType,
   type StageCode,
   type TriagemCriterios,
 } from "@/lib/recrutamento";
+
 
 export const Route = createFileRoute("/backoffice/$vagaId")({
   head: () => ({
@@ -95,6 +107,9 @@ function GestaoVaga() {
     setGrades,
     addVagaRegistro,
     addNotificacoes,
+    gerarAta,
+    atualizarAta,
+    notificarAtaProvisoria,
     notificacoes,
     site,
     currentUser,
@@ -107,6 +122,7 @@ function GestaoVaga() {
   const [aberto, setAberto] = useState<string | null>(null);
   const [ata, setAta] = useState<string | null>(null);
   const [edit, setEdit] = useState(false);
+  const [tab, setTab] = useState<"vaga" | "candidato">("vaga");
   const [obs, setObs] = useState("");
   const [notifAberta, setNotifAberta] = useState<string | null>(null);
 
@@ -194,10 +210,75 @@ function GestaoVaga() {
   }
 
   const todos = applicants.filter((a) => a.vagaId === vaga.id);
+  // Só se tramita para a fase seguinte quando todos estiverem admitidos/excluídos.
+  const porTriar = todos.filter((a) => a.state !== "ADMITTED" && a.state !== "EXCLUDED");
+
   const etapaAtiva = vaga.stages.find((s) => s.state === "active");
+
+  // --- Atas de admitidos e excluídos ---
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  const admitidos = todos.filter((a) => a.state === "ADMITTED");
+  const excluidos = todos.filter((a) => a.state === "EXCLUDED");
+  const todosTriados = todos.length > 0 && porTriar.length === 0;
+  const ataProv = vaga.atas?.find((a) => a.tipo === "PROVISORIA");
+  const ataFinal = vaga.atas?.find((a) => a.tipo === "FINAL");
+  const podeGerarProvisoria = todosTriados && excluidos.length > 0;
+  const podeGerarFinal = todosTriados;
+  const prazoOk =
+    !!ataProv?.prazoResposta && diasUteisEntre(hojeISO, ataProv.prazoResposta) >= 10;
+  const podeNotificarAdmitidos =
+    todosTriados && (excluidos.length === 0 || (!!ataProv?.ficheiroNome && prazoOk));
+
+  function textoAta(tipo: AtaTipo) {
+    const v = vaga!;
+    const linha = (a: Applicant, i: number) =>
+      `${String(i + 1).padStart(2, "0")}. ${a.name} — NIF ${a.nif}${
+        a.state === "EXCLUDED"
+          ? ` — EXCLUÍDO/A${a.exclusionReason ? `: ${a.exclusionReason}` : ""}`
+          : " — ADMITIDO/A"
+      }`;
+    return [
+      `${ATA_LABEL[tipo].toUpperCase()}`,
+      `Instituto Português do Mar e da Atmosfera, I.P.`,
+      `Procedimento ${v.ref} — ${v.title} (${OFFER_TYPE_LABEL[v.offerType]})`,
+      `Data: ${new Date().toLocaleDateString("pt-PT")}`,
+      ``,
+      `JÚRI`,
+      `Presidente: ${v.juryPresident || "(por designar)"}`,
+      ...(v.juryMembers.length ? v.juryMembers.map((m, i) => `Vogal ${i + 1}: ${m}`) : []),
+      ``,
+      `CANDIDATOS ADMITIDOS (${admitidos.length})`,
+      ...(admitidos.length ? admitidos.map(linha) : ["(nenhum)"]),
+      ``,
+      `CANDIDATOS EXCLUÍDOS (${excluidos.length})`,
+      ...(excluidos.length ? excluidos.map(linha) : ["(nenhum)"]),
+      ``,
+      tipo === "PROVISORIA"
+        ? `Os candidatos excluídos dispõem de 10 dias úteis, a contar da notificação, para corrigir ou completar a sua candidatura.`
+        : `A presente lista é definitiva. Só os candidatos admitidos transitam para a fase de avaliação.`,
+    ].join("\n");
+  }
+
+  function descarregarTexto(nome: string, texto: string) {
+    const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const el = document.createElement("a");
+    el.href = url;
+    el.download = nome;
+    el.click();
+    URL.revokeObjectURL(url);
+  }
 
   function notificarFase(code: StageCode) {
     const v = vaga!;
+    if (code === "ADMISSION" && !podeNotificarAdmitidos) {
+      toast.error(
+        porTriar.length > 0
+          ? "Todos os candidatos têm de estar admitidos ou excluídos antes de notificar."
+          : "Carregue a ata provisória assinada e defina a data-limite de resposta (mín. 10 dias úteis).",
+      );
+      return;
+    }
     const modelo = (site.emailTemplates ?? []).find((t) => t.stage === code && t.enabled);
     if (!modelo) {
       toast.error(
@@ -252,7 +333,7 @@ function GestaoVaga() {
     toast.success("Observação registada.");
   }
 
-  function gerarAta() {
+  function gerarAtaJuri() {
     const v = vaga!;
     const ordenados = [...todos].sort((a, b) => (finalGrade(b) ?? -1) - (finalGrade(a) ?? -1));
     const linhas = [
@@ -310,7 +391,7 @@ function GestaoVaga() {
           to="/backoffice"
           className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground"
         >
-          ← Painel de vagas
+          ← Painel de Recrutamento
         </Link>
 
         <div className="mt-5 flex animate-rise flex-wrap items-start justify-between gap-4">
@@ -323,7 +404,8 @@ function GestaoVaga() {
             </div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight">{vaga.title}</h1>
             <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-              {vaga.department} · {vaga.location} · prazo {formatDate(vaga.deadline)}
+              {departmentsOf(vaga).join(" · ")} · {locationsOf(vaga).join(" · ")} · prazo{" "}
+              {formatDate(vaga.deadline)}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -355,7 +437,82 @@ function GestaoVaga() {
           </div>
         </div>
 
-        {edit && (
+        <div className="mt-6 flex flex-wrap gap-2">
+          {([
+            ["vaga", "Procedimento"],
+            ["candidato", "Candidato"],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className={`rounded-md px-4 py-2 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors ${
+                tab === k
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-border bg-white/60 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "vaga" && (
+          <section className="glass mt-6 animate-rise rounded-xl p-6">
+            <h2 className="text-lg font-semibold tracking-tight">Dados do procedimento</h2>
+            <dl className="mt-4 grid gap-4 text-[13px] sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                ["Referência", vaga.ref],
+                ["Tipo de oferta", OFFER_TYPE_LABEL[vaga.offerType]],
+                ["Estado", JOB_STATE_LABEL[vaga.state]],
+                ["Data de publicação", vaga.publishedAt ? formatDate(vaga.publishedAt) : "Por publicar"],
+                ["Prazo de candidatura", formatDate(vaga.deadline)],
+                ["Unidade(s) orgânica(s)", departmentsOf(vaga).join(" · ")],
+                ["Local(is) de trabalho", locationsOf(vaga).join(" · ")],
+                ["Postos", String(vaga.positions)],
+                ["Cargo / carreira", vaga.career],
+                ["Vínculo", vaga.bond],
+                ["Regime", vaga.regime],
+                ["Habilitação mínima", vaga.educationLevel],
+                ["Remuneração", vaga.remuneration],
+                ["Suplemento mensal", vaga.monthlySupplement || "—"],
+                ["Características da remuneração", vaga.remunerationNotes || "—"],
+                ["Código BEP/Edital", vaga.bepCode || "Por atribuir"],
+                ["Métodos de seleção", vaga.selectionMethods.join(" · ")],
+                ["Presidente do júri", vaga.juryPresident || "Por designar"],
+                ["Vogais", vaga.juryMembers.join(", ") || "Por designar"],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    {k}
+                  </dt>
+                  <dd className="mt-1">{v || "—"}</dd>
+                </div>
+              ))}
+            </dl>
+            {(vaga.description || vaga.requirements) && (
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {vaga.description && (
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      Caracterização do posto
+                    </p>
+                    <p className="mt-1 text-[13px] whitespace-pre-wrap">{vaga.description}</p>
+                  </div>
+                )}
+                {vaga.requirements && (
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      Requisitos
+                    </p>
+                    <p className="mt-1 text-[13px] whitespace-pre-wrap">{vaga.requirements}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
+        {tab === "vaga" && edit && (
           <div className="glass mt-6 grid animate-rise gap-4 rounded-xl p-6 sm:grid-cols-3">
             <Campo label="Código BEP/Edital">
               <input
@@ -418,31 +575,40 @@ function GestaoVaga() {
         )}
 
         {/* Pipeline */}
+        {tab === "vaga" && (
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:80ms]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold tracking-tight">Pipeline de etapas</h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {etapaAtiva?.code === "ADMISSION" && porTriar.length > 0 && (
+                <span className="rounded-md border border-warn/50 bg-warn/10 px-3 py-1.5 text-[12px]">
+                  Faltam triar {porTriar.length} candidatura(s)
+                </span>
+              )}
               {etapaAtiva?.code === "ADMISSION" && (
                 <button
+                  disabled={porTriar.length > 0}
                   onClick={() => {
                     const r = concludeScreening(vaga.id);
                     r.ok ? toast.success(r.message) : toast.error(r.message);
                   }}
-                  className="rounded-md border border-border bg-white/60 px-4 py-2 text-[13px] font-medium"
+                  className="rounded-md border border-border bg-white/60 px-4 py-2 text-[13px] font-medium disabled:opacity-40"
                 >
-                  Concluir triagem provisória
+                  Concluir verificação de admitidos
                 </button>
               )}
               <button
+                disabled={etapaAtiva?.code === "ADMISSION" && porTriar.length > 0}
                 onClick={() => {
                   advanceStage(vaga.id);
                   toast.success("Etapa avançada.");
                 }}
-                className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
+                className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
               >
                 Avançar etapa
               </button>
             </div>
+
           </div>
           <ol className="mt-5 grid gap-2 md:grid-cols-6">
             {vaga.stages.map((s, i) => (
@@ -485,7 +651,189 @@ function GestaoVaga() {
             </p>
           )}
         </section>
+        )}
 
+        {/* Atas de admitidos e excluídos */}
+        {tab === "candidato" && (
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:100ms]">
+          <h2 className="text-lg font-semibold tracking-tight">
+            Atas de candidatos admitidos e excluídos
+          </h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            {todosTriados
+              ? `${admitidos.length} admitido(s) · ${excluidos.length} excluído(s).`
+              : `Faltam triar ${porTriar.length} candidatura(s) — as atas só ficam disponíveis depois de todas estarem admitidas ou excluídas.`}
+          </p>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            {/* Provisória */}
+            <div className="rounded-lg border border-border bg-white/50 p-4">
+              <h3 className="text-[14px] font-semibold">{ATA_LABEL.PROVISORIA}</h3>
+              {!podeGerarProvisoria && !ataProv && (
+                <p className="mt-2 text-[12px] text-muted-foreground">
+                  Só é gerada quando existir, pelo menos, um candidato excluído e toda a triagem
+                  estiver concluída.
+                </p>
+              )}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!podeGerarProvisoria || !!ataProv?.notificadaEm}
+                  onClick={() => {
+                    gerarAta(vaga.id, "PROVISORIA", textoAta("PROVISORIA"));
+                    toast.success("Ata provisória gerada.");
+                  }}
+                  className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground disabled:opacity-40"
+                >
+                  {ataProv ? "Regerar ata" : "Gerar ata"}
+                </button>
+                {ataProv && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      descarregarTexto(
+                        `ata-provisoria-${vaga.ref.replace("/", "-")}.txt`,
+                        ataProv.texto,
+                      )
+                    }
+                    className="rounded-md border border-border px-3 py-1.5 text-[12px]"
+                  >
+                    Descarregar
+                  </button>
+                )}
+              </div>
+
+              {ataProv && (
+                <div className="mt-4 space-y-3">
+                  <pre className="max-h-48 overflow-auto rounded-md border border-border bg-white/70 p-3 font-mono text-[11px] whitespace-pre-wrap">
+                    {ataProv.texto}
+                  </pre>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <FilePickButton
+                      small
+                      label={ataProv.ficheiroNome ? "Substituir ata assinada" : "Carregar ata assinada"}
+                      onPick={(fs) => {
+                        const f = fs[0];
+                        if (!f) return;
+                        atualizarAta(vaga.id, "PROVISORIA", {
+                          ficheiroNome: f.name,
+                          uploadedAt: new Date().toISOString(),
+                          prazoResposta: ataProv.prazoResposta ?? diasUteisApos(10),
+                        });
+                        toast.success("Ata assinada carregada.");
+                      }}
+                    />
+                    {ataProv.ficheiroNome && (
+                      <span className="font-mono text-[11px] text-muted-foreground">
+                        {ataProv.ficheiroNome}
+                      </span>
+                    )}
+                  </div>
+                  <label className="block text-[12px]">
+                    <span className="text-muted-foreground">
+                      Data-limite para resposta à ata (mín. 10 dias úteis)
+                    </span>
+                    <input
+                      type="date"
+                      value={ataProv.prazoResposta ?? ""}
+                      onChange={(e) =>
+                        atualizarAta(vaga.id, "PROVISORIA", { prazoResposta: e.target.value })
+                      }
+                      className="input-ipma mt-1 w-full"
+                    />
+                  </label>
+                  {ataProv.notificadaEm ? (
+                    <p className="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-[12px]">
+                      Notificada e publicada em {formatDataHora(ataProv.notificadaEm)}. Os candidatos
+                      excluídos podem editar a candidatura até {formatDate(ataProv.prazoResposta!)}.
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!ataProv.ficheiroNome || !prazoOk}
+                      onClick={() => {
+                        const r = notificarAtaProvisoria(vaga.id);
+                        if (!r.ok) {
+                          toast.error(r.message);
+                          return;
+                        }
+                        notificarFase("ADMISSION");
+                        toast.success(r.message);
+                      }}
+                      className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground disabled:opacity-40"
+                    >
+                      Notificar e publicar
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Final */}
+            <div className="rounded-lg border border-border bg-white/50 p-4">
+              <h3 className="text-[14px] font-semibold">{ATA_LABEL.FINAL}</h3>
+              <p className="mt-2 text-[12px] text-muted-foreground">
+                Gerada após a análise de todas as candidaturas. Só os candidatos admitidos passam à
+                fase de avaliação.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!podeGerarFinal}
+                  onClick={() => {
+                    gerarAta(vaga.id, "FINAL", textoAta("FINAL"));
+                    toast.success("Ata da lista final gerada.");
+                  }}
+                  className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground disabled:opacity-40"
+                >
+                  {ataFinal ? "Regerar ata" : "Gerar ata"}
+                </button>
+                {ataFinal && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      descarregarTexto(`ata-final-${vaga.ref.replace("/", "-")}.txt`, ataFinal.texto)
+                    }
+                    className="rounded-md border border-border px-3 py-1.5 text-[12px]"
+                  >
+                    Descarregar
+                  </button>
+                )}
+              </div>
+              {ataFinal && (
+                <div className="mt-4 space-y-3">
+                  <pre className="max-h-48 overflow-auto rounded-md border border-border bg-white/70 p-3 font-mono text-[11px] whitespace-pre-wrap">
+                    {ataFinal.texto}
+                  </pre>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <FilePickButton
+                      small
+                      label={ataFinal.ficheiroNome ? "Substituir ata assinada" : "Carregar ata assinada"}
+                      onPick={(fs) => {
+                        const f = fs[0];
+                        if (!f) return;
+                        atualizarAta(vaga.id, "FINAL", {
+                          ficheiroNome: f.name,
+                          uploadedAt: new Date().toISOString(),
+                        });
+                        toast.success("Ata final assinada carregada.");
+                      }}
+                    />
+                    {ataFinal.ficheiroNome && (
+                      <span className="font-mono text-[11px] text-muted-foreground">
+                        {ataFinal.ficheiroNome}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+        )}
+
+        {tab === "vaga" && (
+        <>
         {/* Registos e observações */}
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:120ms]">
           <h2 className="text-lg font-semibold tracking-tight">Registos e observações</h2>
@@ -595,7 +943,11 @@ function GestaoVaga() {
             </div>
           )}
         </section>
+        </>
+        )}
 
+        {tab === "candidato" && (
+        <>
         {/* Candidaturas recebidas */}
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:100ms]">
           <h2 className="text-lg font-semibold tracking-tight">
@@ -616,7 +968,7 @@ function GestaoVaga() {
                     <th className="pb-2 pr-3">Nome</th>
                     <th className="pb-2 pr-3">Data</th>
                     <th className="pb-2 pr-3">Estado</th>
-                    <th className="pb-2">Atualizar estado</th>
+                    <th className="pb-2">Triagem</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -624,10 +976,12 @@ function GestaoVaga() {
                     <LinhaCandidatura
                       key={a.id}
                       a={a}
+                      offerType={vaga.offerType}
                       onState={setApplicantState}
                       onTriagem={setTriagem}
                     />
                   ))}
+
                 </tbody>
               </table>
             </div>
@@ -680,7 +1034,7 @@ function GestaoVaga() {
             <h2 className="text-lg font-semibold tracking-tight">Ata do júri</h2>
             <div className="flex gap-2">
               <button
-                onClick={gerarAta}
+                onClick={gerarAtaJuri}
                 className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
               >
                 Gerar ata
@@ -706,6 +1060,8 @@ function GestaoVaga() {
             </p>
           )}
         </section>
+        </>
+        )}
       </main>
     </PageShell>
   );
@@ -715,33 +1071,59 @@ const TODOS_ESTADOS = Object.keys(APPLICANT_STATE_LABEL) as ApplicantState[];
 
 function LinhaCandidatura({
   a,
+  offerType,
   onState,
   onTriagem,
 }: {
   a: Applicant;
+  offerType: OfferType;
   onState: ReturnType<typeof useStore>["setApplicantState"];
   onTriagem: ReturnType<typeof useStore>["setTriagem"];
 }) {
-  const [estado, setEstado] = useState<ApplicantState>(a.state);
   const [aberto, setAberto] = useState(false);
   const [crit, setCrit] = useState<TriagemCriterios>({ ...EMPTY_TRIAGEM, ...(a.triagem ?? {}) });
 
+  const criterios = triagemCriteriosDe(offerType);
+  const motivos = crit.motivos ?? [];
   const motivo = (crit.motivo ?? "").trim();
-  const porPreencher = TRIAGEM_CRITERIOS.filter((c) => crit[c.key] === null).map((c) => c.label);
+  const estadoAuto = triagemEstado(crit, offerType);
+  const porPreencher = criterios
+    .filter((c) => !c.informativo && (crit[c.key] === null || crit[c.key] === undefined))
+    .map((c) => c.label);
 
-  function decidir(novo: ApplicantState, exigeMotivo: boolean) {
-    if (porPreencher.length > 0) {
-      toast.error(`Indique Sim ou Não em: ${porPreencher.join(", ")}.`);
+  /** Aplica uma alteração e recalcula imediatamente o estado do candidato. */
+  function aplicar(next: TriagemCriterios) {
+    setCrit(next);
+    onTriagem(a.id, next);
+    const est = triagemEstado(next, offerType);
+    if (est) {
+      const fund = [...(next.motivos ?? []), (next.motivo ?? "").trim()]
+        .filter(Boolean)
+        .join("\n");
+      onState(a.id, est, est === "EXCLUDED" ? fund : undefined);
+    }
+  }
+
+  function alternarMotivo(m: string) {
+    aplicar({
+      ...crit,
+      motivos: motivos.includes(m) ? motivos.filter((x) => x !== m) : [...motivos, m],
+    });
+  }
+
+  function guardar() {
+    if (!estadoAuto) {
+      toast.error(`Falta responder Sim ou Não a ${porPreencher.length} requisito(s).`);
       return;
     }
-    if (exigeMotivo && !motivo) {
-      toast.error("Indique o motivo de exclusão.");
+    const fundamentacao = [...motivos, motivo].filter(Boolean).join("\n");
+    if (estadoAuto === "EXCLUDED" && !fundamentacao) {
+      toast.error("Indique pelo menos um motivo de exclusão.");
       return;
     }
-    onTriagem(a.id, { ...crit, motivo });
-    onState(a.id, novo, exigeMotivo ? motivo : undefined);
-    setEstado(novo);
-    toast.success(`Candidatura de ${a.name}: ${APPLICANT_STATE_LABEL[novo]}.`);
+    onTriagem(a.id, { ...crit, motivos, motivo });
+    onState(a.id, estadoAuto, estadoAuto === "EXCLUDED" ? fundamentacao : undefined);
+    toast.success(`Candidatura de ${a.name}: ${APPLICANT_STATE_LABEL[estadoAuto]}.`);
   }
 
   return (
@@ -756,28 +1138,6 @@ function LinhaCandidatura({
         </td>
         <td className="py-2">
           <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={estado}
-              onChange={(e) => setEstado(e.target.value as ApplicantState)}
-              className="input-ipma max-w-[200px]"
-            >
-              {TODOS_ESTADOS.map((s) => (
-                <option key={s} value={s}>
-                  {APPLICANT_STATE_LABEL[s]}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              disabled={estado === a.state}
-              onClick={() => {
-                onState(a.id, estado, estado === "EXCLUDED" ? a.exclusionReason ?? "" : undefined);
-                toast.success(`Estado alterado para ${APPLICANT_STATE_LABEL[estado]}.`);
-              }}
-              className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
-            >
-              Atualizar
-            </button>
             <button
               type="button"
               onClick={() => setAberto(!aberto)}
@@ -785,6 +1145,19 @@ function LinhaCandidatura({
             >
               {aberto ? "Fechar triagem" : "Triagem"}
             </button>
+            <a
+              href={`/backoffice/candidatura/${a.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[12px] font-medium transition hover:bg-white/60"
+            >
+              <Eye className="h-3.5 w-3.5" /> Abrir candidatura
+            </a>
+            {estadoAuto && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                resultado: {APPLICANT_STATE_LABEL[estadoAuto]}
+              </span>
+            )}
           </div>
         </td>
       </tr>
@@ -794,10 +1167,24 @@ function LinhaCandidatura({
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
               Verificação dos requisitos
             </p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {TRIAGEM_CRITERIOS.map((c) => (
-                <fieldset key={c.key} className="rounded-lg border border-border bg-white/70 p-3">
-                  <legend className="px-1 text-[12px] font-semibold">{c.label}</legend>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {criterios.map((c) => (
+                <fieldset
+                  key={c.key}
+                  className={
+                    c.informativo
+                      ? "rounded-lg border border-border/60 bg-white/50 p-3 opacity-80"
+                      : "rounded-lg border border-border bg-white/70 p-3"
+                  }
+                >
+                  <legend className="px-1 text-[12px] font-semibold">
+                    {c.label}
+                    {c.informativo && (
+                      <span className="ml-1 font-normal text-muted-foreground">
+                        (informativo — não afeta o resultado)
+                      </span>
+                    )}
+                  </legend>
                   <div className="mt-1 flex gap-4">
                     {[
                       { v: true, l: "Sim" },
@@ -808,7 +1195,7 @@ function LinhaCandidatura({
                           type="radio"
                           name={`${c.key}-${a.id}`}
                           checked={crit[c.key] === o.v}
-                          onChange={() => setCrit({ ...crit, [c.key]: o.v })}
+                          onChange={() => aplicar({ ...crit, [c.key]: o.v })}
                           className="h-3.5 w-3.5 accent-primary"
                         />
                         {o.l}
@@ -818,40 +1205,50 @@ function LinhaCandidatura({
                 </fieldset>
               ))}
             </div>
-            <label className="mt-3 block">
-              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                Motivo de exclusão
-              </span>
-              <textarea
-                value={crit.motivo ?? ""}
-                onChange={(e) => setCrit({ ...crit, motivo: e.target.value })}
-                rows={2}
-                placeholder="Fundamentação, obrigatória para recusar ou rejeitar a candidatura."
-                className="input-ipma mt-1 w-full"
-              />
-            </label>
-            <div className="mt-3 flex flex-wrap gap-2">
+
+            {estadoAuto === "EXCLUDED" && (
+              <>
+                <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Motivo de exclusão (obrigatório)
+                </p>
+                <div className="mt-2 space-y-1.5">
+                  {MOTIVOS_EXCLUSAO.map((m) => (
+                    <label key={m} className="flex items-start gap-2 text-[12px] leading-relaxed">
+                      <input
+                        type="checkbox"
+                        checked={motivos.includes(m)}
+                        onChange={() => alternarMotivo(m)}
+                        className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                      />
+                      <span>{m}</span>
+                    </label>
+                  ))}
+                </div>
+                <textarea
+                  value={crit.motivo ?? ""}
+                  onChange={(e) => setCrit({ ...crit, motivo: e.target.value })}
+                  onBlur={() => aplicar({ ...crit })}
+                  rows={2}
+                  placeholder="Outro motivo ou fundamentação adicional."
+                  className="input-ipma mt-2 w-full"
+                />
+              </>
+            )}
+
+
+            <div className="mt-3 flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={() => decidir("ADMITTED", false)}
-                className="rounded-md bg-success px-4 py-2 text-[12px] font-semibold text-white transition hover:opacity-90"
+                onClick={guardar}
+                className="rounded-md bg-primary px-4 py-2 text-[12px] font-semibold text-primary-foreground transition hover:opacity-90"
               >
-                Aprovar
+                Guardar triagem
               </button>
-              <button
-                type="button"
-                onClick={() => decidir("EXCLUDED", true)}
-                className="rounded-md bg-warn px-4 py-2 text-[12px] font-semibold text-black transition hover:opacity-90"
-              >
-                Recusar
-              </button>
-              <button
-                type="button"
-                onClick={() => decidir("REJECTED", true)}
-                className="rounded-md bg-destructive px-4 py-2 text-[12px] font-semibold text-white transition hover:opacity-90"
-              >
-                Rejeitar
-              </button>
+              <p className="text-[12px] text-muted-foreground">
+                {estadoAuto
+                  ? `Estado calculado: ${APPLICANT_STATE_LABEL[estadoAuto]}.`
+                  : `Falta responder: ${porPreencher.join(" · ")}`}
+              </p>
             </div>
           </td>
         </tr>
@@ -859,6 +1256,7 @@ function LinhaCandidatura({
     </>
   );
 }
+
 
 
 function CandidatoLinha({
@@ -928,7 +1326,17 @@ function CandidatoLinha({
             </p>
             <p className="mt-1 text-[13px] text-pretty">{a.motivation}</p>
           </div>
+          {a.state !== "ADMITTED" && (
+            <p className="sm:col-span-3 rounded-lg border border-border bg-white/60 p-4 text-[13px] text-muted-foreground">
+              A avaliação curricular, a prova de conhecimentos e a entrevista só estão disponíveis
+              para candidatos admitidos. Conclua a triagem desta candidatura.
+            </p>
+          )}
+          {a.state === "ADMITTED" && (
+          <>
           <Campo label="Prova de Conhecimentos (0-20)">
+
+
             <input
               type="number"
               step="0.1"
@@ -1059,6 +1467,9 @@ function CandidatoLinha({
               className="input-ipma"
             />
           </Campo>
+          </>
+          )}
+
           <div className="sm:col-span-2">
             <Campo label="Motivo de exclusão">
               <input

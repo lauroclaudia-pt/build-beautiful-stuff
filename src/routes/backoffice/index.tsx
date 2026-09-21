@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageShell, JobStateBadge, RequireRole } from "@/components/shell";
+import { Req } from "@/components/req";
 import { useStore } from "@/lib/store";
 import { hasActiveRole } from "@/lib/pessoas";
 import { Eye } from "lucide-react";
@@ -9,8 +10,13 @@ import {
   JOB_STATE_LABEL,
   OFFER_TYPE_LABEL,
   daysUntil,
+  DEFAULT_REQUIREMENTS,
+  defaultRemunerationNotes,
+  departmentsOf,
   formatDate,
+  nextRef,
   offerTypeRules,
+  selectionMethodsFrom,
   stageCodesFor,
   STAGE_LABEL,
   type JobState,
@@ -94,7 +100,7 @@ function Backoffice() {
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-primary">
               Backoffice · Divisão de Recursos Humanos
             </p>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight">Painel de vagas</h1>
+            <h1 className="mt-3 text-4xl font-bold tracking-tight">Painel de Recrutamento</h1>
           </div>
           <button
             onClick={() => setNovo((n) => !n)}
@@ -168,7 +174,7 @@ function Backoffice() {
                         {OFFER_TYPE_LABEL[v.offerType]}
                       </p>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{v.department}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{departmentsOf(v).join(" · ")}</td>
                     <td className="px-4 py-3">
                       <JobStateBadge state={v.state} />
                     </td>
@@ -257,7 +263,7 @@ function NovaVaga({
   onCreate: ReturnType<typeof useStore>["addVaga"];
   onDone: () => void;
 }) {
-  const { opcoesDe, pessoas, currentUser } = useStore();
+  const { opcoesDe, pessoas, currentUser, vagas } = useStore();
   const gestores = pessoas.filter((p) => hasActiveRole(p, "GESTOR_RH"));
   const departamentos = opcoesDe("DEPARTAMENTO");
   const locais = opcoesDe("LOCAL");
@@ -265,23 +271,28 @@ function NovaVaga({
   const habilitacoes = opcoesDe("HABILITACAO");
   const vinculos = opcoesDe("VINCULO");
   const regimes = opcoesDe("REGIME");
-  const metodos = opcoesDe("METODO_SELECAO");
+  const refAuto = useMemo(() => nextRef(vagas), [vagas]);
 
   const [f, setF] = useState({
-    ref: "",
     title: "",
     offerType: "PROCEDIMENTO_CONCURSAL_COMUM" as OfferType,
-    department: departamentos[0] ?? "",
-    location: locais[0] ?? "",
+    departments: departamentos[0] ? [departamentos[0]] : ([] as string[]),
+    locations: locais[0] ? [locais[0]] : ([] as string[]),
     positions: 1,
     career: carreiras[0] ?? "",
     bond: vinculos[0] ?? "",
     regime: regimes[0] ?? "",
     remuneration: "",
+    monthlySupplement: "",
+    remunerationNotes: defaultRemunerationNotes("PROCEDIMENTO_CONCURSAL_COMUM"),
     educationLevel: habilitacoes[1] ?? habilitacoes[0] ?? "",
-    requirements: "",
+    educationDescription: "",
+    requirements: DEFAULT_REQUIREMENTS,
     description: "",
-    selectionMethods: metodos[1] ? [metodos[1]] : metodos.slice(0, 1),
+    procedureDescription: "",
+    knowledgeReadings: "",
+    allowNoDegree: false,
+    disabilityQuota: false,
     juryPresident: "",
     hrManagerId: gestores.find((g) => g.id === currentUser?.id)?.id ?? gestores[0]?.id ?? "",
     juryMembers: "",
@@ -297,32 +308,73 @@ function NovaVaga({
   const hasAc = rules.ac ?? f.hasAc;
   const hasEac = rules.eac ?? f.hasEac;
   const fases = stageCodesFor(f.offerType, { hasAc, hasEac });
+  const metodosSelecionados = selectionMethodsFrom({ hasPc, hasAc, hasEac });
+  const maxLocais = Math.max(1, rules.singlePosition ? 1 : Number(f.positions) || 1);
+  const dirigente = f.offerType === "CARGOS_DIRECAO";
+
+  function alternarLocal(d: string) {
+    setF((prev) => {
+      const on = prev.locations.includes(d);
+      if (on) return { ...prev, locations: prev.locations.filter((x) => x !== d) };
+      if (prev.locations.length >= maxLocais) return prev;
+      return { ...prev, locations: [...prev.locations, d] };
+    });
+  }
 
   function mudarTipo(t: OfferType) {
     const r = offerTypeRules(t);
-    setF((prev) => ({
-      ...prev,
-      offerType: t,
-      hasPc: r.pc ?? r.defaults.pc,
-      hasAc: r.ac ?? r.defaults.ac,
-      hasEac: r.eac ?? r.defaults.eac,
-      positions: r.singlePosition ? 1 : prev.positions,
-    }));
+    setF((prev) => {
+      // Mantém o texto se já foi editado; caso contrário, segue o predefinido do novo tipo.
+      const notes = !prev.remunerationNotes.trim() || prev.remunerationNotes === defaultRemunerationNotes(prev.offerType)
+        ? defaultRemunerationNotes(t)
+        : prev.remunerationNotes;
+      return {
+        ...prev,
+        offerType: t,
+        remunerationNotes: notes,
+        hasPc: r.pc ?? r.defaults.pc,
+        hasAc: r.ac ?? r.defaults.ac,
+        hasEac: r.eac ?? r.defaults.eac,
+        positions: r.singlePosition ? 1 : prev.positions,
+      };
+    });
   }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!f.ref.trim() || !f.title.trim()) {
-      toast.error("Indique a referência e o título do procedimento.");
+    if (!f.title.trim()) {
+      toast.error("Indique o título do procedimento.");
       return;
+    }
+    if (f.departments.length === 0) {
+      toast.error("Escolha pelo menos uma unidade orgânica.");
+      return;
+    }
+    if (f.locations.length === 0) {
+      toast.error("Escolha pelo menos um local de trabalho.");
+      return;
+    }
+    if (f.locations.length > maxLocais) {
+      toast.error(`Só pode escolher ${maxLocais} local(is) de trabalho.`);
+      return;
+    }
+    if (dirigente) {
+      const valor = f.monthlySupplement.replace(/\s|€/g, "").replace(",", ".");
+      if (!valor || Number.isNaN(Number(valor)) || Number(valor) <= 0) {
+        toast.error("Indique o suplemento mensal (obrigatório em cargos de direção).");
+        return;
+      }
     }
     onCreate({
       ...f,
       hasPc,
       hasAc,
       hasEac,
-      ref: f.ref.trim(),
+      ref: refAuto,
       title: f.title.trim(),
+      department: f.departments[0] ?? "",
+      location: f.locations[0] ?? "",
+      selectionMethods: metodosSelecionados,
       positions: Number(f.positions) || 1,
       juryMembers: f.juryMembers
         .split(",")
@@ -335,8 +387,15 @@ function NovaVaga({
 
   return (
     <form onSubmit={submit} className="glass mt-6 animate-rise grid gap-4 rounded-xl p-6 sm:grid-cols-3">
-      <L label="Referência">
-        <input value={f.ref} onChange={(e) => setF({ ...f, ref: e.target.value })} className="input-ipma" />
+      <L label="Referência (automática)">
+        <input value={refAuto} readOnly className="input-ipma bg-surface-2 text-muted-foreground" />
+      </L>
+      <L label="Data de publicação">
+        <input
+          value="Preenchida ao publicar"
+          readOnly
+          className="input-ipma bg-surface-2 text-muted-foreground"
+        />
       </L>
       <div className="sm:col-span-2">
         <L label="Título">
@@ -356,17 +415,34 @@ function NovaVaga({
           ))}
         </select>
       </L>
-      <L label="Unidade orgânica">
-        <select
-          value={f.department}
-          onChange={(e) => setF({ ...f, department: e.target.value })}
-          className="input-ipma"
-        >
-          {departamentos.map((d) => (
-            <option key={d}>{d}</option>
-          ))}
-        </select>
-      </L>
+      <div className="sm:col-span-3">
+        <L label="Unidade(s) orgânica(s)">
+          <div className="flex flex-wrap gap-2">
+            {departamentos.map((d) => {
+              const on = f.departments.includes(d);
+              return (
+                <button
+                  type="button"
+                  key={d}
+                  onClick={() =>
+                    setF({
+                      ...f,
+                      departments: on
+                        ? f.departments.filter((x) => x !== d)
+                        : [...f.departments, d],
+                    })
+                  }
+                  className={`rounded-md px-3 py-1.5 text-[12px] ${
+                    on ? "bg-primary text-primary-foreground" : "border border-border bg-white/60"
+                  }`}
+                >
+                  {d}
+                </button>
+              );
+            })}
+          </div>
+        </L>
+      </div>
       <L label="Cargo / carreira">
         <select
           value={f.career}
@@ -400,20 +476,42 @@ function NovaVaga({
           ))}
         </select>
       </L>
-      <L label="Local">
-        <select value={f.location} onChange={(e) => setF({ ...f, location: e.target.value })} className="input-ipma">
-          {locais.map((d) => (
-            <option key={d}>{d}</option>
-          ))}
-        </select>
-      </L>
+      <div className="sm:col-span-3 rounded-lg border border-border bg-white/50 p-4">
+        <L label={`Local de trabalho (máx. ${maxLocais} — n.º de postos)`}>
+          <div className="flex flex-wrap gap-2">
+            {locais.map((d) => {
+              const on = f.locations.includes(d);
+              const cheio = !on && f.locations.length >= maxLocais;
+              return (
+                <button
+                  type="button"
+                  key={d}
+                  disabled={cheio}
+                  onClick={() => alternarLocal(d)}
+                  className={`rounded-md px-3 py-1.5 text-[12px] disabled:opacity-40 ${
+                    on ? "bg-primary text-primary-foreground" : "border border-border bg-white/60"
+                  }`}
+                >
+                  {d}
+                </button>
+              );
+            })}
+          </div>
+        </L>
+        <p className="mt-2 text-[12px] text-muted-foreground">
+          Selecionados {f.locations.length} de {maxLocais} locais permitidos.
+        </p>
+      </div>
       <L label="Postos">
         <input
           type="number"
           min={1}
           value={rules.singlePosition ? 1 : f.positions}
           disabled={rules.singlePosition}
-          onChange={(e) => setF({ ...f, positions: Number(e.target.value) })}
+          onChange={(e) => {
+            const n = Math.max(1, Number(e.target.value) || 1);
+            setF((prev) => ({ ...prev, positions: n, locations: prev.locations.slice(0, n) }));
+          }}
           className="input-ipma disabled:opacity-60"
         />
       </L>
@@ -428,6 +526,58 @@ function NovaVaga({
           ))}
         </select>
       </L>
+      <div className="sm:col-span-3">
+        <L label="Descrição da habilitação literária">
+          <textarea
+            rows={2}
+            maxLength={500}
+            value={f.educationDescription}
+            onChange={(e) => setF({ ...f, educationDescription: e.target.value })}
+            className="input-ipma"
+          />
+        </L>
+        <p className="mt-1 text-[12px] text-muted-foreground">
+          {f.educationDescription.length}/500 caracteres.
+        </p>
+      </div>
+      <div className="sm:col-span-3 grid gap-4 sm:grid-cols-2">
+        <L label="Admissão sem habilitação exigida">
+          <div className="flex gap-4">
+            {[
+              ["Sim", true],
+              ["Não", false],
+            ].map(([lbl, val]) => (
+              <label key={String(val)} className="flex items-center gap-2 text-[13px]">
+                <input
+                  type="radio"
+                  name="allowNoDegree"
+                  checked={f.allowNoDegree === val}
+                  onChange={() => setF({ ...f, allowNoDegree: val as boolean })}
+                />
+                {lbl}
+              </label>
+            ))}
+          </div>
+        </L>
+        <L label="Vagas para candidatos com deficiência">
+          <div className="flex gap-4">
+            {[
+              ["Sim", true],
+              ["Não", false],
+            ].map(([lbl, val]) => (
+              <label key={String(val)} className="flex items-center gap-2 text-[13px]">
+                <input
+                  type="radio"
+                  name="disabilityQuota"
+                  checked={f.disabilityQuota === val}
+                  onChange={() => setF({ ...f, disabilityQuota: val as boolean })}
+                />
+                {lbl}
+              </label>
+            ))}
+          </div>
+        </L>
+      </div>
       <L label="Prazo de candidatura">
         <input
           type="date"
@@ -440,6 +590,15 @@ function NovaVaga({
         <input
           value={f.remuneration}
           onChange={(e) => setF({ ...f, remuneration: e.target.value })}
+          className="input-ipma"
+        />
+      </L>
+      <L label={<>Suplemento mensal{dirigente && <Req />}</>}>
+        <input
+          inputMode="decimal"
+          placeholder="0,00 €"
+          value={f.monthlySupplement}
+          onChange={(e) => setF({ ...f, monthlySupplement: e.target.value })}
           className="input-ipma"
         />
       </L>
@@ -510,31 +669,30 @@ function NovaVaga({
         </div>
       </div>
       <div className="sm:col-span-3">
-        <L label="Métodos de seleção">
+        <L label="Métodos de seleção (definidos pela tramitação)">
           <div className="flex flex-wrap gap-2">
-            {metodos.map((m) => {
-              const on = f.selectionMethods.includes(m);
-              return (
-                <button
-                  type="button"
-                  key={m}
-                  onClick={() =>
-                    setF({
-                      ...f,
-                      selectionMethods: on
-                        ? f.selectionMethods.filter((x) => x !== m)
-                        : [...f.selectionMethods, m],
-                    })
-                  }
-                  className={`rounded-md px-3 py-1.5 text-[12px] ${
-                    on ? "bg-primary text-primary-foreground" : "border border-border bg-white/50"
-                  }`}
-                >
-                  {m}
-                </button>
-              );
-            })}
+            {metodosSelecionados.length === 0 && (
+              <span className="text-[12px] text-muted-foreground">
+                Selecione acima as fases de avaliação (PC, AC, EAC).
+              </span>
+            )}
+            {metodosSelecionados.map((m) => (
+              <span key={m} className="rounded-md bg-primary px-3 py-1.5 text-[12px] text-primary-foreground">
+                {m}
+              </span>
+            ))}
           </div>
+        </L>
+      </div>
+      <div className="sm:col-span-3">
+        <L label="Características da remuneração">
+          <textarea
+            rows={3}
+            value={f.remunerationNotes}
+            onChange={(e) => setF({ ...f, remunerationNotes: e.target.value })}
+            placeholder="Posição e nível remuneratório, suplementos, subsídios e outras condições."
+            className="input-ipma"
+          />
         </L>
       </div>
       <div className="sm:col-span-3">
@@ -548,11 +706,31 @@ function NovaVaga({
         </L>
       </div>
       <div className="sm:col-span-3">
+        <L label="Descrição do procedimento">
+          <textarea
+            rows={4}
+            value={f.procedureDescription}
+            onChange={(e) => setF({ ...f, procedureDescription: e.target.value })}
+            className="input-ipma"
+          />
+        </L>
+      </div>
+      <div className="sm:col-span-3">
         <L label="Requisitos">
           <textarea
-            rows={3}
+            rows={8}
             value={f.requirements}
             onChange={(e) => setF({ ...f, requirements: e.target.value })}
+            className="input-ipma"
+          />
+        </L>
+      </div>
+      <div className="sm:col-span-3">
+        <L label="Lista de consulta de legislação/documentos para Prova de Conhecimentos">
+          <textarea
+            rows={4}
+            value={f.knowledgeReadings}
+            onChange={(e) => setF({ ...f, knowledgeReadings: e.target.value })}
             className="input-ipma"
           />
         </L>
@@ -569,7 +747,7 @@ function NovaVaga({
   );
 }
 
-function L({ label, children }: { label: string; children: React.ReactNode }) {
+function L({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">

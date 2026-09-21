@@ -8,7 +8,9 @@ import {
   STAGE_LABEL,
   ageFrom,
   daysUntil,
+  departmentsOf,
   formatDate,
+  locationsOf,
   validateNif,
 } from "@/lib/recrutamento";
 import { applyJava, javaBase } from "@/lib/java-api";
@@ -94,7 +96,11 @@ const emptyForm = {
 function VagaDetalhe() {
   const { vagaId } = Route.useParams();
   const navigate = useNavigate();
-  const { vagas, applicants, addApplicant, hydrated, opcoesDe, site } = useStore();
+  const { vagas, applicants, addApplicant, hydrated, opcoesDe, site, currentUser } = useStore();
+  // Cartão «Síntese do procedimento»: visibilidade separada para público e candidatos autenticados.
+  const mostrarSintese = currentUser
+    ? site.showSummaryCandidate !== false
+    : site.showSummaryPublic !== false;
   const habilitacoes = opcoesDe("HABILITACAO");
   const situacoes = opcoesDe("SITUACAO_PROFISSIONAL");
   const vaga = vagas.find((v) => v.id === vagaId);
@@ -912,6 +918,7 @@ function VagaDetalhe() {
             </section>
           </div>
 
+          {mostrarSintese && (
           <aside className="col-span-12 lg:col-span-4">
             <div className="glass sticky top-24 animate-rise rounded-xl p-5 [animation-delay:200ms]">
               <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -919,13 +926,25 @@ function VagaDetalhe() {
               </p>
               <div className="mt-4 space-y-3 text-[13px]">
                 {[
+                  ["Referência", vaga.ref],
+                  ["Tipo de oferta", OFFER_TYPE_LABEL[vaga.offerType]],
+                  ["Data de publicação", vaga.publishedAt ? formatDate(vaga.publishedAt) : "—"],
+                  ["Prazo de candidatura", formatDate(vaga.deadline)],
+                  ["Unidade(s) orgânica(s)", departmentsOf(vaga).join(" · ")],
+                  ["Local(is) de trabalho", locationsOf(vaga).join(" · ")],
+                  ["Postos", String(vaga.positions)],
                   ["Carreira", vaga.career],
                   ["Vínculo", vaga.bond],
                   ["Regime", vaga.regime],
                   ["Remuneração", vaga.remuneration],
+                  ["Suplemento mensal", vaga.monthlySupplement || "—"],
                   ["Habilitação", vaga.educationLevel],
+                  ["Admissão sem habilitação exigida", vaga.allowNoDegree ? "Sim" : "Não"],
+                  ["Vagas para candidatos com deficiência", vaga.disabilityQuota ? "Sim" : "Não"],
+                  ["Métodos de seleção", vaga.selectionMethods.join(" · ") || "—"],
                   ["Código BEP", vaga.bepCode || "—"],
                   ["Presidente do júri", vaga.juryPresident || "—"],
+                  ["Vogais", vaga.juryMembers.join(", ") || "—"],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-3 border-b border-border pb-2 last:border-0">
                     <span className="text-muted-foreground">{k}</span>
@@ -933,6 +952,22 @@ function VagaDetalhe() {
                   </div>
                 ))}
               </div>
+              {([
+                ["Descrição da habilitação literária", vaga.educationDescription],
+                ["Características da remuneração", vaga.remunerationNotes],
+                ["Descrição do procedimento", vaga.procedureDescription],
+                ["Requisitos", vaga.requirements],
+                ["Legislação/documentos para a prova de conhecimentos", vaga.knowledgeReadings],
+              ] as const)
+                .filter(([, v]) => Boolean(v && v.trim()))
+                .map(([k, v]) => (
+                  <div key={k} className="mt-4">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      {k}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap text-[13px]">{v}</p>
+                  </div>
+                ))}
               <div className="mt-4">
                 <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                   Fases
@@ -961,6 +996,7 @@ function VagaDetalhe() {
               </p>
             </div>
           </aside>
+          )}
         </div>
       </main>
     </PageShell>

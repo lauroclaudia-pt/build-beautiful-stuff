@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, type ChangeEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 import { PageShell, RequireRole } from "@/components/shell";
-import logo from "@/assets/logo-ipma.png.asset.json";
+import logo from "@/assets/logo-ipma.png";
 import { useStore } from "@/lib/store";
 import { COLOR_FIELDS } from "@/lib/site";
 import { DEFAULT_JAVA_API_URL } from "@/lib/java-api";
@@ -100,7 +100,7 @@ function GestaoSite() {
               </p>
               <div className="mt-3 flex items-center gap-4">
                 <img
-                  src={site.logoUrl ?? logo.url}
+                  src={site.logoUrl ?? logo}
                   alt="Pré-visualização do ícone das páginas"
                   className="h-12 w-auto max-w-[160px] object-contain"
                 />
@@ -276,6 +276,28 @@ function GestaoSite() {
               onChange={(v) => updateSite({ showLocationFilter: v })}
               label="Mostrar o filtro por local"
               desc="Permite filtrar as vagas pelo local de trabalho."
+            />
+          </div>
+        </section>
+
+        {/* Síntese do procedimento */}
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:200ms]">
+          <h2 className="text-lg font-semibold tracking-tight">Síntese do procedimento</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Cartão lateral da página de cada vaga, com todos os dados do procedimento.
+          </p>
+          <div className="mt-5 space-y-3">
+            <Interruptor
+              checked={site.showSummaryPublic !== false}
+              onChange={(v) => updateSite({ showSummaryPublic: v })}
+              label="Mostrar no website público"
+              desc="Visível para quem consulta as vagas sem sessão iniciada."
+            />
+            <Interruptor
+              checked={site.showSummaryCandidate !== false}
+              onChange={(v) => updateSite({ showSummaryCandidate: v })}
+              label="Mostrar no portal do candidato"
+              desc="Visível para candidatos com sessão iniciada."
             />
           </div>
         </section>

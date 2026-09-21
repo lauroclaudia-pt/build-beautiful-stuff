@@ -56,3 +56,27 @@
 - [x] Gestor de RH vê por omissão apenas os seus procedimentos (alternável para «Todos»); Administrador e Gestão veem tudo
 - [x] Ligação no menu («Dashboard») e cartão em Administração
 - [x] Dashboard: filtros por período (30 dias / 90 dias / 12 meses) e por procedimento; exportação para CSV (separador «;», UTF-8 com BOM) e PDF (impressão A4 do browser)
+
+## Formulário de novo procedimento (2026-09-21)
+- [x] Referência automática AAAA/N.º sequencial
+- [x] Data de publicação preenchida ao publicar
+- [x] Unidade orgânica: seleção múltipla
+- [x] Métodos de seleção derivados das caixas da tramitação (PC/AC/EAC)
+- [x] Campo memo "Características da remuneração"
+- [x] Secção "Local de trabalho": vários locais, no máximo tantos quantos o n.º de vagas
+- [x] "Painel de vagas" → "Painel de Recrutamento"
+- [x] Ao abrir uma vaga no backoffice: mostrar apenas os dados da vaga (consulta); candidaturas só no separador Candidato
+
+- [x] Campo Suplemento Mensal (money) a seguir à Remuneração; obrigatório em Cargos de direção, com validação numérica e asterisco (2026-09-21)
+
+## Instalação do interface em servidor próprio (2026-09-21)
+- [x] Pacote do portal para Railway: `Dockerfile.portal`, `railway.portal.json`, `.dockerignore`, `README-portal.md`
+- [x] `vite.config.ts` aceita `NITRO_PRESET` (ex.: node-server) e gera `.output/server/index.mjs`
+
+## Campos da vaga e síntese (2026-09-21)
+- [x] Descrição da habilitação literária (500 caracteres) a seguir à habilitação mínima
+- [x] Requisitos com texto predefinido (alíneas a) a e))
+- [x] Memo "Descrição do procedimento"
+- [x] Memo "Lista de consulta de legislação/documentos para Prova de Conhecimentos"
+- [x] Radio "Admissão sem habilitação exigida" e "Vagas para candidatos com deficiência"
+- [x] Síntese do procedimento com todos os campos; mostrar/ocultar no site público e no portal do candidato (Gestão do site)

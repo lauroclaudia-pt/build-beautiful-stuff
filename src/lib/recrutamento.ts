@@ -85,15 +85,31 @@ export interface Vaga {
   offerType: OfferType;
   state: JobState;
   department: string;
+  /** Unidades orgânicas (uma ou mais); o campo `department` guarda a principal. */
+  departments?: string[];
   location: string;
+  /** Locais de trabalho (um ou mais, no máximo o n.º de postos); `location` guarda o principal. */
+  locations?: string[];
   positions: number;
   career: string;
   bond: string;
   regime: string;
   remuneration: string;
+  /** Suplemento mensal (money) — obrigatório em cargos de direção (dirigentes). */
+  monthlySupplement?: string;
+  /** Características da remuneração (texto livre). */
+  remunerationNotes?: string;
   educationLevel: string;
+  /** Descrição da habilitação literária (máx. 500 caracteres). */
+  educationDescription?: string;
   requirements: string;
   description: string;
+  /** Descrição do procedimento (memo). */
+  procedureDescription?: string;
+  /** Lista de consulta de legislação/documentos para a prova de conhecimentos (memo). */
+  knowledgeReadings?: string;
+  /** Reserva de vagas para candidatos com deficiência. */
+  disabilityQuota?: boolean;
   selectionMethods: string[];
   juryPresident: string;
   /** Pessoa (id) responsável pela gestão do procedimento — Gestor de RH. */
@@ -115,6 +131,56 @@ export interface Vaga {
   salaryPlus?: string;
   /** Registos e observações do procedimento (fases, notificações, notas manuais). */
   registros?: VagaRegistro[];
+  /** Atas de admitidos/excluídos geradas no procedimento. */
+  atas?: AtaVaga[];
+}
+
+export type AtaTipo = "PROVISORIA" | "FINAL";
+
+export const ATA_LABEL: Record<AtaTipo, string> = {
+  PROVISORIA: "Ata — Lista provisória de candidatos admitidos e excluídos",
+  FINAL: "Ata — Lista final de candidatos",
+};
+
+export interface AtaVaga {
+  tipo: AtaTipo;
+  /** Texto gerado automaticamente a partir da triagem. */
+  texto: string;
+  geradaEm: string;
+  /** Nome do ficheiro da ata assinada carregada pelo júri. */
+  ficheiroNome?: string;
+  uploadedAt?: string;
+  /** Data-limite para resposta dos candidatos (só na ata provisória). */
+  prazoResposta?: string;
+  /** Data/hora da notificação e publicação da ata. */
+  notificadaEm?: string;
+}
+
+/** Data (ISO, só dia) resultante de somar N dias úteis a partir de hoje. */
+export function diasUteisApos(dias: number, from: Date = new Date()): string {
+  const d = new Date(from.getTime());
+  let restantes = dias;
+  while (restantes > 0) {
+    d.setDate(d.getDate() + 1);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) restantes -= 1;
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+/** Número de dias úteis entre duas datas ISO (exclui o dia inicial). */
+export function diasUteisEntre(inicioISO: string, fimISO: string): number {
+  const inicio = new Date(`${inicioISO.slice(0, 10)}T00:00:00`);
+  const fim = new Date(`${fimISO.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime()) || fim <= inicio) return 0;
+  let n = 0;
+  const cur = new Date(inicio.getTime());
+  while (cur < fim) {
+    cur.setDate(cur.getDate() + 1);
+    const dow = cur.getDay();
+    if (dow !== 0 && dow !== 6) n += 1;
+  }
+  return n;
 }
 
 export type DocState = "PENDING" | "RECEIVED" | "VALIDATED" | "MISSING";
@@ -210,16 +276,27 @@ export interface Applicant {
   /** Secção E — declarações condicionais. */
   mobDeclaration?: boolean;
   grantDeclaration?: boolean;
+  /** Data-limite (ISO) para o candidato excluído editar a candidatura após a ata provisória. */
+  respostaPrazo?: string;
 }
 
 /** Critérios booleanos verificados na triagem da candidatura. */
 export interface TriagemCriterios {
+  /** Preferência do candidato por Prova de Conhecimentos (informativo). */
+  preferePc?: boolean | null;
   habilitacao: boolean | null;
   vinculo: boolean | null;
   documentos: boolean | null;
+  /** Experiência profissional mínima (4 ou 6 anos) — só em cargos de direção. */
   experiencia: boolean | null;
+
+  /** Outros fatores de exclusão cumpridos. */
+  outrosFatores?: boolean | null;
+  /** Motivos de exclusão pré-definidos selecionados (vários). */
+  motivos?: string[];
   motivo?: string;
 }
+
 
 /** Critério de avaliação com peso percentual (a soma dos pesos = 100). */
 export interface EvalCriterion {
@@ -302,20 +379,81 @@ export function methodWeights(has: { pc: boolean; ac: boolean; eac: boolean }): 
   return { pc: pc ? 1 : 0, ac: ac ? 1 : 0, eac: eac ? 1 : 0 };
 }
 
-export const TRIAGEM_CRITERIOS: { key: keyof Omit<TriagemCriterios, "motivo">; label: string }[] = [
-  { key: "habilitacao", label: "Habilitação" },
-  { key: "vinculo", label: "Vínculo" },
-  { key: "documentos", label: "Documentos" },
-  { key: "experiencia", label: "Experiência" },
+export type TriagemKey = "preferePc" | "habilitacao" | "vinculo" | "documentos" | "experiencia" | "outrosFatores";
+
+export interface TriagemCriterioDef {
+  key: TriagemKey;
+  label: string;
+  /** Não influencia o estado do candidato (apenas registo). */
+  informativo?: boolean;
+  /** "Sim" significa incumprimento (exclui o candidato). */
+  invertido?: boolean;
+  /** Só é apresentado em concursos de dirigente. */
+  apenasDirigente?: boolean;
+}
+
+export const TRIAGEM_CRITERIOS: TriagemCriterioDef[] = [
+  { key: "preferePc", label: "Prefere Prova de Conhecimentos (PC)?", informativo: true },
+  { key: "habilitacao", label: "Habilitação igual ou superior ao exigido?" },
+  { key: "vinculo", label: "Tem vínculo necessário ao procedimento?" },
+  {
+    key: "documentos",
+    label: "Apresentou todos os documentos ou justificação para não apresentar?",
+  },
+  {
+    key: "experiencia",
+    label:
+      "Tem no mínimo 4 ou 6 anos de experiência profissional, respetivamente CD ou DS, na AP ou no setor privado depois de concluída a licenciatura?",
+    apenasDirigente: true,
+  },
+  { key: "outrosFatores", label: "Outros fatores de exclusão cumpridos?" },
 ];
 
+/** Critérios aplicáveis a um tipo de oferta. */
+export function triagemCriteriosDe(offerType: OfferType): TriagemCriterioDef[] {
+  return TRIAGEM_CRITERIOS.filter((c) => !c.apenasDirigente || offerType === "CARGOS_DIRECAO");
+}
+
+/** Motivos de exclusão pré-definidos (seleção múltipla). */
+export const MOTIVOS_EXCLUSAO: string[] = [
+  "(a) Candidato/a tem 10 dias úteis para apresentar certificado de habilitações literárias",
+  "(b) Candidato/a excluído/a por não comprovar ser detentor/a de relação jurídica de emprego público constituída por CTFP tempo indeterminado (Cfr. ponto 10.2 do aviso integral de abertura);",
+  "(c) Não formaliza a candidatura nos termos do n.º 11.4 do Aviso integral de abertura",
+  "(c) Candidato/a tem 10 dias úteis para apresentar declaração emitida pelo órgão ou serviço a que pertence, comprovativa de vínculo e das funções desempenhadas",
+  "(c) Candidato/a tem 10 dias úteis para apresentar declaração de vínculo atualizada",
+  "(c) Não possui experiência profissional suficiente de acordo com o art 20 da Lei n.º 2/2004, de 15 de janeiro, EPD",
+];
+
+/**
+ * Estado resultante da triagem: Admitido se todos os requisitos aplicáveis
+ * estiverem cumpridos; Excluído se algum falhar; null enquanto faltar responder.
+ */
+export function triagemEstado(
+  crit: TriagemCriterios | undefined,
+  offerType: OfferType,
+): "ADMITTED" | "EXCLUDED" | null {
+  if (!crit) return null;
+  const aplicaveis = triagemCriteriosDe(offerType).filter((c) => !c.informativo);
+  let excluido = false;
+  for (const c of aplicaveis) {
+    const v = crit[c.key];
+    if (v === null || v === undefined) return null;
+    if (c.invertido ? v === true : v === false) excluido = true;
+  }
+  return excluido ? "EXCLUDED" : "ADMITTED";
+}
+
 export const EMPTY_TRIAGEM: TriagemCriterios = {
+  preferePc: null,
   habilitacao: null,
   vinculo: null,
   documentos: null,
   experiencia: null,
+  outrosFatores: null,
+  motivos: [],
   motivo: "",
 };
+
 
 export type AppealChannel = "PORTAL" | "EMAIL" | "FISICO" | "SEM_RESPOSTA";
 
@@ -361,7 +499,7 @@ export const APPLICANT_STATE_LABEL: Record<ApplicantState, string> = {
 export const STAGE_LABEL: Record<StageCode, string> = {
   OPENING: "Abertura",
   APPLICATIONS: "Candidaturas",
-  ADMISSION: "Triagem provisória",
+  ADMISSION: "Verificação de admitidos",
   MISSING_REQUIREMENTS: "Requisitos em falta",
   EVALUATION: "Avaliação",
   INTERVIEW: "Entrevista (EAC)",
@@ -401,6 +539,69 @@ export const EDUCATION_LEVELS = [
 export const BONDS = ["Contrato de trabalho em funções públicas", "Comissão de serviço", "Bolsa"];
 export const REGIMES = ["Tempo inteiro", "Tempo parcial"];
 export const SELECTION_METHODS = ["Prova de Conhecimentos (PC)", "Avaliação Curricular (AC)", "Entrevista de Avaliação de Competências (EAC)"];
+
+/** Texto predefinido dos requisitos gerais de admissão (art. 17.º da LTFP). */
+export const DEFAULT_REQUIREMENTS = `a) Nacionalidade Portuguesa, quando não dispensada pela Constituição, convenção internacional ou lei especial;
+
+b) 18 anos de idade completos;
+
+c) Não inibição do exercício de funções públicas ou não interdição para o exercício daquelas que se propõe desempenhar;
+
+d) Robustez física e perfil psíquico indispensável ao exercício das funções;
+
+e) Cumprimento das leis de vacinação obrigatória`;
+
+/** Texto predefinido das características da remuneração — procedimentos concursais (negociação do posicionamento remuneratório). */
+export const DEFAULT_REMUNERATION_NOTES_CONCURSAL = `- Havendo lugar à negociação do posicionamento remuneratório, aquela que o dirigente máximo do órgão ou serviço pondera vir a oferecer aos trabalhadores a recrutar, determinada em função das disponibilidades orçamentais, sem prejuízo da possibilidade de, fundamentadamente, poder vir a oferecer posição diferente nos termos e com observância dos limites legalmente definidos`;
+
+/** Texto predefinido das características da remuneração — bolsas de investigação (valores FCT). */
+export const DEFAULT_REMUNERATION_NOTES_BOLSA = `- O montante da bolsa consta da tabela de valores das bolsas, aprovada pela FCT, I.P. https://www.fct.pt/wp-content/uploads/2026/03/Tabela-de-Valores-SMM-2026.pdf . O bolseiro tem ainda direito ao reembolso dos encargos relativos ao Seguro Social Voluntário (1.º escalão), caso se aplique, de acordo com as condições definidas no Estatuto do Bolseiro de Investigação. O bolseiro beneficiará de um seguro de acidentes pessoais no decurso da bolsa.
+
+O pagamento da bolsa será feito com periodicidade mensal, através de transferência bancária a efetuar pelos serviços do IPMA, I.P. para a conta indicada pelo bolseiro.`;
+
+/** Texto predefinido das características da remuneração, conforme o tipo de oferta. */
+export function defaultRemunerationNotes(t: OfferType): string {
+  return t === "BOLSA_INVESTIGACAO_CIENTIFICA" ? DEFAULT_REMUNERATION_NOTES_BOLSA : DEFAULT_REMUNERATION_NOTES_CONCURSAL;
+}
+
+/** Nome do método de seleção correspondente a cada fase de avaliação da tramitação. */
+export const METHOD_BY_FLAG = {
+  pc: "Prova de Conhecimentos (PC)",
+  ac: "Avaliação Curricular (AC)",
+  eac: "Entrevista de Avaliação de Competências (EAC)",
+} as const;
+
+/** Métodos de seleção resultantes das caixas selecionadas na tramitação. */
+export function selectionMethodsFrom(f: { hasPc?: boolean; hasAc?: boolean; hasEac?: boolean }): string[] {
+  const out: string[] = [];
+  if (f.hasPc) out.push(METHOD_BY_FLAG.pc);
+  if (f.hasAc) out.push(METHOD_BY_FLAG.ac);
+  if (f.hasEac) out.push(METHOD_BY_FLAG.eac);
+  return out;
+}
+
+/** Unidades orgânicas de um procedimento (suporta o campo antigo com um só valor). */
+export function departmentsOf(v: { departments?: string[]; department?: string }): string[] {
+  if (v.departments?.length) return v.departments;
+  return v.department ? [v.department] : [];
+}
+
+/** Locais de trabalho de um procedimento (suporta o campo antigo com um só valor). */
+export function locationsOf(v: { locations?: string[]; location?: string }): string[] {
+  if (v.locations?.length) return v.locations;
+  return v.location ? [v.location] : [];
+}
+
+/** Próxima referência automática no formato AAAA/N.º sequencial (ex.: 2026/004). */
+export function nextRef(vagas: { ref: string }[], date = new Date()): string {
+  const ano = date.getFullYear();
+  let max = 0;
+  for (const v of vagas) {
+    const m = /^(\d{4})\/(\d+)$/.exec((v.ref ?? "").trim());
+    if (m && Number(m[1]) === ano) max = Math.max(max, Number(m[2]));
+  }
+  return `${ano}/${String(max + 1).padStart(3, "0")}`;
+}
 
 export const CAREERS = [
   "Técnico Superior",

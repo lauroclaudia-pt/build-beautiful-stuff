@@ -51,6 +51,7 @@ function PortalCandidato() {
     applicants,
     addDocumentUploads,
     addAppeal,
+    responderAta,
     notificacoes,
   } = useStore();
   const [appealText, setAppealText] = useState<Record<string, string>>({});
@@ -298,6 +299,28 @@ function PortalCandidato() {
                       })}
                     </ul>
                   </div>
+
+                  {a.state === "EXCLUDED" && a.respostaPrazo && (
+                    <div className="rounded-lg border border-warn/50 bg-warn/10 p-3">
+                      <p className="text-[13px]">
+                        Foi publicada a lista provisória de candidatos admitidos e excluídos. Pode
+                        corrigir ou completar a sua candidatura até{" "}
+                        <strong>{formatDate(a.respostaPrazo)}</strong> (10 dias úteis).
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          responderAta(a.id);
+                          toast.success(
+                            "Candidatura submetida para nova análise — estado: Em análise.",
+                          );
+                        }}
+                        className="mt-2 rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground"
+                      >
+                        Submeter alterações para nova análise
+                      </button>
+                    </div>
+                  )}
 
                   <div>
                     <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">

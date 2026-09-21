@@ -23,6 +23,10 @@ export interface SiteConfig {
   showDepartmentFilter: boolean;
   showCareerFilter: boolean;
   showLocationFilter: boolean;
+  /** Mostrar o cartão «Síntese do procedimento» no website público. */
+  showSummaryPublic: boolean;
+  /** Mostrar o cartão «Síntese do procedimento» aos candidatos autenticados. */
+  showSummaryCandidate: boolean;
   /** Perguntas frequentes apresentadas na página de apoio. */
   faq: FaqItem[];
   /** Contactos apresentados na página pública. */
@@ -326,6 +330,8 @@ export const DEFAULT_SITE: SiteConfig = {
   showDepartmentFilter: true,
   showCareerFilter: true,
   showLocationFilter: true,
+  showSummaryPublic: true,
+  showSummaryCandidate: true,
   faq: DEFAULT_FAQ.map((f) => ({ ...f })),
   contacts: DEFAULT_CONTACTS.map((c) => ({ ...c })),
   emailTemplates: DEFAULT_EMAIL_TEMPLATES.map((t) => ({ ...t })),
