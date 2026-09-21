@@ -26,6 +26,9 @@ import {
   type TriagemCriterios,
   type VagaRegistro,
   type Notificacao,
+  type AtaTipo,
+  type AtaVaga,
+  diasUteisEntre,
 } from "./recrutamento";
 import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
 import { DEFAULT_SITE, type SiteConfig } from "./site";
