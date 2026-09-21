@@ -58,11 +58,11 @@
 - [x] Dashboard: filtros por período (30 dias / 90 dias / 12 meses) e por procedimento; exportação para CSV (separador «;», UTF-8 com BOM) e PDF (impressão A4 do browser)
 
 ## Formulário de novo procedimento (2026-09-21)
-- [ ] Referência automática AAAA/N.º sequencial
-- [ ] Data de publicação preenchida ao publicar
-- [ ] Unidade orgânica: seleção múltipla
-- [ ] Métodos de seleção derivados das caixas da tramitação (PC/AC/EAC)
-- [ ] Campo memo "Características da remuneração"
-- [ ] Secção "Local de trabalho": vários locais, no máximo tantos quantos o n.º de vagas
-- [ ] "Painel de vagas" → "Painel de Recrutamento"
-- [ ] Ao abrir uma vaga no backoffice: mostrar apenas os dados da vaga (consulta); candidaturas só no separador Candidato
+- [x] Referência automática AAAA/N.º sequencial
+- [x] Data de publicação preenchida ao publicar
+- [x] Unidade orgânica: seleção múltipla
+- [x] Métodos de seleção derivados das caixas da tramitação (PC/AC/EAC)
+- [x] Campo memo "Características da remuneração"
+- [x] Secção "Local de trabalho": vários locais, no máximo tantos quantos o n.º de vagas
+- [x] "Painel de vagas" → "Painel de Recrutamento"
+- [x] Ao abrir uma vaga no backoffice: mostrar apenas os dados da vaga (consulta); candidaturas só no separador Candidato
