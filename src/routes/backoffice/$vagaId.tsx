@@ -970,6 +970,8 @@ function GestaoVaga() {
             </p>
           )}
         </section>
+        </>
+        )}
       </main>
     </PageShell>
   );
