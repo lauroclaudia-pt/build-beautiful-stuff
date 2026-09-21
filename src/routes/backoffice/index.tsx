@@ -359,17 +359,34 @@ function NovaVaga({
           ))}
         </select>
       </L>
-      <L label="Unidade orgânica">
-        <select
-          value={f.department}
-          onChange={(e) => setF({ ...f, department: e.target.value })}
-          className="input-ipma"
-        >
-          {departamentos.map((d) => (
-            <option key={d}>{d}</option>
-          ))}
-        </select>
-      </L>
+      <div className="sm:col-span-3">
+        <L label="Unidade(s) orgânica(s)">
+          <div className="flex flex-wrap gap-2">
+            {departamentos.map((d) => {
+              const on = f.departments.includes(d);
+              return (
+                <button
+                  type="button"
+                  key={d}
+                  onClick={() =>
+                    setF({
+                      ...f,
+                      departments: on
+                        ? f.departments.filter((x) => x !== d)
+                        : [...f.departments, d],
+                    })
+                  }
+                  className={`rounded-md px-3 py-1.5 text-[12px] ${
+                    on ? "bg-primary text-primary-foreground" : "border border-border bg-white/60"
+                  }`}
+                >
+                  {d}
+                </button>
+              );
+            })}
+          </div>
+        </L>
+      </div>
       <L label="Cargo / carreira">
         <select
           value={f.career}
