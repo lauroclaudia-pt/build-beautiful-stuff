@@ -329,7 +329,7 @@ function GestaoVaga() {
     toast.success("Observação registada.");
   }
 
-  function gerarAta() {
+  function gerarAtaJuri() {
     const v = vaga!;
     const ordenados = [...todos].sort((a, b) => (finalGrade(b) ?? -1) - (finalGrade(a) ?? -1));
     const linhas = [
@@ -944,7 +944,7 @@ function GestaoVaga() {
             <h2 className="text-lg font-semibold tracking-tight">Ata do júri</h2>
             <div className="flex gap-2">
               <button
-                onClick={gerarAta}
+                onClick={gerarAtaJuri}
                 className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
               >
                 Gerar ata
