@@ -53,7 +53,7 @@ function abrirAnexo(nome: string, descricao: string | undefined, candidato: stri
   setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
-function Campo({ label, value }: { label: string; value?: string | number | null | boolean }) {
+function Campo({ label, value }: { label: string; value?: string | number | null | boolean | undefined }) {
   const texto =
     typeof value === "boolean" ? (value ? "Sim" : "Não") : value === null || value === undefined || value === "" ? "—" : String(value);
   return (
@@ -79,9 +79,9 @@ function Seccao({ titulo, children }: { titulo: string; children: React.ReactNod
 
 function ConsultaCandidatura() {
   const { applicantId } = Route.useParams();
-  const { data } = useStore();
-  const a: Applicant | undefined = data.applicants.find((x) => x.id === applicantId);
-  const vaga: Vaga | undefined = a ? data.vagas.find((v) => v.id === a.vagaId) : undefined;
+  const { vagas, applicants } = useStore();
+  const a: Applicant | undefined = applicants.find((x: Applicant) => x.id === applicantId);
+  const vaga: Vaga | undefined = a ? vagas.find((v: Vaga) => v.id === a.vagaId) : undefined;
 
   if (!a) {
     return (
