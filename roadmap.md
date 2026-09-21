@@ -56,3 +56,13 @@
 - [x] Gestor de RH vê por omissão apenas os seus procedimentos (alternável para «Todos»); Administrador e Gestão veem tudo
 - [x] Ligação no menu («Dashboard») e cartão em Administração
 - [x] Dashboard: filtros por período (30 dias / 90 dias / 12 meses) e por procedimento; exportação para CSV (separador «;», UTF-8 com BOM) e PDF (impressão A4 do browser)
+
+## Formulário de novo procedimento (2026-09-21)
+- [x] Referência automática AAAA/N.º sequencial
+- [x] Data de publicação preenchida ao publicar
+- [x] Unidade orgânica: seleção múltipla
+- [x] Métodos de seleção derivados das caixas da tramitação (PC/AC/EAC)
+- [x] Campo memo "Características da remuneração"
+- [x] Secção "Local de trabalho": vários locais, no máximo tantos quantos o n.º de vagas
+- [x] "Painel de vagas" → "Painel de Recrutamento"
+- [x] Ao abrir uma vaga no backoffice: mostrar apenas os dados da vaga (consulta); candidaturas só no separador Candidato

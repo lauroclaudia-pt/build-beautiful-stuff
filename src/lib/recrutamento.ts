@@ -85,12 +85,18 @@ export interface Vaga {
   offerType: OfferType;
   state: JobState;
   department: string;
+  /** Unidades orgânicas (uma ou mais); o campo `department` guarda a principal. */
+  departments?: string[];
   location: string;
+  /** Locais de trabalho (um ou mais, no máximo o n.º de postos); `location` guarda o principal. */
+  locations?: string[];
   positions: number;
   career: string;
   bond: string;
   regime: string;
   remuneration: string;
+  /** Características da remuneração (texto livre). */
+  remunerationNotes?: string;
   educationLevel: string;
   requirements: string;
   description: string;
@@ -523,6 +529,45 @@ export const EDUCATION_LEVELS = [
 export const BONDS = ["Contrato de trabalho em funções públicas", "Comissão de serviço", "Bolsa"];
 export const REGIMES = ["Tempo inteiro", "Tempo parcial"];
 export const SELECTION_METHODS = ["Prova de Conhecimentos (PC)", "Avaliação Curricular (AC)", "Entrevista de Avaliação de Competências (EAC)"];
+
+/** Nome do método de seleção correspondente a cada fase de avaliação da tramitação. */
+export const METHOD_BY_FLAG = {
+  pc: "Prova de Conhecimentos (PC)",
+  ac: "Avaliação Curricular (AC)",
+  eac: "Entrevista de Avaliação de Competências (EAC)",
+} as const;
+
+/** Métodos de seleção resultantes das caixas selecionadas na tramitação. */
+export function selectionMethodsFrom(f: { hasPc?: boolean; hasAc?: boolean; hasEac?: boolean }): string[] {
+  const out: string[] = [];
+  if (f.hasPc) out.push(METHOD_BY_FLAG.pc);
+  if (f.hasAc) out.push(METHOD_BY_FLAG.ac);
+  if (f.hasEac) out.push(METHOD_BY_FLAG.eac);
+  return out;
+}
+
+/** Unidades orgânicas de um procedimento (suporta o campo antigo com um só valor). */
+export function departmentsOf(v: { departments?: string[]; department?: string }): string[] {
+  if (v.departments?.length) return v.departments;
+  return v.department ? [v.department] : [];
+}
+
+/** Locais de trabalho de um procedimento (suporta o campo antigo com um só valor). */
+export function locationsOf(v: { locations?: string[]; location?: string }): string[] {
+  if (v.locations?.length) return v.locations;
+  return v.location ? [v.location] : [];
+}
+
+/** Próxima referência automática no formato AAAA/N.º sequencial (ex.: 2026/004). */
+export function nextRef(vagas: { ref: string }[], date = new Date()): string {
+  const ano = date.getFullYear();
+  let max = 0;
+  for (const v of vagas) {
+    const m = /^(\d{4})\/(\d+)$/.exec((v.ref ?? "").trim());
+    if (m && Number(m[1]) === ano) max = Math.max(max, Number(m[2]));
+  }
+  return `${ano}/${String(max + 1).padStart(3, "0")}`;
+}
 
 export const CAREERS = [
   "Técnico Superior",

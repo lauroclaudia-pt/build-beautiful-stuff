@@ -346,7 +346,7 @@ function Dashboard() {
               to="/backoffice"
               className="rounded-md bg-primary px-4 py-2.5 text-[13px] font-medium text-primary-foreground ring-1 ring-black/5 hover:bg-primary/90"
             >
-              Painel de vagas
+              Painel de Recrutamento
             </Link>
           </div>
         </div>

@@ -19,8 +19,11 @@ import {
   EAC_MIN,
   EMPTY_TRIAGEM,
   MOTIVOS_EXCLUSAO,
+  JOB_STATE_LABEL,
   OFFER_TYPE_LABEL,
   STAGE_LABEL,
+  departmentsOf,
+  locationsOf,
   calcAcGrade,
   calcEacGrade,
   formatDate,
@@ -119,6 +122,7 @@ function GestaoVaga() {
   const [aberto, setAberto] = useState<string | null>(null);
   const [ata, setAta] = useState<string | null>(null);
   const [edit, setEdit] = useState(false);
+  const [tab, setTab] = useState<"vaga" | "candidato">("vaga");
   const [obs, setObs] = useState("");
   const [notifAberta, setNotifAberta] = useState<string | null>(null);
 
@@ -387,7 +391,7 @@ function GestaoVaga() {
           to="/backoffice"
           className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground hover:text-foreground"
         >
-          ← Painel de vagas
+          ← Painel de Recrutamento
         </Link>
 
         <div className="mt-5 flex animate-rise flex-wrap items-start justify-between gap-4">
@@ -400,7 +404,8 @@ function GestaoVaga() {
             </div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight">{vaga.title}</h1>
             <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-              {vaga.department} · {vaga.location} · prazo {formatDate(vaga.deadline)}
+              {departmentsOf(vaga).join(" · ")} · {locationsOf(vaga).join(" · ")} · prazo{" "}
+              {formatDate(vaga.deadline)}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -432,7 +437,81 @@ function GestaoVaga() {
           </div>
         </div>
 
-        {edit && (
+        <div className="mt-6 flex flex-wrap gap-2">
+          {([
+            ["vaga", "Procedimento"],
+            ["candidato", "Candidato"],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              onClick={() => setTab(k)}
+              className={`rounded-md px-4 py-2 font-mono text-[10px] uppercase tracking-[0.14em] transition-colors ${
+                tab === k
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-border bg-white/60 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "vaga" && (
+          <section className="glass mt-6 animate-rise rounded-xl p-6">
+            <h2 className="text-lg font-semibold tracking-tight">Dados do procedimento</h2>
+            <dl className="mt-4 grid gap-4 text-[13px] sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                ["Referência", vaga.ref],
+                ["Tipo de oferta", OFFER_TYPE_LABEL[vaga.offerType]],
+                ["Estado", JOB_STATE_LABEL[vaga.state]],
+                ["Data de publicação", vaga.publishedAt ? formatDate(vaga.publishedAt) : "Por publicar"],
+                ["Prazo de candidatura", formatDate(vaga.deadline)],
+                ["Unidade(s) orgânica(s)", departmentsOf(vaga).join(" · ")],
+                ["Local(is) de trabalho", locationsOf(vaga).join(" · ")],
+                ["Postos", String(vaga.positions)],
+                ["Cargo / carreira", vaga.career],
+                ["Vínculo", vaga.bond],
+                ["Regime", vaga.regime],
+                ["Habilitação mínima", vaga.educationLevel],
+                ["Remuneração", vaga.remuneration],
+                ["Características da remuneração", vaga.remunerationNotes || "—"],
+                ["Código BEP/Edital", vaga.bepCode || "Por atribuir"],
+                ["Métodos de seleção", vaga.selectionMethods.join(" · ")],
+                ["Presidente do júri", vaga.juryPresident || "Por designar"],
+                ["Vogais", vaga.juryMembers.join(", ") || "Por designar"],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                    {k}
+                  </dt>
+                  <dd className="mt-1">{v || "—"}</dd>
+                </div>
+              ))}
+            </dl>
+            {(vaga.description || vaga.requirements) && (
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                {vaga.description && (
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      Caracterização do posto
+                    </p>
+                    <p className="mt-1 text-[13px] whitespace-pre-wrap">{vaga.description}</p>
+                  </div>
+                )}
+                {vaga.requirements && (
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      Requisitos
+                    </p>
+                    <p className="mt-1 text-[13px] whitespace-pre-wrap">{vaga.requirements}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
+        {tab === "vaga" && edit && (
           <div className="glass mt-6 grid animate-rise gap-4 rounded-xl p-6 sm:grid-cols-3">
             <Campo label="Código BEP/Edital">
               <input
@@ -495,6 +574,7 @@ function GestaoVaga() {
         )}
 
         {/* Pipeline */}
+        {tab === "vaga" && (
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:80ms]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold tracking-tight">Pipeline de etapas</h2>
@@ -570,8 +650,10 @@ function GestaoVaga() {
             </p>
           )}
         </section>
+        )}
 
         {/* Atas de admitidos e excluídos */}
+        {tab === "candidato" && (
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:100ms]">
           <h2 className="text-lg font-semibold tracking-tight">
             Atas de candidatos admitidos e excluídos
@@ -747,7 +829,10 @@ function GestaoVaga() {
             </div>
           </div>
         </section>
+        )}
 
+        {tab === "vaga" && (
+        <>
         {/* Registos e observações */}
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:120ms]">
           <h2 className="text-lg font-semibold tracking-tight">Registos e observações</h2>
@@ -857,7 +942,11 @@ function GestaoVaga() {
             </div>
           )}
         </section>
+        </>
+        )}
 
+        {tab === "candidato" && (
+        <>
         {/* Candidaturas recebidas */}
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:100ms]">
           <h2 className="text-lg font-semibold tracking-tight">
@@ -970,6 +1059,8 @@ function GestaoVaga() {
             </p>
           )}
         </section>
+        </>
+        )}
       </main>
     </PageShell>
   );
