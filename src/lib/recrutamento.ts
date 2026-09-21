@@ -483,7 +483,7 @@ export const APPLICANT_STATE_LABEL: Record<ApplicantState, string> = {
 export const STAGE_LABEL: Record<StageCode, string> = {
   OPENING: "Abertura",
   APPLICATIONS: "Candidaturas",
-  ADMISSION: "Triagem provisória",
+  ADMISSION: "Verificação de admitidos",
   MISSING_REQUIREMENTS: "Requisitos em falta",
   EVALUATION: "Avaliação",
   INTERVIEW: "Entrevista (EAC)",
