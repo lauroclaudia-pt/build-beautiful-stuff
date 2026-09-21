@@ -484,7 +484,10 @@ function NovaVaga({
           min={1}
           value={rules.singlePosition ? 1 : f.positions}
           disabled={rules.singlePosition}
-          onChange={(e) => setF({ ...f, positions: Number(e.target.value) })}
+          onChange={(e) => {
+            const n = Math.max(1, Number(e.target.value) || 1);
+            setF((prev) => ({ ...prev, positions: n, locations: prev.locations.slice(0, n) }));
+          }}
           className="input-ipma disabled:opacity-60"
         />
       </L>
