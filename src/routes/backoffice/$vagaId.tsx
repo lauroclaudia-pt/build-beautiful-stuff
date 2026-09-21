@@ -13,17 +13,21 @@ import {
   EAC_MAX,
   EAC_MIN,
   EMPTY_TRIAGEM,
+  MOTIVOS_EXCLUSAO,
   OFFER_TYPE_LABEL,
   STAGE_LABEL,
-  TRIAGEM_CRITERIOS,
   calcAcGrade,
   calcEacGrade,
   formatDate,
+  triagemCriteriosDe,
+  triagemEstado,
   type Applicant,
   type ApplicantState,
+  type OfferType,
   type StageCode,
   type TriagemCriterios,
 } from "@/lib/recrutamento";
+
 
 export const Route = createFileRoute("/backoffice/$vagaId")({
   head: () => ({
