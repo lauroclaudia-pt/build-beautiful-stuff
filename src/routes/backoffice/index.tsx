@@ -9,6 +9,7 @@ import {
   JOB_STATE_LABEL,
   OFFER_TYPE_LABEL,
   daysUntil,
+  defaultRemunerationNotes,
   departmentsOf,
   formatDate,
   nextRef,
