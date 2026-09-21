@@ -115,6 +115,56 @@ export interface Vaga {
   salaryPlus?: string;
   /** Registos e observações do procedimento (fases, notificações, notas manuais). */
   registros?: VagaRegistro[];
+  /** Atas de admitidos/excluídos geradas no procedimento. */
+  atas?: AtaVaga[];
+}
+
+export type AtaTipo = "PROVISORIA" | "FINAL";
+
+export const ATA_LABEL: Record<AtaTipo, string> = {
+  PROVISORIA: "Ata — Lista provisória de candidatos admitidos e excluídos",
+  FINAL: "Ata — Lista final de candidatos",
+};
+
+export interface AtaVaga {
+  tipo: AtaTipo;
+  /** Texto gerado automaticamente a partir da triagem. */
+  texto: string;
+  geradaEm: string;
+  /** Nome do ficheiro da ata assinada carregada pelo júri. */
+  ficheiroNome?: string;
+  uploadedAt?: string;
+  /** Data-limite para resposta dos candidatos (só na ata provisória). */
+  prazoResposta?: string;
+  /** Data/hora da notificação e publicação da ata. */
+  notificadaEm?: string;
+}
+
+/** Data (ISO, só dia) resultante de somar N dias úteis a partir de hoje. */
+export function diasUteisApos(dias: number, from: Date = new Date()): string {
+  const d = new Date(from.getTime());
+  let restantes = dias;
+  while (restantes > 0) {
+    d.setDate(d.getDate() + 1);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) restantes -= 1;
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+/** Número de dias úteis entre duas datas ISO (exclui o dia inicial). */
+export function diasUteisEntre(inicioISO: string, fimISO: string): number {
+  const inicio = new Date(`${inicioISO.slice(0, 10)}T00:00:00`);
+  const fim = new Date(`${fimISO.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime()) || fim <= inicio) return 0;
+  let n = 0;
+  const cur = new Date(inicio.getTime());
+  while (cur < fim) {
+    cur.setDate(cur.getDate() + 1);
+    const dow = cur.getDay();
+    if (dow !== 0 && dow !== 6) n += 1;
+  }
+  return n;
 }
 
 export type DocState = "PENDING" | "RECEIVED" | "VALIDATED" | "MISSING";
