@@ -68,3 +68,7 @@
 - [x] Ao abrir uma vaga no backoffice: mostrar apenas os dados da vaga (consulta); candidaturas só no separador Candidato
 
 - [x] Campo Suplemento Mensal (money) a seguir à Remuneração; obrigatório em Cargos de direção, com validação numérica e asterisco (2026-09-21)
+
+## Instalação do interface em servidor próprio (2026-09-21)
+- [x] Pacote do portal para Railway: `Dockerfile.portal`, `railway.portal.json`, `.dockerignore`, `README-portal.md`
+- [x] `vite.config.ts` aceita `NITRO_PRESET` (ex.: node-server) e gera `.output/server/index.mjs`
