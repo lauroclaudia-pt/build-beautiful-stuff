@@ -119,6 +119,7 @@ function GestaoVaga() {
   const [aberto, setAberto] = useState<string | null>(null);
   const [ata, setAta] = useState<string | null>(null);
   const [edit, setEdit] = useState(false);
+  const [tab, setTab] = useState<"vaga" | "candidato">("vaga");
   const [obs, setObs] = useState("");
   const [notifAberta, setNotifAberta] = useState<string | null>(null);
 
