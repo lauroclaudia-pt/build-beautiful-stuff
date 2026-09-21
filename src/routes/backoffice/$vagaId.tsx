@@ -5,9 +5,14 @@ import { toast } from "sonner";
 import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/components/shell";
 import { finalGrade, useStore } from "@/lib/store";
 import { hasActiveRole } from "@/lib/pessoas";
+import { FilePickButton } from "@/components/file-upload";
 import {
   AC_CRITERIA,
   APPLICANT_STATE_LABEL,
+  ATA_LABEL,
+  diasUteisApos,
+  diasUteisEntre,
+  type AtaTipo,
   DESEMPENHO_CONVERSION,
   EAC_CRITERIA,
   EAC_MAX,
@@ -99,6 +104,9 @@ function GestaoVaga() {
     setGrades,
     addVagaRegistro,
     addNotificacoes,
+    gerarAta,
+    atualizarAta,
+    notificarAtaProvisoria,
     notificacoes,
     site,
     currentUser,
@@ -203,8 +211,70 @@ function GestaoVaga() {
 
   const etapaAtiva = vaga.stages.find((s) => s.state === "active");
 
+  // --- Atas de admitidos e excluídos ---
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  const admitidos = todos.filter((a) => a.state === "ADMITTED");
+  const excluidos = todos.filter((a) => a.state === "EXCLUDED");
+  const todosTriados = todos.length > 0 && porTriar.length === 0;
+  const ataProv = vaga.atas?.find((a) => a.tipo === "PROVISORIA");
+  const ataFinal = vaga.atas?.find((a) => a.tipo === "FINAL");
+  const podeGerarProvisoria = todosTriados && excluidos.length > 0;
+  const podeGerarFinal = todosTriados;
+  const prazoOk =
+    !!ataProv?.prazoResposta && diasUteisEntre(hojeISO, ataProv.prazoResposta) >= 10;
+  const podeNotificarAdmitidos =
+    todosTriados && (excluidos.length === 0 || (!!ataProv?.ficheiroNome && prazoOk));
+
+  function textoAta(tipo: AtaTipo) {
+    const v = vaga!;
+    const linha = (a: Applicant, i: number) =>
+      `${String(i + 1).padStart(2, "0")}. ${a.name} — NIF ${a.nif}${
+        a.state === "EXCLUDED"
+          ? ` — EXCLUÍDO/A${a.exclusionReason ? `: ${a.exclusionReason}` : ""}`
+          : " — ADMITIDO/A"
+      }`;
+    return [
+      `${ATA_LABEL[tipo].toUpperCase()}`,
+      `Instituto Português do Mar e da Atmosfera, I.P.`,
+      `Procedimento ${v.ref} — ${v.title} (${OFFER_TYPE_LABEL[v.offerType]})`,
+      `Data: ${new Date().toLocaleDateString("pt-PT")}`,
+      ``,
+      `JÚRI`,
+      `Presidente: ${v.juryPresident || "(por designar)"}`,
+      ...(v.juryMembers.length ? v.juryMembers.map((m, i) => `Vogal ${i + 1}: ${m}`) : []),
+      ``,
+      `CANDIDATOS ADMITIDOS (${admitidos.length})`,
+      ...(admitidos.length ? admitidos.map(linha) : ["(nenhum)"]),
+      ``,
+      `CANDIDATOS EXCLUÍDOS (${excluidos.length})`,
+      ...(excluidos.length ? excluidos.map(linha) : ["(nenhum)"]),
+      ``,
+      tipo === "PROVISORIA"
+        ? `Os candidatos excluídos dispõem de 10 dias úteis, a contar da notificação, para corrigir ou completar a sua candidatura.`
+        : `A presente lista é definitiva. Só os candidatos admitidos transitam para a fase de avaliação.`,
+    ].join("\n");
+  }
+
+  function descarregarTexto(nome: string, texto: string) {
+    const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const el = document.createElement("a");
+    el.href = url;
+    el.download = nome;
+    el.click();
+    URL.revokeObjectURL(url);
+  }
+
   function notificarFase(code: StageCode) {
     const v = vaga!;
+    if (code === "ADMISSION" && !podeNotificarAdmitidos) {
+      toast.error(
+        porTriar.length > 0
+          ? "Todos os candidatos têm de estar admitidos ou excluídos antes de notificar."
+          : "Carregue a ata provisória assinada e defina a data-limite de resposta (mín. 10 dias úteis).",
+      );
+      return;
+    }
     const modelo = (site.emailTemplates ?? []).find((t) => t.stage === code && t.enabled);
     if (!modelo) {
       toast.error(
@@ -259,7 +329,7 @@ function GestaoVaga() {
     toast.success("Observação registada.");
   }
 
-  function gerarAta() {
+  function gerarAtaJuri() {
     const v = vaga!;
     const ordenados = [...todos].sort((a, b) => (finalGrade(b) ?? -1) - (finalGrade(a) ?? -1));
     const linhas = [
@@ -443,7 +513,7 @@ function GestaoVaga() {
                   }}
                   className="rounded-md border border-border bg-white/60 px-4 py-2 text-[13px] font-medium disabled:opacity-40"
                 >
-                  Concluir triagem provisória
+                  Concluir verificação de admitidos
                 </button>
               )}
               <button
@@ -499,6 +569,183 @@ function GestaoVaga() {
               Etapa atual: {STAGE_LABEL[etapaAtiva.code]}
             </p>
           )}
+        </section>
+
+        {/* Atas de admitidos e excluídos */}
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:100ms]">
+          <h2 className="text-lg font-semibold tracking-tight">
+            Atas de candidatos admitidos e excluídos
+          </h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            {todosTriados
+              ? `${admitidos.length} admitido(s) · ${excluidos.length} excluído(s).`
+              : `Faltam triar ${porTriar.length} candidatura(s) — as atas só ficam disponíveis depois de todas estarem admitidas ou excluídas.`}
+          </p>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            {/* Provisória */}
+            <div className="rounded-lg border border-border bg-white/50 p-4">
+              <h3 className="text-[14px] font-semibold">{ATA_LABEL.PROVISORIA}</h3>
+              {!podeGerarProvisoria && !ataProv && (
+                <p className="mt-2 text-[12px] text-muted-foreground">
+                  Só é gerada quando existir, pelo menos, um candidato excluído e toda a triagem
+                  estiver concluída.
+                </p>
+              )}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!podeGerarProvisoria || !!ataProv?.notificadaEm}
+                  onClick={() => {
+                    gerarAta(vaga.id, "PROVISORIA", textoAta("PROVISORIA"));
+                    toast.success("Ata provisória gerada.");
+                  }}
+                  className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground disabled:opacity-40"
+                >
+                  {ataProv ? "Regerar ata" : "Gerar ata"}
+                </button>
+                {ataProv && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      descarregarTexto(
+                        `ata-provisoria-${vaga.ref.replace("/", "-")}.txt`,
+                        ataProv.texto,
+                      )
+                    }
+                    className="rounded-md border border-border px-3 py-1.5 text-[12px]"
+                  >
+                    Descarregar
+                  </button>
+                )}
+              </div>
+
+              {ataProv && (
+                <div className="mt-4 space-y-3">
+                  <pre className="max-h-48 overflow-auto rounded-md border border-border bg-white/70 p-3 font-mono text-[11px] whitespace-pre-wrap">
+                    {ataProv.texto}
+                  </pre>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <FilePickButton
+                      small
+                      label={ataProv.ficheiroNome ? "Substituir ata assinada" : "Carregar ata assinada"}
+                      onPick={(fs) => {
+                        const f = fs[0];
+                        if (!f) return;
+                        atualizarAta(vaga.id, "PROVISORIA", {
+                          ficheiroNome: f.name,
+                          uploadedAt: new Date().toISOString(),
+                          prazoResposta: ataProv.prazoResposta ?? diasUteisApos(10),
+                        });
+                        toast.success("Ata assinada carregada.");
+                      }}
+                    />
+                    {ataProv.ficheiroNome && (
+                      <span className="font-mono text-[11px] text-muted-foreground">
+                        {ataProv.ficheiroNome}
+                      </span>
+                    )}
+                  </div>
+                  <label className="block text-[12px]">
+                    <span className="text-muted-foreground">
+                      Data-limite para resposta à ata (mín. 10 dias úteis)
+                    </span>
+                    <input
+                      type="date"
+                      value={ataProv.prazoResposta ?? ""}
+                      onChange={(e) =>
+                        atualizarAta(vaga.id, "PROVISORIA", { prazoResposta: e.target.value })
+                      }
+                      className="input-ipma mt-1 w-full"
+                    />
+                  </label>
+                  {ataProv.notificadaEm ? (
+                    <p className="rounded-md border border-success/40 bg-success/10 px-3 py-2 text-[12px]">
+                      Notificada e publicada em {formatDataHora(ataProv.notificadaEm)}. Os candidatos
+                      excluídos podem editar a candidatura até {formatDate(ataProv.prazoResposta!)}.
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!ataProv.ficheiroNome || !prazoOk}
+                      onClick={() => {
+                        const r = notificarAtaProvisoria(vaga.id);
+                        if (!r.ok) {
+                          toast.error(r.message);
+                          return;
+                        }
+                        notificarFase("ADMISSION");
+                        toast.success(r.message);
+                      }}
+                      className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground disabled:opacity-40"
+                    >
+                      Notificar e publicar
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Final */}
+            <div className="rounded-lg border border-border bg-white/50 p-4">
+              <h3 className="text-[14px] font-semibold">{ATA_LABEL.FINAL}</h3>
+              <p className="mt-2 text-[12px] text-muted-foreground">
+                Gerada após a análise de todas as candidaturas. Só os candidatos admitidos passam à
+                fase de avaliação.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!podeGerarFinal}
+                  onClick={() => {
+                    gerarAta(vaga.id, "FINAL", textoAta("FINAL"));
+                    toast.success("Ata da lista final gerada.");
+                  }}
+                  className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground disabled:opacity-40"
+                >
+                  {ataFinal ? "Regerar ata" : "Gerar ata"}
+                </button>
+                {ataFinal && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      descarregarTexto(`ata-final-${vaga.ref.replace("/", "-")}.txt`, ataFinal.texto)
+                    }
+                    className="rounded-md border border-border px-3 py-1.5 text-[12px]"
+                  >
+                    Descarregar
+                  </button>
+                )}
+              </div>
+              {ataFinal && (
+                <div className="mt-4 space-y-3">
+                  <pre className="max-h-48 overflow-auto rounded-md border border-border bg-white/70 p-3 font-mono text-[11px] whitespace-pre-wrap">
+                    {ataFinal.texto}
+                  </pre>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <FilePickButton
+                      small
+                      label={ataFinal.ficheiroNome ? "Substituir ata assinada" : "Carregar ata assinada"}
+                      onPick={(fs) => {
+                        const f = fs[0];
+                        if (!f) return;
+                        atualizarAta(vaga.id, "FINAL", {
+                          ficheiroNome: f.name,
+                          uploadedAt: new Date().toISOString(),
+                        });
+                        toast.success("Ata final assinada carregada.");
+                      }}
+                    />
+                    {ataFinal.ficheiroNome && (
+                      <span className="font-mono text-[11px] text-muted-foreground">
+                        {ataFinal.ficheiroNome}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </section>
 
         {/* Registos e observações */}
@@ -697,7 +944,7 @@ function GestaoVaga() {
             <h2 className="text-lg font-semibold tracking-tight">Ata do júri</h2>
             <div className="flex gap-2">
               <button
-                onClick={gerarAta}
+                onClick={gerarAtaJuri}
                 className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
               >
                 Gerar ata
