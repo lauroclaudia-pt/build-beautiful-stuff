@@ -636,10 +636,12 @@ function GestaoVaga() {
                     <LinhaCandidatura
                       key={a.id}
                       a={a}
+                      offerType={vaga.offerType}
                       onState={setApplicantState}
                       onTriagem={setTriagem}
                     />
                   ))}
+
                 </tbody>
               </table>
             </div>
