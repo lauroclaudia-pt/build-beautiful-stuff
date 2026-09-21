@@ -338,8 +338,15 @@ function NovaVaga({
 
   return (
     <form onSubmit={submit} className="glass mt-6 animate-rise grid gap-4 rounded-xl p-6 sm:grid-cols-3">
-      <L label="Referência">
-        <input value={f.ref} onChange={(e) => setF({ ...f, ref: e.target.value })} className="input-ipma" />
+      <L label="Referência (automática)">
+        <input value={refAuto} readOnly className="input-ipma bg-surface-2 text-muted-foreground" />
+      </L>
+      <L label="Data de publicação">
+        <input
+          value="Preenchida ao publicar"
+          readOnly
+          className="input-ipma bg-surface-2 text-muted-foreground"
+        />
       </L>
       <div className="sm:col-span-2">
         <L label="Título">
