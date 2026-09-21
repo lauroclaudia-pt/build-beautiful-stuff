@@ -404,7 +404,8 @@ function GestaoVaga() {
             </div>
             <h1 className="mt-3 text-3xl font-bold tracking-tight">{vaga.title}</h1>
             <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-              {vaga.department} · {vaga.location} · prazo {formatDate(vaga.deadline)}
+              {departmentsOf(vaga).join(" · ")} · {locationsOf(vaga).join(" · ")} · prazo{" "}
+              {formatDate(vaga.deadline)}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
