@@ -748,6 +748,8 @@ function GestaoVaga() {
           </div>
         </section>
 
+        {tab === "vaga" && (
+        <>
         {/* Registos e observações */}
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:120ms]">
           <h2 className="text-lg font-semibold tracking-tight">Registos e observações</h2>
