@@ -51,6 +51,7 @@ function PortalCandidato() {
     applicants,
     addDocumentUploads,
     addAppeal,
+    responderAta,
     notificacoes,
   } = useStore();
   const [appealText, setAppealText] = useState<Record<string, string>>({});
