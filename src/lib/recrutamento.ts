@@ -85,12 +85,16 @@ export interface Vaga {
   offerType: OfferType;
   state: JobState;
   department: string;
+  /** Unidades orgânicas (uma ou mais); o campo `department` guarda a principal. */
+  departments?: string[];
   location: string;
   positions: number;
   career: string;
   bond: string;
   regime: string;
   remuneration: string;
+  /** Características da remuneração (texto livre). */
+  remunerationNotes?: string;
   educationLevel: string;
   requirements: string;
   description: string;
