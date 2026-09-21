@@ -715,33 +715,46 @@ const TODOS_ESTADOS = Object.keys(APPLICANT_STATE_LABEL) as ApplicantState[];
 
 function LinhaCandidatura({
   a,
+  offerType,
   onState,
   onTriagem,
 }: {
   a: Applicant;
+  offerType: OfferType;
   onState: ReturnType<typeof useStore>["setApplicantState"];
   onTriagem: ReturnType<typeof useStore>["setTriagem"];
 }) {
-  const [estado, setEstado] = useState<ApplicantState>(a.state);
   const [aberto, setAberto] = useState(false);
   const [crit, setCrit] = useState<TriagemCriterios>({ ...EMPTY_TRIAGEM, ...(a.triagem ?? {}) });
 
+  const criterios = triagemCriteriosDe(offerType);
+  const motivos = crit.motivos ?? [];
   const motivo = (crit.motivo ?? "").trim();
-  const porPreencher = TRIAGEM_CRITERIOS.filter((c) => crit[c.key] === null).map((c) => c.label);
+  const estadoAuto = triagemEstado(crit, offerType);
+  const porPreencher = criterios
+    .filter((c) => !c.informativo && (crit[c.key] === null || crit[c.key] === undefined))
+    .map((c) => c.label);
 
-  function decidir(novo: ApplicantState, exigeMotivo: boolean) {
-    if (porPreencher.length > 0) {
-      toast.error(`Indique Sim ou Não em: ${porPreencher.join(", ")}.`);
+  function alternarMotivo(m: string) {
+    setCrit({
+      ...crit,
+      motivos: motivos.includes(m) ? motivos.filter((x) => x !== m) : [...motivos, m],
+    });
+  }
+
+  function guardar() {
+    if (!estadoAuto) {
+      toast.error(`Falta responder Sim ou Não a ${porPreencher.length} requisito(s).`);
       return;
     }
-    if (exigeMotivo && !motivo) {
-      toast.error("Indique o motivo de exclusão.");
+    const fundamentacao = [...motivos, motivo].filter(Boolean).join("\n");
+    if (estadoAuto === "EXCLUDED" && !fundamentacao) {
+      toast.error("Indique pelo menos um motivo de exclusão.");
       return;
     }
-    onTriagem(a.id, { ...crit, motivo });
-    onState(a.id, novo, exigeMotivo ? motivo : undefined);
-    setEstado(novo);
-    toast.success(`Candidatura de ${a.name}: ${APPLICANT_STATE_LABEL[novo]}.`);
+    onTriagem(a.id, { ...crit, motivos, motivo });
+    onState(a.id, estadoAuto, estadoAuto === "EXCLUDED" ? fundamentacao : undefined);
+    toast.success(`Candidatura de ${a.name}: ${APPLICANT_STATE_LABEL[estadoAuto]}.`);
   }
 
   return (
@@ -756,28 +769,6 @@ function LinhaCandidatura({
         </td>
         <td className="py-2">
           <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={estado}
-              onChange={(e) => setEstado(e.target.value as ApplicantState)}
-              className="input-ipma max-w-[200px]"
-            >
-              {TODOS_ESTADOS.map((s) => (
-                <option key={s} value={s}>
-                  {APPLICANT_STATE_LABEL[s]}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              disabled={estado === a.state}
-              onClick={() => {
-                onState(a.id, estado, estado === "EXCLUDED" ? a.exclusionReason ?? "" : undefined);
-                toast.success(`Estado alterado para ${APPLICANT_STATE_LABEL[estado]}.`);
-              }}
-              className="rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-40"
-            >
-              Atualizar
-            </button>
             <button
               type="button"
               onClick={() => setAberto(!aberto)}
@@ -785,6 +776,11 @@ function LinhaCandidatura({
             >
               {aberto ? "Fechar triagem" : "Triagem"}
             </button>
+            {estadoAuto && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                resultado: {APPLICANT_STATE_LABEL[estadoAuto]}
+              </span>
+            )}
           </div>
         </td>
       </tr>
@@ -794,10 +790,15 @@ function LinhaCandidatura({
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
               Verificação dos requisitos
             </p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {TRIAGEM_CRITERIOS.map((c) => (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {criterios.map((c) => (
                 <fieldset key={c.key} className="rounded-lg border border-border bg-white/70 p-3">
-                  <legend className="px-1 text-[12px] font-semibold">{c.label}</legend>
+                  <legend className="px-1 text-[12px] font-semibold">
+                    {c.label}
+                    {c.informativo && (
+                      <span className="ml-1 font-normal text-muted-foreground">(informativo)</span>
+                    )}
+                  </legend>
                   <div className="mt-1 flex gap-4">
                     {[
                       { v: true, l: "Sim" },
@@ -818,40 +819,44 @@ function LinhaCandidatura({
                 </fieldset>
               ))}
             </div>
-            <label className="mt-3 block">
-              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                Motivo de exclusão
-              </span>
-              <textarea
-                value={crit.motivo ?? ""}
-                onChange={(e) => setCrit({ ...crit, motivo: e.target.value })}
-                rows={2}
-                placeholder="Fundamentação, obrigatória para recusar ou rejeitar a candidatura."
-                className="input-ipma mt-1 w-full"
-              />
-            </label>
-            <div className="mt-3 flex flex-wrap gap-2">
+
+            <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+              Motivo de exclusão
+            </p>
+            <div className="mt-2 space-y-1.5">
+              {MOTIVOS_EXCLUSAO.map((m) => (
+                <label key={m} className="flex items-start gap-2 text-[12px] leading-relaxed">
+                  <input
+                    type="checkbox"
+                    checked={motivos.includes(m)}
+                    onChange={() => alternarMotivo(m)}
+                    className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                  />
+                  <span>{m}</span>
+                </label>
+              ))}
+            </div>
+            <textarea
+              value={crit.motivo ?? ""}
+              onChange={(e) => setCrit({ ...crit, motivo: e.target.value })}
+              rows={2}
+              placeholder="Outro motivo ou fundamentação adicional."
+              className="input-ipma mt-2 w-full"
+            />
+
+            <div className="mt-3 flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={() => decidir("ADMITTED", false)}
-                className="rounded-md bg-success px-4 py-2 text-[12px] font-semibold text-white transition hover:opacity-90"
+                onClick={guardar}
+                className="rounded-md bg-primary px-4 py-2 text-[12px] font-semibold text-primary-foreground transition hover:opacity-90"
               >
-                Aprovar
+                Guardar triagem
               </button>
-              <button
-                type="button"
-                onClick={() => decidir("EXCLUDED", true)}
-                className="rounded-md bg-warn px-4 py-2 text-[12px] font-semibold text-black transition hover:opacity-90"
-              >
-                Recusar
-              </button>
-              <button
-                type="button"
-                onClick={() => decidir("REJECTED", true)}
-                className="rounded-md bg-destructive px-4 py-2 text-[12px] font-semibold text-white transition hover:opacity-90"
-              >
-                Rejeitar
-              </button>
+              <p className="text-[12px] text-muted-foreground">
+                {estadoAuto
+                  ? `Estado calculado: ${APPLICANT_STATE_LABEL[estadoAuto]}.`
+                  : `Falta responder: ${porPreencher.join(" · ")}`}
+              </p>
             </div>
           </td>
         </tr>
@@ -859,6 +864,7 @@ function LinhaCandidatura({
     </>
   );
 }
+
 
 
 function CandidatoLinha({
