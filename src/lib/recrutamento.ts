@@ -95,6 +95,8 @@ export interface Vaga {
   bond: string;
   regime: string;
   remuneration: string;
+  /** Suplemento mensal (money) — obrigatório em cargos de direção (dirigentes). */
+  monthlySupplement?: string;
   /** Características da remuneração (texto livre). */
   remunerationNotes?: string;
   educationLevel: string;
