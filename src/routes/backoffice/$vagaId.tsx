@@ -425,28 +425,36 @@ function GestaoVaga() {
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:80ms]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold tracking-tight">Pipeline de etapas</h2>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {etapaAtiva?.code === "ADMISSION" && porTriar.length > 0 && (
+                <span className="rounded-md border border-warn/50 bg-warn/10 px-3 py-1.5 text-[12px]">
+                  Faltam triar {porTriar.length} candidatura(s)
+                </span>
+              )}
               {etapaAtiva?.code === "ADMISSION" && (
                 <button
+                  disabled={porTriar.length > 0}
                   onClick={() => {
                     const r = concludeScreening(vaga.id);
                     r.ok ? toast.success(r.message) : toast.error(r.message);
                   }}
-                  className="rounded-md border border-border bg-white/60 px-4 py-2 text-[13px] font-medium"
+                  className="rounded-md border border-border bg-white/60 px-4 py-2 text-[13px] font-medium disabled:opacity-40"
                 >
                   Concluir triagem provisória
                 </button>
               )}
               <button
+                disabled={etapaAtiva?.code === "ADMISSION" && porTriar.length > 0}
                 onClick={() => {
                   advanceStage(vaga.id);
                   toast.success("Etapa avançada.");
                 }}
-                className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
+                className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
               >
                 Avançar etapa
               </button>
             </div>
+
           </div>
           <ol className="mt-5 grid gap-2 md:grid-cols-6">
             {vaga.stages.map((s, i) => (
