@@ -809,11 +809,20 @@ function LinhaCandidatura({
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {criterios.map((c) => (
-                <fieldset key={c.key} className="rounded-lg border border-border bg-white/70 p-3">
+                <fieldset
+                  key={c.key}
+                  className={
+                    c.informativo
+                      ? "rounded-lg border border-border/60 bg-white/50 p-3 opacity-80"
+                      : "rounded-lg border border-border bg-white/70 p-3"
+                  }
+                >
                   <legend className="px-1 text-[12px] font-semibold">
                     {c.label}
                     {c.informativo && (
-                      <span className="ml-1 font-normal text-muted-foreground">(informativo)</span>
+                      <span className="ml-1 font-normal text-muted-foreground">
+                        (informativo — não afeta o resultado)
+                      </span>
                     )}
                   </legend>
                   <div className="mt-1 flex gap-4">
