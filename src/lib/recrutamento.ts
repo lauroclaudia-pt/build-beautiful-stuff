@@ -260,6 +260,8 @@ export interface Applicant {
   /** Secção E — declarações condicionais. */
   mobDeclaration?: boolean;
   grantDeclaration?: boolean;
+  /** Data-limite (ISO) para o candidato excluído editar a candidatura após a ata provisória. */
+  respostaPrazo?: string;
 }
 
 /** Critérios booleanos verificados na triagem da candidatura. */
