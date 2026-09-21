@@ -752,8 +752,21 @@ function LinhaCandidatura({
     .filter((c) => !c.informativo && (crit[c.key] === null || crit[c.key] === undefined))
     .map((c) => c.label);
 
+  /** Aplica uma alteração e recalcula imediatamente o estado do candidato. */
+  function aplicar(next: TriagemCriterios) {
+    setCrit(next);
+    onTriagem(a.id, next);
+    const est = triagemEstado(next, offerType);
+    if (est) {
+      const fund = [...(next.motivos ?? []), (next.motivo ?? "").trim()]
+        .filter(Boolean)
+        .join("\n");
+      onState(a.id, est, est === "EXCLUDED" ? fund : undefined);
+    }
+  }
+
   function alternarMotivo(m: string) {
-    setCrit({
+    aplicar({
       ...crit,
       motivos: motivos.includes(m) ? motivos.filter((x) => x !== m) : [...motivos, m],
     });

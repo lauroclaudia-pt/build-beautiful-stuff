@@ -338,7 +338,7 @@ export const TRIAGEM_CRITERIOS: TriagemCriterioDef[] = [
       "Tem no mínimo 4 ou 6 anos de experiência profissional, respetivamente CD ou DS, na AP ou no setor privado depois de concluída a licenciatura?",
     apenasDirigente: true,
   },
-  { key: "outrosFatores", label: "Outros fatores de exclusão não cumpridos?", invertido: true },
+  { key: "outrosFatores", label: "Outros fatores de exclusão não cumpridos?" },
 ];
 
 /** Critérios aplicáveis a um tipo de oferta. */
