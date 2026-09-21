@@ -513,7 +513,7 @@ function GestaoVaga() {
                   }}
                   className="rounded-md border border-border bg-white/60 px-4 py-2 text-[13px] font-medium disabled:opacity-40"
                 >
-                  Concluir triagem provisória
+                  Concluir verificação de admitidos
                 </button>
               )}
               <button
