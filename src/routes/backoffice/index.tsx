@@ -281,7 +281,7 @@ function NovaVaga({
     bond: vinculos[0] ?? "",
     regime: regimes[0] ?? "",
     remuneration: "",
-    remunerationNotes: "",
+    remunerationNotes: defaultRemunerationNotes("PROCEDIMENTO_CONCURSAL_COMUM"),
     educationLevel: habilitacoes[1] ?? habilitacoes[0] ?? "",
     requirements: "",
     description: "",
