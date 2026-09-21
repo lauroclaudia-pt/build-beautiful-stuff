@@ -279,6 +279,28 @@ function GestaoSite() {
             />
           </div>
         </section>
+
+        {/* Síntese do procedimento */}
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:200ms]">
+          <h2 className="text-lg font-semibold tracking-tight">Síntese do procedimento</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Cartão lateral da página de cada vaga, com todos os dados do procedimento.
+          </p>
+          <div className="mt-5 space-y-3">
+            <Interruptor
+              checked={site.showSummaryPublic !== false}
+              onChange={(v) => updateSite({ showSummaryPublic: v })}
+              label="Mostrar no website público"
+              desc="Visível para quem consulta as vagas sem sessão iniciada."
+            />
+            <Interruptor
+              checked={site.showSummaryCandidate !== false}
+              onChange={(v) => updateSite({ showSummaryCandidate: v })}
+              label="Mostrar no portal do candidato"
+              desc="Visível para candidatos com sessão iniciada."
+            />
+          </div>
+        </section>
       </main>
     </PageShell>
   );

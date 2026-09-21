@@ -100,8 +100,16 @@ export interface Vaga {
   /** Características da remuneração (texto livre). */
   remunerationNotes?: string;
   educationLevel: string;
+  /** Descrição da habilitação literária (máx. 500 caracteres). */
+  educationDescription?: string;
   requirements: string;
   description: string;
+  /** Descrição do procedimento (memo). */
+  procedureDescription?: string;
+  /** Lista de consulta de legislação/documentos para a prova de conhecimentos (memo). */
+  knowledgeReadings?: string;
+  /** Reserva de vagas para candidatos com deficiência. */
+  disabilityQuota?: boolean;
   selectionMethods: string[];
   juryPresident: string;
   /** Pessoa (id) responsável pela gestão do procedimento — Gestor de RH. */
@@ -531,6 +539,17 @@ export const EDUCATION_LEVELS = [
 export const BONDS = ["Contrato de trabalho em funções públicas", "Comissão de serviço", "Bolsa"];
 export const REGIMES = ["Tempo inteiro", "Tempo parcial"];
 export const SELECTION_METHODS = ["Prova de Conhecimentos (PC)", "Avaliação Curricular (AC)", "Entrevista de Avaliação de Competências (EAC)"];
+
+/** Texto predefinido dos requisitos gerais de admissão (art. 17.º da LTFP). */
+export const DEFAULT_REQUIREMENTS = `a) Nacionalidade Portuguesa, quando não dispensada pela Constituição, convenção internacional ou lei especial;
+
+b) 18 anos de idade completos;
+
+c) Não inibição do exercício de funções públicas ou não interdição para o exercício daquelas que se propõe desempenhar;
+
+d) Robustez física e perfil psíquico indispensável ao exercício das funções;
+
+e) Cumprimento das leis de vacinação obrigatória`;
 
 /** Texto predefinido das características da remuneração — procedimentos concursais (negociação do posicionamento remuneratório). */
 export const DEFAULT_REMUNERATION_NOTES_CONCURSAL = `- Havendo lugar à negociação do posicionamento remuneratório, aquela que o dirigente máximo do órgão ou serviço pondera vir a oferecer aos trabalhadores a recrutar, determinada em função das disponibilidades orçamentais, sem prejuízo da possibilidade de, fundamentadamente, poder vir a oferecer posição diferente nos termos e com observância dos limites legalmente definidos`;
