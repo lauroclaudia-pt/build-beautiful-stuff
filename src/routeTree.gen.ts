@@ -27,6 +27,7 @@ import { Route as BackofficePessoasRouteImport } from './routes/backoffice/pesso
 import { Route as BackofficeSiteRouteImport } from './routes/backoffice/site'
 import { Route as VagasVagaIdRouteImport } from './routes/vagas/$vagaId'
 import { Route as ApiJavaSplatRouteImport } from './routes/api/java/$'
+import { Route as BackofficeCandidaturaApplicantIdRouteImport } from './routes/backoffice/candidatura.$applicantId'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -119,6 +120,12 @@ const ApiJavaSplatRoute = ApiJavaSplatRouteImport.update({
   path: '/api/java/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BackofficeCandidaturaApplicantIdRoute =
+  BackofficeCandidaturaApplicantIdRouteImport.update({
+    id: '/backoffice/candidatura/$applicantId',
+    path: '/backoffice/candidatura/$applicantId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -145,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice/': typeof BackofficeIndexRoute
   '/api/java/$': typeof ApiJavaSplatRoute
+  '/backoffice/candidatura/$applicantId': typeof BackofficeCandidaturaApplicantIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -166,6 +174,7 @@ export interface FileRoutesByTo {
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice': typeof BackofficeIndexRoute
   '/api/java/$': typeof ApiJavaSplatRoute
+  '/backoffice/candidatura/$applicantId': typeof BackofficeCandidaturaApplicantIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
@@ -188,6 +197,7 @@ export interface FileRoutesById {
   '/vagas/$vagaId': typeof VagasVagaIdRoute
   '/backoffice/': typeof BackofficeIndexRoute
   '/api/java/$': typeof ApiJavaSplatRoute
+  '/backoffice/candidatura/$applicantId': typeof BackofficeCandidaturaApplicantIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
@@ -211,6 +221,7 @@ export interface FileRouteTypes {
     | '/vagas/$vagaId'
     | '/backoffice/'
     | '/api/java/$'
+    | '/backoffice/candidatura/$applicantId'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/vagas/$vagaId'
     | '/backoffice'
     | '/api/java/$'
+    | '/backoffice/candidatura/$applicantId'
     | '/lovable/email/transactional/preview'
   id:
     | '__root__'
@@ -253,6 +265,7 @@ export interface FileRouteTypes {
     | '/vagas/$vagaId'
     | '/backoffice/'
     | '/api/java/$'
+    | '/backoffice/candidatura/$applicantId'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
@@ -275,6 +288,7 @@ export interface RootRouteChildren {
   VagasVagaIdRoute: typeof VagasVagaIdRoute
   BackofficeIndexRoute: typeof BackofficeIndexRoute
   ApiJavaSplatRoute: typeof ApiJavaSplatRoute
+  BackofficeCandidaturaApplicantIdRoute: typeof BackofficeCandidaturaApplicantIdRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -406,6 +420,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiJavaSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/backoffice/candidatura/$applicantId': {
+      id: '/backoffice/candidatura/$applicantId'
+      path: '/backoffice/candidatura/$applicantId'
+      fullPath: '/backoffice/candidatura/$applicantId'
+      preLoaderRoute: typeof BackofficeCandidaturaApplicantIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -435,6 +456,7 @@ const rootRouteChildren: RootRouteChildren = {
   VagasVagaIdRoute: VagasVagaIdRoute,
   BackofficeIndexRoute: BackofficeIndexRoute,
   ApiJavaSplatRoute: ApiJavaSplatRoute,
+  BackofficeCandidaturaApplicantIdRoute: BackofficeCandidaturaApplicantIdRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport

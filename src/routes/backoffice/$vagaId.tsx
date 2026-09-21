@@ -752,8 +752,21 @@ function LinhaCandidatura({
     .filter((c) => !c.informativo && (crit[c.key] === null || crit[c.key] === undefined))
     .map((c) => c.label);
 
+  /** Aplica uma alteração e recalcula imediatamente o estado do candidato. */
+  function aplicar(next: TriagemCriterios) {
+    setCrit(next);
+    onTriagem(a.id, next);
+    const est = triagemEstado(next, offerType);
+    if (est) {
+      const fund = [...(next.motivos ?? []), (next.motivo ?? "").trim()]
+        .filter(Boolean)
+        .join("\n");
+      onState(a.id, est, est === "EXCLUDED" ? fund : undefined);
+    }
+  }
+
   function alternarMotivo(m: string) {
-    setCrit({
+    aplicar({
       ...crit,
       motivos: motivos.includes(m) ? motivos.filter((x) => x !== m) : [...motivos, m],
     });
@@ -793,6 +806,14 @@ function LinhaCandidatura({
             >
               {aberto ? "Fechar triagem" : "Triagem"}
             </button>
+            <a
+              href={`/backoffice/candidatura/${a.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[12px] font-medium transition hover:bg-white/60"
+            >
+              <Eye className="h-3.5 w-3.5" /> Abrir candidatura
+            </a>
             {estadoAuto && (
               <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                 resultado: {APPLICANT_STATE_LABEL[estadoAuto]}
@@ -835,7 +856,7 @@ function LinhaCandidatura({
                           type="radio"
                           name={`${c.key}-${a.id}`}
                           checked={crit[c.key] === o.v}
-                          onChange={() => setCrit({ ...crit, [c.key]: o.v })}
+                          onChange={() => aplicar({ ...crit, [c.key]: o.v })}
                           className="h-3.5 w-3.5 accent-primary"
                         />
                         {o.l}
@@ -846,29 +867,35 @@ function LinhaCandidatura({
               ))}
             </div>
 
-            <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-              Motivo de exclusão
-            </p>
-            <div className="mt-2 space-y-1.5">
-              {MOTIVOS_EXCLUSAO.map((m) => (
-                <label key={m} className="flex items-start gap-2 text-[12px] leading-relaxed">
-                  <input
-                    type="checkbox"
-                    checked={motivos.includes(m)}
-                    onChange={() => alternarMotivo(m)}
-                    className="mt-0.5 h-3.5 w-3.5 accent-primary"
-                  />
-                  <span>{m}</span>
-                </label>
-              ))}
-            </div>
-            <textarea
-              value={crit.motivo ?? ""}
-              onChange={(e) => setCrit({ ...crit, motivo: e.target.value })}
-              rows={2}
-              placeholder="Outro motivo ou fundamentação adicional."
-              className="input-ipma mt-2 w-full"
-            />
+            {estadoAuto === "EXCLUDED" && (
+              <>
+                <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  Motivo de exclusão (obrigatório)
+                </p>
+                <div className="mt-2 space-y-1.5">
+                  {MOTIVOS_EXCLUSAO.map((m) => (
+                    <label key={m} className="flex items-start gap-2 text-[12px] leading-relaxed">
+                      <input
+                        type="checkbox"
+                        checked={motivos.includes(m)}
+                        onChange={() => alternarMotivo(m)}
+                        className="mt-0.5 h-3.5 w-3.5 accent-primary"
+                      />
+                      <span>{m}</span>
+                    </label>
+                  ))}
+                </div>
+                <textarea
+                  value={crit.motivo ?? ""}
+                  onChange={(e) => setCrit({ ...crit, motivo: e.target.value })}
+                  onBlur={() => aplicar({ ...crit })}
+                  rows={2}
+                  placeholder="Outro motivo ou fundamentação adicional."
+                  className="input-ipma mt-2 w-full"
+                />
+              </>
+            )}
+
 
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <button
