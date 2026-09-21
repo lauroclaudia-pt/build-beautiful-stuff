@@ -5,9 +5,14 @@ import { toast } from "sonner";
 import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/components/shell";
 import { finalGrade, useStore } from "@/lib/store";
 import { hasActiveRole } from "@/lib/pessoas";
+import { FilePickButton } from "@/components/file-upload";
 import {
   AC_CRITERIA,
   APPLICANT_STATE_LABEL,
+  ATA_LABEL,
+  diasUteisApos,
+  diasUteisEntre,
+  type AtaTipo,
   DESEMPENHO_CONVERSION,
   EAC_CRITERIA,
   EAC_MAX,
