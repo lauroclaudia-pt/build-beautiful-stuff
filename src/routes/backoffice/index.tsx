@@ -314,14 +314,21 @@ function NovaVaga({
 
   function mudarTipo(t: OfferType) {
     const r = offerTypeRules(t);
-    setF((prev) => ({
-      ...prev,
-      offerType: t,
-      hasPc: r.pc ?? r.defaults.pc,
-      hasAc: r.ac ?? r.defaults.ac,
-      hasEac: r.eac ?? r.defaults.eac,
-      positions: r.singlePosition ? 1 : prev.positions,
-    }));
+    setF((prev) => {
+      // Mantém o texto se já foi editado; caso contrário, segue o predefinido do novo tipo.
+      const notes = !prev.remunerationNotes.trim() || prev.remunerationNotes === defaultRemunerationNotes(prev.offerType)
+        ? defaultRemunerationNotes(t)
+        : prev.remunerationNotes;
+      return {
+        ...prev,
+        offerType: t,
+        remunerationNotes: notes,
+        hasPc: r.pc ?? r.defaults.pc,
+        hasAc: r.ac ?? r.defaults.ac,
+        hasEac: r.eac ?? r.defaults.eac,
+        positions: r.singlePosition ? 1 : prev.positions,
+      };
+    });
   }
 
   function submit(e: React.FormEvent) {
