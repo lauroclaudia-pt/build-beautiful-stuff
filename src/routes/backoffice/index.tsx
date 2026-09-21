@@ -513,31 +513,30 @@ function NovaVaga({
         </div>
       </div>
       <div className="sm:col-span-3">
-        <L label="Métodos de seleção">
+        <L label="Métodos de seleção (definidos pela tramitação)">
           <div className="flex flex-wrap gap-2">
-            {metodos.map((m) => {
-              const on = f.selectionMethods.includes(m);
-              return (
-                <button
-                  type="button"
-                  key={m}
-                  onClick={() =>
-                    setF({
-                      ...f,
-                      selectionMethods: on
-                        ? f.selectionMethods.filter((x) => x !== m)
-                        : [...f.selectionMethods, m],
-                    })
-                  }
-                  className={`rounded-md px-3 py-1.5 text-[12px] ${
-                    on ? "bg-primary text-primary-foreground" : "border border-border bg-white/50"
-                  }`}
-                >
-                  {m}
-                </button>
-              );
-            })}
+            {metodosSelecionados.length === 0 && (
+              <span className="text-[12px] text-muted-foreground">
+                Selecione acima as fases de avaliação (PC, AC, EAC).
+              </span>
+            )}
+            {metodosSelecionados.map((m) => (
+              <span key={m} className="rounded-md bg-primary px-3 py-1.5 text-[12px] text-primary-foreground">
+                {m}
+              </span>
+            ))}
           </div>
+        </L>
+      </div>
+      <div className="sm:col-span-3">
+        <L label="Características da remuneração">
+          <textarea
+            rows={3}
+            value={f.remunerationNotes}
+            onChange={(e) => setF({ ...f, remunerationNotes: e.target.value })}
+            placeholder="Posição e nível remuneratório, suplementos, subsídios e outras condições."
+            className="input-ipma"
+          />
         </L>
       </div>
       <div className="sm:col-span-3">
