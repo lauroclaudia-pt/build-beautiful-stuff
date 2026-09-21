@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageShell, JobStateBadge, RequireRole } from "@/components/shell";
+import { Req } from "@/components/req";
 import { useStore } from "@/lib/store";
 import { hasActiveRole } from "@/lib/pessoas";
 import { Eye } from "lucide-react";
@@ -281,6 +282,7 @@ function NovaVaga({
     bond: vinculos[0] ?? "",
     regime: regimes[0] ?? "",
     remuneration: "",
+    monthlySupplement: "",
     remunerationNotes: defaultRemunerationNotes("PROCEDIMENTO_CONCURSAL_COMUM"),
     educationLevel: habilitacoes[1] ?? habilitacoes[0] ?? "",
     requirements: "",
@@ -302,6 +304,7 @@ function NovaVaga({
   const fases = stageCodesFor(f.offerType, { hasAc, hasEac });
   const metodosSelecionados = selectionMethodsFrom({ hasPc, hasAc, hasEac });
   const maxLocais = Math.max(1, rules.singlePosition ? 1 : Number(f.positions) || 1);
+  const dirigente = f.offerType === "CARGOS_DIRECAO";
 
   function alternarLocal(d: string) {
     setF((prev) => {
@@ -348,6 +351,13 @@ function NovaVaga({
     if (f.locations.length > maxLocais) {
       toast.error(`Só pode escolher ${maxLocais} local(is) de trabalho.`);
       return;
+    }
+    if (dirigente) {
+      const valor = f.monthlySupplement.replace(/\s|€/g, "").replace(",", ".");
+      if (!valor || Number.isNaN(Number(valor)) || Number(valor) <= 0) {
+        toast.error("Indique o suplemento mensal (obrigatório em cargos de direção).");
+        return;
+      }
     }
     onCreate({
       ...f,
@@ -659,7 +669,7 @@ function NovaVaga({
   );
 }
 
-function L({ label, children }: { label: string; children: React.ReactNode }) {
+function L({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
