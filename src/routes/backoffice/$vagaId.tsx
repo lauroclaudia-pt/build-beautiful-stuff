@@ -747,6 +747,7 @@ function GestaoVaga() {
             </div>
           </div>
         </section>
+        )}
 
         {tab === "vaga" && (
         <>
