@@ -584,6 +584,102 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return result;
   }, []);
 
+  const gerarAta: StoreValue["gerarAta"] = useCallback((vagaId, tipo, texto) => {
+    const agora = new Date().toISOString();
+    setData((d) => ({
+      ...d,
+      vagas: d.vagas.map((v) => {
+        if (v.id !== vagaId) return v;
+        const atas = v.atas ?? [];
+        const existente = atas.find((a) => a.tipo === tipo);
+        const nova: AtaVaga = existente
+          ? { ...existente, texto, geradaEm: agora }
+          : { tipo, texto, geradaEm: agora };
+        return { ...v, atas: [...atas.filter((a) => a.tipo !== tipo), nova] };
+      }),
+    }));
+  }, []);
+
+  const atualizarAta: StoreValue["atualizarAta"] = useCallback((vagaId, tipo, patch) => {
+    setData((d) => ({
+      ...d,
+      vagas: d.vagas.map((v) =>
+        v.id === vagaId
+          ? {
+              ...v,
+              atas: (v.atas ?? []).map((a) => (a.tipo === tipo ? { ...a, ...patch } : a)),
+            }
+          : v,
+      ),
+    }));
+  }, []);
+
+  /**
+   * Notifica e publica a ata provisória: exige ata assinada carregada e
+   * data-limite de resposta com pelo menos 10 dias úteis. Os candidatos
+   * excluídos passam a poder editar a candidatura até essa data.
+   */
+  const notificarAtaProvisoria: StoreValue["notificarAtaProvisoria"] = useCallback((vagaId) => {
+    let result = { ok: true, message: "Ata provisória notificada e publicada." };
+    const hoje = new Date().toISOString().slice(0, 10);
+    setData((d) => {
+      const vaga = d.vagas.find((v) => v.id === vagaId);
+      const ata = vaga?.atas?.find((a) => a.tipo === "PROVISORIA");
+      if (!vaga || !ata || !ata.ficheiroNome) {
+        result = { ok: false, message: "Carregue primeiro a ata assinada." };
+        return d;
+      }
+      if (!ata.prazoResposta || diasUteisEntre(hoje, ata.prazoResposta) < 10) {
+        result = {
+          ok: false,
+          message: "A data-limite de resposta tem de ter pelo menos 10 dias úteis.",
+        };
+        return d;
+      }
+      const agora = new Date().toISOString();
+      const prazo = ata.prazoResposta;
+      return {
+        ...d,
+        vagas: d.vagas.map((v) =>
+          v.id === vagaId
+            ? {
+                ...v,
+                atas: (v.atas ?? []).map((a) =>
+                  a.tipo === "PROVISORIA" ? { ...a, notificadaEm: agora } : a,
+                ),
+                registros: [
+                  ...(v.registros ?? []),
+                  {
+                    id: crypto.randomUUID(),
+                    tipo: "NOTIFICACAO" as const,
+                    stage: "ADMISSION" as const,
+                    texto: `Ata provisória de admitidos e excluídos notificada e publicada. Resposta até ${prazo}.`,
+                    createdAt: agora,
+                  },
+                ],
+              }
+            : v,
+        ),
+        applicants: d.applicants.map((a) =>
+          a.vagaId === vagaId && a.state === "EXCLUDED" ? { ...a, respostaPrazo: prazo } : a,
+        ),
+      };
+    });
+    return result;
+  }, []);
+
+  /** O candidato excluído responde à ata: a candidatura volta a triagem, em análise. */
+  const responderAta: StoreValue["responderAta"] = useCallback((applicantId) => {
+    setData((d) => ({
+      ...d,
+      applicants: d.applicants.map((a) =>
+        a.id === applicantId
+          ? { ...a, state: "UNDER_REVIEW" as const, respostaPrazo: undefined }
+          : a,
+      ),
+    }));
+  }, []);
+
   const reset = useCallback(() => {
     setData(seed());
   }, []);
