@@ -88,6 +88,10 @@ export interface StoreValue extends Data {
   removeOpcao: (id: string) => void;
   opcoesDe: (category: OptionCategory) => string[];
   concludeScreening: (vagaId: string) => { ok: boolean; message: string };
+  gerarAta: (vagaId: string, tipo: AtaTipo, texto: string) => void;
+  atualizarAta: (vagaId: string, tipo: AtaTipo, patch: Partial<AtaVaga>) => void;
+  notificarAtaProvisoria: (vagaId: string) => { ok: boolean; message: string };
+  responderAta: (applicantId: string) => void;
   /** Acrescenta um registo ao procedimento (notificação enviada ou observação manual). */
   addVagaRegistro: (vagaId: string, reg: Omit<VagaRegistro, "id" | "createdAt">) => void;
   /** Regista notificações enviadas aos candidatos, com o texto final. */
