@@ -474,6 +474,7 @@ function GestaoVaga() {
                 ["Regime", vaga.regime],
                 ["Habilitação mínima", vaga.educationLevel],
                 ["Remuneração", vaga.remuneration],
+                ["Suplemento mensal", vaga.monthlySupplement || "—"],
                 ["Características da remuneração", vaga.remunerationNotes || "—"],
                 ["Código BEP/Edital", vaga.bepCode || "Por atribuir"],
                 ["Métodos de seleção", vaga.selectionMethods.join(" · ")],
