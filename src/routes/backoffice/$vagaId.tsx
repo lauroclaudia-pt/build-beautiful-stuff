@@ -958,7 +958,9 @@ function CandidatoLinha({
             </p>
           )}
           {a.state === "ADMITTED" && (
+          <>
           <Campo label="Prova de Conhecimentos (0-20)">
+
 
             <input
               type="number"
