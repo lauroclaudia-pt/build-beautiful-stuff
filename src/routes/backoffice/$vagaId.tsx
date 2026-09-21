@@ -569,6 +569,7 @@ function GestaoVaga() {
         )}
 
         {/* Pipeline */}
+        {tab === "vaga" && (
         <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:80ms]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold tracking-tight">Pipeline de etapas</h2>
