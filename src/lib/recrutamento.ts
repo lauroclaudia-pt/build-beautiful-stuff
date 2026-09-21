@@ -214,12 +214,21 @@ export interface Applicant {
 
 /** Critérios booleanos verificados na triagem da candidatura. */
 export interface TriagemCriterios {
+  /** Preferência do candidato por Prova de Conhecimentos (informativo). */
+  preferePc?: boolean | null;
   habilitacao: boolean | null;
   vinculo: boolean | null;
   documentos: boolean | null;
+  /** Experiência profissional mínima (4 ou 6 anos) — só em cargos de direção. */
   experiencia: boolean | null;
+
+  /** Outros fatores de exclusão não cumpridos. */
+  outrosFatores?: boolean | null;
+  /** Motivos de exclusão pré-definidos selecionados (vários). */
+  motivos?: string[];
   motivo?: string;
 }
+
 
 /** Critério de avaliação com peso percentual (a soma dos pesos = 100). */
 export interface EvalCriterion {
@@ -302,20 +311,81 @@ export function methodWeights(has: { pc: boolean; ac: boolean; eac: boolean }): 
   return { pc: pc ? 1 : 0, ac: ac ? 1 : 0, eac: eac ? 1 : 0 };
 }
 
-export const TRIAGEM_CRITERIOS: { key: keyof Omit<TriagemCriterios, "motivo">; label: string }[] = [
-  { key: "habilitacao", label: "Habilitação" },
-  { key: "vinculo", label: "Vínculo" },
-  { key: "documentos", label: "Documentos" },
-  { key: "experiencia", label: "Experiência" },
+export type TriagemKey = "preferePc" | "habilitacao" | "vinculo" | "documentos" | "experiencia" | "outrosFatores";
+
+export interface TriagemCriterioDef {
+  key: TriagemKey;
+  label: string;
+  /** Não influencia o estado do candidato (apenas registo). */
+  informativo?: boolean;
+  /** "Sim" significa incumprimento (exclui o candidato). */
+  invertido?: boolean;
+  /** Só é apresentado em concursos de dirigente. */
+  apenasDirigente?: boolean;
+}
+
+export const TRIAGEM_CRITERIOS: TriagemCriterioDef[] = [
+  { key: "preferePc", label: "Prefere Prova de Conhecimentos (PC)?", informativo: true },
+  { key: "habilitacao", label: "Habilitação igual ou superior ao exigido?" },
+  { key: "vinculo", label: "Tem vínculo necessário ao procedimento?" },
+  {
+    key: "documentos",
+    label: "Apresentou todos os documentos ou justificação para não apresentar?",
+  },
+  {
+    key: "experiencia",
+    label:
+      "Tem no mínimo 4 ou 6 anos de experiência profissional, respetivamente CD ou DS, na AP ou no setor privado depois de concluída a licenciatura?",
+    apenasDirigente: true,
+  },
+  { key: "outrosFatores", label: "Outros fatores de exclusão não cumpridos?", invertido: true },
 ];
 
+/** Critérios aplicáveis a um tipo de oferta. */
+export function triagemCriteriosDe(offerType: OfferType): TriagemCriterioDef[] {
+  return TRIAGEM_CRITERIOS.filter((c) => !c.apenasDirigente || offerType === "CARGOS_DIRECAO");
+}
+
+/** Motivos de exclusão pré-definidos (seleção múltipla). */
+export const MOTIVOS_EXCLUSAO: string[] = [
+  "(a) Candidato/a tem 10 dias úteis para apresentar certificado de habilitações literárias",
+  "(b) Candidato/a excluído/a por não comprovar ser detentor/a de relação jurídica de emprego público constituída por CTFP tempo indeterminado (Cfr. ponto 10.2 do aviso integral de abertura);",
+  "(c) Não formaliza a candidatura nos termos do n.º 11.4 do Aviso integral de abertura",
+  "(c) Candidato/a tem 10 dias úteis para apresentar declaração emitida pelo órgão ou serviço a que pertence, comprovativa de vínculo e das funções desempenhadas",
+  "(c) Candidato/a tem 10 dias úteis para apresentar declaração de vínculo atualizada",
+  "(c) Não possui experiência profissional suficiente de acordo com o art 20 da Lei n.º 2/2004, de 15 de janeiro, EPD",
+];
+
+/**
+ * Estado resultante da triagem: Admitido se todos os requisitos aplicáveis
+ * estiverem cumpridos; Excluído se algum falhar; null enquanto faltar responder.
+ */
+export function triagemEstado(
+  crit: TriagemCriterios | undefined,
+  offerType: OfferType,
+): "ADMITTED" | "EXCLUDED" | null {
+  if (!crit) return null;
+  const aplicaveis = triagemCriteriosDe(offerType).filter((c) => !c.informativo);
+  let excluido = false;
+  for (const c of aplicaveis) {
+    const v = crit[c.key];
+    if (v === null || v === undefined) return null;
+    if (c.invertido ? v === true : v === false) excluido = true;
+  }
+  return excluido ? "EXCLUDED" : "ADMITTED";
+}
+
 export const EMPTY_TRIAGEM: TriagemCriterios = {
+  preferePc: null,
   habilitacao: null,
   vinculo: null,
   documentos: null,
   experiencia: null,
+  outrosFatores: null,
+  motivos: [],
   motivo: "",
 };
+
 
 export type AppealChannel = "PORTAL" | "EMAIL" | "FISICO" | "SEM_RESPOSTA";
 
