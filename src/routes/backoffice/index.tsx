@@ -10,6 +10,7 @@ import {
   JOB_STATE_LABEL,
   OFFER_TYPE_LABEL,
   daysUntil,
+  DEFAULT_REQUIREMENTS,
   defaultRemunerationNotes,
   departmentsOf,
   formatDate,
@@ -285,8 +286,13 @@ function NovaVaga({
     monthlySupplement: "",
     remunerationNotes: defaultRemunerationNotes("PROCEDIMENTO_CONCURSAL_COMUM"),
     educationLevel: habilitacoes[1] ?? habilitacoes[0] ?? "",
-    requirements: "",
+    educationDescription: "",
+    requirements: DEFAULT_REQUIREMENTS,
     description: "",
+    procedureDescription: "",
+    knowledgeReadings: "",
+    allowNoDegree: false,
+    disabilityQuota: false,
     juryPresident: "",
     hrManagerId: gestores.find((g) => g.id === currentUser?.id)?.id ?? gestores[0]?.id ?? "",
     juryMembers: "",
@@ -520,6 +526,58 @@ function NovaVaga({
           ))}
         </select>
       </L>
+      <div className="sm:col-span-3">
+        <L label="Descrição da habilitação literária">
+          <textarea
+            rows={2}
+            maxLength={500}
+            value={f.educationDescription}
+            onChange={(e) => setF({ ...f, educationDescription: e.target.value })}
+            className="input-ipma"
+          />
+        </L>
+        <p className="mt-1 text-[12px] text-muted-foreground">
+          {f.educationDescription.length}/500 caracteres.
+        </p>
+      </div>
+      <div className="sm:col-span-3 grid gap-4 sm:grid-cols-2">
+        <L label="Admissão sem habilitação exigida">
+          <div className="flex gap-4">
+            {[
+              ["Sim", true],
+              ["Não", false],
+            ].map(([lbl, val]) => (
+              <label key={String(val)} className="flex items-center gap-2 text-[13px]">
+                <input
+                  type="radio"
+                  name="allowNoDegree"
+                  checked={f.allowNoDegree === val}
+                  onChange={() => setF({ ...f, allowNoDegree: val as boolean })}
+                />
+                {lbl}
+              </label>
+            ))}
+          </div>
+        </L>
+        <L label="Vagas para candidatos com deficiência">
+          <div className="flex gap-4">
+            {[
+              ["Sim", true],
+              ["Não", false],
+            ].map(([lbl, val]) => (
+              <label key={String(val)} className="flex items-center gap-2 text-[13px]">
+                <input
+                  type="radio"
+                  name="disabilityQuota"
+                  checked={f.disabilityQuota === val}
+                  onChange={() => setF({ ...f, disabilityQuota: val as boolean })}
+                />
+                {lbl}
+              </label>
+            ))}
+          </div>
+        </L>
+      </div>
       <L label="Prazo de candidatura">
         <input
           type="date"
@@ -648,11 +706,31 @@ function NovaVaga({
         </L>
       </div>
       <div className="sm:col-span-3">
+        <L label="Descrição do procedimento">
+          <textarea
+            rows={4}
+            value={f.procedureDescription}
+            onChange={(e) => setF({ ...f, procedureDescription: e.target.value })}
+            className="input-ipma"
+          />
+        </L>
+      </div>
+      <div className="sm:col-span-3">
         <L label="Requisitos">
           <textarea
-            rows={3}
+            rows={8}
             value={f.requirements}
             onChange={(e) => setF({ ...f, requirements: e.target.value })}
+            className="input-ipma"
+          />
+        </L>
+      </div>
+      <div className="sm:col-span-3">
+        <L label="Lista de consulta de legislação/documentos para Prova de Conhecimentos">
+          <textarea
+            rows={4}
+            value={f.knowledgeReadings}
+            onChange={(e) => setF({ ...f, knowledgeReadings: e.target.value })}
             className="input-ipma"
           />
         </L>

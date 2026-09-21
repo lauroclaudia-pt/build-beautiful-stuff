@@ -72,3 +72,11 @@
 ## Instalação do interface em servidor próprio (2026-09-21)
 - [x] Pacote do portal para Railway: `Dockerfile.portal`, `railway.portal.json`, `.dockerignore`, `README-portal.md`
 - [x] `vite.config.ts` aceita `NITRO_PRESET` (ex.: node-server) e gera `.output/server/index.mjs`
+
+## Campos da vaga e síntese (2026-09-21)
+- [x] Descrição da habilitação literária (500 caracteres) a seguir à habilitação mínima
+- [x] Requisitos com texto predefinido (alíneas a) a e))
+- [x] Memo "Descrição do procedimento"
+- [x] Memo "Lista de consulta de legislação/documentos para Prova de Conhecimentos"
+- [x] Radio "Admissão sem habilitação exigida" e "Vagas para candidatos com deficiência"
+- [x] Síntese do procedimento com todos os campos; mostrar/ocultar no site público e no portal do candidato (Gestão do site)
