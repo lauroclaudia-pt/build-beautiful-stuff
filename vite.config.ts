@@ -12,7 +12,13 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 const serverEnv = loadEnv(process.env['NODE_ENV'] ?? "development", process.cwd(), "");
 Object.assign(process.env, serverEnv);
 
+// Permite fixar o alvo de compilação a partir do ambiente (ex.: NITRO_PRESET=node-server
+// para servir o portal a partir de um servidor Node próprio, como o Railway).
+// Sem esta variável, o comportamento predefinido da Lovable mantém-se inalterado.
+const nitroPreset = process.env['NITRO_PRESET'];
+
 export default defineConfig({
+  ...(nitroPreset ? { nitro: { preset: nitroPreset } } : {}),
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
