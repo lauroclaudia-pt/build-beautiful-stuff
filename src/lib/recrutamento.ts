@@ -214,12 +214,21 @@ export interface Applicant {
 
 /** Critérios booleanos verificados na triagem da candidatura. */
 export interface TriagemCriterios {
+  /** Preferência do candidato por Prova de Conhecimentos (informativo). */
+  preferePc?: boolean | null;
   habilitacao: boolean | null;
   vinculo: boolean | null;
   documentos: boolean | null;
   experiencia: boolean | null;
+  /** Experiência profissional mínima (4 ou 6 anos) — só em cargos de direção. */
+  experienciaDirigente?: boolean | null;
+  /** Outros fatores de exclusão não cumpridos. */
+  outrosFatores?: boolean | null;
+  /** Motivos de exclusão pré-definidos selecionados (vários). */
+  motivos?: string[];
   motivo?: string;
 }
+
 
 /** Critério de avaliação com peso percentual (a soma dos pesos = 100). */
 export interface EvalCriterion {
