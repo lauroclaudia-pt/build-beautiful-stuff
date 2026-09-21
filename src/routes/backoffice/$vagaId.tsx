@@ -211,8 +211,70 @@ function GestaoVaga() {
 
   const etapaAtiva = vaga.stages.find((s) => s.state === "active");
 
+  // --- Atas de admitidos e excluídos ---
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  const admitidos = todos.filter((a) => a.state === "ADMITTED");
+  const excluidos = todos.filter((a) => a.state === "EXCLUDED");
+  const todosTriados = todos.length > 0 && porTriar.length === 0;
+  const ataProv = vaga.atas?.find((a) => a.tipo === "PROVISORIA");
+  const ataFinal = vaga.atas?.find((a) => a.tipo === "FINAL");
+  const podeGerarProvisoria = todosTriados && excluidos.length > 0;
+  const podeGerarFinal = todosTriados;
+  const prazoOk =
+    !!ataProv?.prazoResposta && diasUteisEntre(hojeISO, ataProv.prazoResposta) >= 10;
+  const podeNotificarAdmitidos =
+    todosTriados && (excluidos.length === 0 || (!!ataProv?.ficheiroNome && prazoOk));
+
+  function textoAta(tipo: AtaTipo) {
+    const v = vaga!;
+    const linha = (a: Applicant, i: number) =>
+      `${String(i + 1).padStart(2, "0")}. ${a.name} — NIF ${a.nif}${
+        a.state === "EXCLUDED"
+          ? ` — EXCLUÍDO/A${a.exclusionReason ? `: ${a.exclusionReason}` : ""}`
+          : " — ADMITIDO/A"
+      }`;
+    return [
+      `${ATA_LABEL[tipo].toUpperCase()}`,
+      `Instituto Português do Mar e da Atmosfera, I.P.`,
+      `Procedimento ${v.ref} — ${v.title} (${OFFER_TYPE_LABEL[v.offerType]})`,
+      `Data: ${new Date().toLocaleDateString("pt-PT")}`,
+      ``,
+      `JÚRI`,
+      `Presidente: ${v.juryPresident || "(por designar)"}`,
+      ...(v.juryMembers.length ? v.juryMembers.map((m, i) => `Vogal ${i + 1}: ${m}`) : []),
+      ``,
+      `CANDIDATOS ADMITIDOS (${admitidos.length})`,
+      ...(admitidos.length ? admitidos.map(linha) : ["(nenhum)"]),
+      ``,
+      `CANDIDATOS EXCLUÍDOS (${excluidos.length})`,
+      ...(excluidos.length ? excluidos.map(linha) : ["(nenhum)"]),
+      ``,
+      tipo === "PROVISORIA"
+        ? `Os candidatos excluídos dispõem de 10 dias úteis, a contar da notificação, para corrigir ou completar a sua candidatura.`
+        : `A presente lista é definitiva. Só os candidatos admitidos transitam para a fase de avaliação.`,
+    ].join("\n");
+  }
+
+  function descarregarTexto(nome: string, texto: string) {
+    const blob = new Blob([texto], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const el = document.createElement("a");
+    el.href = url;
+    el.download = nome;
+    el.click();
+    URL.revokeObjectURL(url);
+  }
+
   function notificarFase(code: StageCode) {
     const v = vaga!;
+    if (code === "ADMISSION" && !podeNotificarAdmitidos) {
+      toast.error(
+        porTriar.length > 0
+          ? "Todos os candidatos têm de estar admitidos ou excluídos antes de notificar."
+          : "Carregue a ata provisória assinada e defina a data-limite de resposta (mín. 10 dias úteis).",
+      );
+      return;
+    }
     const modelo = (site.emailTemplates ?? []).find((t) => t.stage === code && t.enabled);
     if (!modelo) {
       toast.error(
