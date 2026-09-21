@@ -1092,6 +1092,9 @@ function CandidatoLinha({
               className="input-ipma"
             />
           </Campo>
+          </>
+          )}
+
           <div className="sm:col-span-2">
             <Campo label="Motivo de exclusão">
               <input
