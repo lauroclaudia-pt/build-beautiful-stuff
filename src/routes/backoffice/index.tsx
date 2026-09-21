@@ -315,8 +315,20 @@ function NovaVaga({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!f.ref.trim() || !f.title.trim()) {
-      toast.error("Indique a referência e o título do procedimento.");
+    if (!f.title.trim()) {
+      toast.error("Indique o título do procedimento.");
+      return;
+    }
+    if (f.departments.length === 0) {
+      toast.error("Escolha pelo menos uma unidade orgânica.");
+      return;
+    }
+    if (f.locations.length === 0) {
+      toast.error("Escolha pelo menos um local de trabalho.");
+      return;
+    }
+    if (f.locations.length > maxLocais) {
+      toast.error(`Só pode escolher ${maxLocais} local(is) de trabalho.`);
       return;
     }
     onCreate({
@@ -324,8 +336,11 @@ function NovaVaga({
       hasPc,
       hasAc,
       hasEac,
-      ref: f.ref.trim(),
+      ref: refAuto,
       title: f.title.trim(),
+      department: f.departments[0] ?? "",
+      location: f.locations[0] ?? "",
+      selectionMethods: metodosSelecionados,
       positions: Number(f.positions) || 1,
       juryMembers: f.juryMembers
         .split(",")
