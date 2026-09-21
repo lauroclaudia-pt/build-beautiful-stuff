@@ -644,6 +644,7 @@ function GestaoVaga() {
             </p>
           )}
         </section>
+        )}
 
         {/* Atas de admitidos e excluídos */}
         {tab === "candidato" && (
