@@ -544,9 +544,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
    * recolha de requisitos em falta, caso contrário avança diretamente para a avaliação.
    */
   const concludeScreening: StoreValue["concludeScreening"] = useCallback((vagaId) => {
-    let result = { ok: true, message: "Triagem provisória concluída." };
+    let result = { ok: true, message: "Verificação de admitidos concluída." };
     setData((d) => {
       const excluidos = d.applicants.some((a) => a.vagaId === vagaId && a.state === "EXCLUDED");
+      const vagaAtual = d.vagas.find((v) => v.id === vagaId);
+      const prov = vagaAtual?.atas?.find((a) => a.tipo === "PROVISORIA");
+      const final = vagaAtual?.atas?.find((a) => a.tipo === "FINAL");
+      if (prov?.notificadaEm && !final?.ficheiroNome) {
+        result = {
+          ok: false,
+          message: "Gere e carregue a ata da lista final de candidatos antes de concluir.",
+        };
+        return d;
+      }
       return {
         ...d,
         vagas: d.vagas.map((v) => {
