@@ -951,7 +951,15 @@ function CandidatoLinha({
             </p>
             <p className="mt-1 text-[13px] text-pretty">{a.motivation}</p>
           </div>
+          {a.state !== "ADMITTED" && (
+            <p className="sm:col-span-3 rounded-lg border border-border bg-white/60 p-4 text-[13px] text-muted-foreground">
+              A avaliação curricular, a prova de conhecimentos e a entrevista só estão disponíveis
+              para candidatos admitidos. Conclua a triagem desta candidatura.
+            </p>
+          )}
+          {a.state === "ADMITTED" && (
           <Campo label="Prova de Conhecimentos (0-20)">
+
             <input
               type="number"
               step="0.1"
