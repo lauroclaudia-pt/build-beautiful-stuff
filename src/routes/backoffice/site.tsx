@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, type ChangeEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 import { PageShell, RequireRole } from "@/components/shell";
-import logo from "@/assets/logo-ipma.png.asset.json";
+import logo from "@/assets/logo-ipma.png";
 import { useStore } from "@/lib/store";
 import { COLOR_FIELDS } from "@/lib/site";
 import { DEFAULT_JAVA_API_URL } from "@/lib/java-api";
@@ -100,7 +100,7 @@ function GestaoSite() {
               </p>
               <div className="mt-3 flex items-center gap-4">
                 <img
-                  src={site.logoUrl ?? logo.url}
+                  src={site.logoUrl ?? logo}
                   alt="Pré-visualização do ícone das páginas"
                   className="h-12 w-auto max-w-[160px] object-contain"
                 />

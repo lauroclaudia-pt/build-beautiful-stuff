@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
-import logo from "@/assets/logo-ipma.png.asset.json";
+import logo from "@/assets/logo-ipma.png";
 import { useStore } from "@/lib/store";
 import { BACKOFFICE_ROLES, ROLE_LABEL, activeRoles, hasActiveRole, type Role } from "@/lib/pessoas";
 import {
@@ -56,7 +56,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-[68px] max-w-[1440px] items-center gap-6 px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-3">
           <img
-            src={site.logoUrl ?? logo.url}
+            src={site.logoUrl ?? logo}
             alt="IPMA — Instituto Português do Mar e da Atmosfera"
             className="h-10 w-auto"
           />
