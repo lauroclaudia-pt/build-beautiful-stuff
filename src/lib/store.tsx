@@ -682,11 +682,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const responderAta: StoreValue["responderAta"] = useCallback((applicantId) => {
     setData((d) => ({
       ...d,
-      applicants: d.applicants.map((a) =>
-        a.id === applicantId
-          ? { ...a, state: "UNDER_REVIEW" as const, respostaPrazo: undefined }
-          : a,
-      ),
+      applicants: d.applicants.map((a) => {
+        if (a.id !== applicantId) return a;
+        const { respostaPrazo: _omit, ...resto } = a;
+        return { ...resto, state: "UNDER_REVIEW" as const };
+      }),
     }));
   }, []);
 
