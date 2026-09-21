@@ -524,6 +524,39 @@ export const BONDS = ["Contrato de trabalho em funções públicas", "Comissão 
 export const REGIMES = ["Tempo inteiro", "Tempo parcial"];
 export const SELECTION_METHODS = ["Prova de Conhecimentos (PC)", "Avaliação Curricular (AC)", "Entrevista de Avaliação de Competências (EAC)"];
 
+/** Nome do método de seleção correspondente a cada fase de avaliação da tramitação. */
+export const METHOD_BY_FLAG = {
+  pc: "Prova de Conhecimentos (PC)",
+  ac: "Avaliação Curricular (AC)",
+  eac: "Entrevista de Avaliação de Competências (EAC)",
+} as const;
+
+/** Métodos de seleção resultantes das caixas selecionadas na tramitação. */
+export function selectionMethodsFrom(f: { hasPc?: boolean; hasAc?: boolean; hasEac?: boolean }): string[] {
+  const out: string[] = [];
+  if (f.hasPc) out.push(METHOD_BY_FLAG.pc);
+  if (f.hasAc) out.push(METHOD_BY_FLAG.ac);
+  if (f.hasEac) out.push(METHOD_BY_FLAG.eac);
+  return out;
+}
+
+/** Unidades orgânicas de um procedimento (suporta o campo antigo com um só valor). */
+export function departmentsOf(v: { departments?: string[]; department?: string }): string[] {
+  if (v.departments?.length) return v.departments;
+  return v.department ? [v.department] : [];
+}
+
+/** Próxima referência automática no formato AAAA/N.º sequencial (ex.: 2026/004). */
+export function nextRef(vagas: { ref: string }[], date = new Date()): string {
+  const ano = date.getFullYear();
+  let max = 0;
+  for (const v of vagas) {
+    const m = /^(\d{4})\/(\d+)$/.exec((v.ref ?? "").trim());
+    if (m && Number(m[1]) === ano) max = Math.max(max, Number(m[2]));
+  }
+  return `${ano}/${String(max + 1).padStart(3, "0")}`;
+}
+
 export const CAREERS = [
   "Técnico Superior",
   "Assistente Técnico",
