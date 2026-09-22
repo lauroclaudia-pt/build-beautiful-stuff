@@ -21,23 +21,11 @@ NITRO_PRESET=node-server NODE_ENV=production bun run build
 node .output/server/index.mjs
 ```
 
-### No Railway (portal igual à pré-visualização)
+### No Railway
 
-Este pacote já inclui tudo o que o Railway precisa para o portal:
-
-| Ficheiro | Para que serve |
-| --- | --- |
-| `Dockerfile.portal` | Compila e executa o portal (React + renderização no servidor, Node 22) |
-| `railway.portal.json` | Configuração do serviço Railway do portal |
-| `.dockerignore` | Evita enviar ficheiros desnecessários para a imagem |
-| `README-portal.md` | Guia detalhado do serviço do portal |
-
-1. Novo serviço a partir deste repositório (**New → GitHub Repo**).
+1. Novo serviço a partir deste repositório.
 2. Settings → Build → Builder `Dockerfile`, Dockerfile Path `Dockerfile.portal`.
 3. Settings → Networking → gerar domínio público (o contentor escuta na porta 8080).
-4. O resultado é exatamente o interface da pré-visualização.
-
-> O `Dockerfile` da raiz é do serviço Java. São dois serviços distintos no mesmo projeto Railway.
 
 ## 2. Serviço Java + PostgreSQL 18 (opcional)
 
