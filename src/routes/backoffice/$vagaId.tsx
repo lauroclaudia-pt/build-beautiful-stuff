@@ -112,6 +112,7 @@ function GestaoVaga() {
     notificarAtaProvisoria,
     notificacoes,
     site,
+    pessoas,
     currentUser,
   } = useStore();
   const vaga = vagas.find((v) => v.id === vagaId);
@@ -479,7 +480,14 @@ function GestaoVaga() {
                 ["Código BEP/Edital", vaga.bepCode || "Por atribuir"],
                 ["Métodos de seleção", vaga.selectionMethods.join(" · ")],
                 ["Presidente do júri", vaga.juryPresident || "Por designar"],
-                ["Vogais", vaga.juryMembers.join(", ") || "Por designar"],
+                ["1.º Vogal Efetivo", vaga.juryVogal1 || "Por designar"],
+                ["2.º Vogal Efetivo", vaga.juryVogal2 || "Por designar"],
+                ["1.º Vogal Suplente", vaga.jurySuplente1 || "Por designar"],
+                ["2.º Vogal Suplente", vaga.jurySuplente2 || "Por designar"],
+                [
+                  "Gestor de RH suplente",
+                  pessoas.find((p) => p.id === vaga.hrManagerDeputyId)?.name || "—",
+                ],
               ].map(([k, v]) => (
                 <div key={k}>
                   <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
@@ -521,24 +529,59 @@ function GestaoVaga() {
                 className="input-ipma"
               />
             </Campo>
-            <Campo label="Presidente do júri">
-              <input
-                value={vaga.juryPresident}
-                onChange={(e) => updateVaga(vaga.id, { juryPresident: e.target.value })}
+            <Campo label="Gestor de RH suplente (opcional)">
+              <select
+                value={vaga.hrManagerDeputyId ?? ""}
+                onChange={(e) => updateVaga(vaga.id, { hrManagerDeputyId: e.target.value })}
                 className="input-ipma"
-              />
+              >
+                <option value="">— sem suplente —</option>
+                {pessoas
+                  .filter((p) => p.hasLogin && p.id !== vaga.hrManagerId)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+              </select>
             </Campo>
-            <Campo label="Vogais (vírgula)">
-              <input
-                value={vaga.juryMembers.join(", ")}
-                onChange={(e) =>
-                  updateVaga(vaga.id, {
-                    juryMembers: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
-                  })
-                }
-                className="input-ipma"
-              />
-            </Campo>
+            {(
+              [
+                ["Presidente", "juryPresident"],
+                ["1.º Vogal Efetivo", "juryVogal1"],
+                ["2.º Vogal Efetivo", "juryVogal2"],
+                ["1.º Vogal Suplente", "jurySuplente1"],
+                ["2.º Vogal Suplente", "jurySuplente2"],
+              ] as const
+            ).map(([label, key]) => (
+              <Campo key={key} label={label}>
+                <select
+                  value={vaga[key] ?? ""}
+                  onChange={(e) => {
+                    const patch = { [key]: e.target.value } as Partial<typeof vaga>;
+                    const next = { ...vaga, ...patch };
+                    updateVaga(vaga.id, {
+                      ...patch,
+                      juryMembers: [
+                        next.juryVogal1,
+                        next.juryVogal2,
+                        next.jurySuplente1,
+                        next.jurySuplente2,
+                      ].filter((n): n is string => Boolean(n)),
+                    });
+                  }}
+                  className="input-ipma"
+                >
+                  <option value="">— por designar —</option>
+                  {pessoas.map((p) => (
+                    <option key={p.id} value={p.name}>
+                      {p.name}
+                      {p.department ? ` · ${p.department}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </Campo>
+            ))}
             <Campo label="Prazo">
               <input
                 type="date"

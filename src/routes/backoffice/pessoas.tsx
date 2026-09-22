@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { PageShell, RequireRole } from "@/components/shell";
 import { Req, hojeISO } from "@/components/req";
+import { FilePickButton } from "@/components/file-upload";
 import { useStore } from "@/lib/store";
 import {
   ROLES,
@@ -42,13 +43,68 @@ export const Route = createFileRoute("/backoffice/pessoas")({
 const hoje = hojeISO;
 
 function Pessoas() {
-  const { pessoas, addPessoa, updatePessoa, addResponsabilidade, removeResponsabilidade } =
+  const { pessoas, addPessoa, updatePessoa, addResponsabilidade, removeResponsabilidade, opcoesDe } =
     useStore();
-  const [nova, setNova] = useState({ name: "", email: "", phone: "", nif: "", password: "ipma" });
+  const departamentos = opcoesDe("DEPARTAMENTO");
+  const [nova, setNova] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    nif: "",
+    department: "",
+    hasLogin: true,
+    password: "ipma",
+  });
   const [resp, setResp] = useState<Record<string, { role: Role; start: string; end: string }>>({});
 
   function campos(id: string) {
     return resp[id] ?? { role: "JURI" as Role, start: hoje(), end: "" };
+  }
+
+  /** Importa nomes, emails e departamentos a partir de um ficheiro Excel ou CSV. */
+  async function importar(file: File) {
+    const XLSX = await import("xlsx");
+    const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+    const sheetName = wb.SheetNames[0];
+    const sheet = sheetName ? wb.Sheets[sheetName] : undefined;
+    if (!sheet) {
+      toast.error("O ficheiro não tem dados.");
+      return;
+    }
+    const linhas = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+    const valor = (l: Record<string, unknown>, ...chaves: string[]) => {
+      for (const [k, v] of Object.entries(l)) {
+        const key = k.trim().toLowerCase();
+        if (chaves.some((c) => key === c || key.startsWith(c))) return String(v ?? "").trim();
+      }
+      return "";
+    };
+    let criadas = 0;
+    let ignoradas = 0;
+    for (const l of linhas) {
+      const name = valor(l, "nome", "name");
+      const email = valor(l, "email", "e-mail");
+      if (!name || !email) {
+        ignoradas += 1;
+        continue;
+      }
+      if (pessoas.some((p) => p.email.toLowerCase() === email.toLowerCase())) {
+        ignoradas += 1;
+        continue;
+      }
+      addPessoa({
+        name,
+        email,
+        phone: valor(l, "telefone", "phone"),
+        nif: valor(l, "nif"),
+        department: valor(l, "departamento", "unidade", "department") || null,
+        hasLogin: false,
+        password: null,
+        responsabilidades: [],
+      });
+      criadas += 1;
+    }
+    toast.success(`${criadas} pessoa(s) importada(s).${ignoradas ? ` ${ignoradas} ignorada(s).` : ""}`);
   }
 
   return (
@@ -121,6 +177,31 @@ function Pessoas() {
               onChange={(e) => setNova({ ...nova, nif: e.target.value })}
             />
           </label>
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              Departamento
+            </span>
+            <select
+              className="input-ipma mt-1"
+              value={nova.department}
+              onChange={(e) => setNova({ ...nova, department: e.target.value })}
+            >
+              <option value="">— sem departamento —</option>
+              {departamentos.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 self-end pb-2 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={nova.hasLogin}
+              onChange={(e) => setNova({ ...nova, hasLogin: e.target.checked })}
+            />
+            Criar login
+          </label>
           <button
             type="button"
             onClick={() => {
@@ -131,7 +212,7 @@ function Pessoas() {
               if (
                 pessoas.some((p) => p.email.toLowerCase() === nova.email.trim().toLowerCase())
               ) {
-                toast.error("Já existe um login com esse email.");
+                toast.error("Já existe uma pessoa com esse email.");
                 return;
               }
               addPessoa({
@@ -139,17 +220,46 @@ function Pessoas() {
                 email: nova.email.trim(),
                 phone: nova.phone.trim(),
                 nif: nova.nif.trim(),
-                hasLogin: true,
-                password: nova.password || "ipma",
+                department: nova.department || null,
+                hasLogin: nova.hasLogin,
+                password: nova.hasLogin ? nova.password || "ipma" : null,
                 responsabilidades: [],
               });
-              setNova({ name: "", email: "", phone: "", nif: "", password: "ipma" });
-              toast.success("Pessoa criada com login.");
+              setNova({
+                name: "",
+                email: "",
+                phone: "",
+                nif: "",
+                department: "",
+                hasLogin: true,
+                password: "ipma",
+              });
+              toast.success(nova.hasLogin ? "Pessoa criada com login." : "Pessoa criada sem login.");
             }}
             className="rounded-md bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground hover:bg-primary/90"
           >
             Criar pessoa
           </button>
+        </div>
+
+        <div className="mt-6 border-t border-border/60 pt-4">
+          <h3 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            Importar de Excel ou CSV
+          </h3>
+          <p className="mt-1 text-[12px] text-muted-foreground">
+            Colunas reconhecidas: Nome, Email, Telefone, NIF e Departamento. As pessoas importadas
+            ficam sem login (podem ser membros do júri).
+          </p>
+          <div className="mt-3">
+            <FilePickButton
+              accept=".xlsx,.xls,.csv"
+              label="Escolher ficheiro"
+              onPick={(files) => {
+                const file = files[0];
+                if (file) void importar(file);
+              }}
+            />
+          </div>
         </div>
       </section>
 
@@ -165,14 +275,38 @@ function Pessoas() {
                     {p.email} · NIF {p.nif || "—"} · {p.phone || "—"}
                   </p>
                 </div>
-                <label className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={p.hasLogin}
-                    onChange={(e) => updatePessoa(p.id, { hasLogin: e.target.checked })}
-                  />
-                  Login ativo
-                </label>
+                <div className="flex flex-wrap items-center gap-4">
+                  <label className="block">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                      Departamento
+                    </span>
+                    <select
+                      className="input-ipma mt-1 !py-1 text-[12px]"
+                      value={p.department ?? ""}
+                      onChange={(e) => updatePessoa(p.id, { department: e.target.value || null })}
+                    >
+                      <option value="">— sem departamento —</option>
+                      {departamentos.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={p.hasLogin}
+                      onChange={(e) =>
+                        updatePessoa(p.id, {
+                          hasLogin: e.target.checked,
+                          password: e.target.checked ? (p.password ?? "ipma") : null,
+                        })
+                      }
+                    />
+                    Login ativo
+                  </label>
+                </div>
               </div>
 
               <table className="mt-4 w-full text-left text-[13px]">

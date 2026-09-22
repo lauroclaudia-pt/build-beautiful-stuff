@@ -25,6 +25,8 @@ export interface Pessoa {
   email: string;
   phone: string;
   nif: string;
+  /** Departamento (unidade orgânica) a que pertence. Cada pessoa pertence a um só. */
+  department?: string | null;
   /** Cada pessoa pode ter, no máximo, um login. */
   hasLogin: boolean;
   password: string | null;

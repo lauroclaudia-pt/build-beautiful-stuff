@@ -294,8 +294,12 @@ function NovaVaga({
     allowNoDegree: false,
     disabilityQuota: false,
     juryPresident: "",
+    juryVogal1: "",
+    juryVogal2: "",
+    jurySuplente1: "",
+    jurySuplente2: "",
     hrManagerId: gestores.find((g) => g.id === currentUser?.id)?.id ?? gestores[0]?.id ?? "",
-    juryMembers: "",
+    hrManagerDeputyId: "",
     bepCode: "",
     deadline: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
     hasPc: true,
@@ -376,10 +380,7 @@ function NovaVaga({
       location: f.locations[0] ?? "",
       selectionMethods: metodosSelecionados,
       positions: Number(f.positions) || 1,
-      juryMembers: f.juryMembers
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      juryMembers: [f.juryVogal1, f.juryVogal2, f.jurySuplente1, f.jurySuplente2].filter(Boolean),
     });
     toast.success("Procedimento criado como rascunho.");
     onDone();
@@ -618,20 +619,47 @@ function NovaVaga({
           ))}
         </select>
       </L>
-      <L label="Presidente do júri">
-        <input
-          value={f.juryPresident}
-          onChange={(e) => setF({ ...f, juryPresident: e.target.value })}
+      <L label="Gestor de RH suplente (opcional)">
+        <select
+          value={f.hrManagerDeputyId}
+          onChange={(e) => setF({ ...f, hrManagerDeputyId: e.target.value })}
           className="input-ipma"
-        />
+        >
+          <option value="">— sem suplente —</option>
+          {pessoas
+            .filter((p) => p.hasLogin && p.id !== f.hrManagerId)
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+        </select>
       </L>
-      <L label="Vogais (separados por vírgula)">
-        <input
-          value={f.juryMembers}
-          onChange={(e) => setF({ ...f, juryMembers: e.target.value })}
-          className="input-ipma"
-        />
-      </L>
+      {(
+        [
+          ["Presidente", "juryPresident"],
+          ["1.º Vogal Efetivo", "juryVogal1"],
+          ["2.º Vogal Efetivo", "juryVogal2"],
+          ["1.º Vogal Suplente", "jurySuplente1"],
+          ["2.º Vogal Suplente", "jurySuplente2"],
+        ] as const
+      ).map(([label, key]) => (
+        <L key={key} label={label}>
+          <select
+            value={f[key]}
+            onChange={(e) => setF({ ...f, [key]: e.target.value })}
+            className="input-ipma"
+          >
+            <option value="">— por designar —</option>
+            {pessoas.map((p) => (
+              <option key={p.id} value={p.name}>
+                {p.name}
+                {p.department ? ` · ${p.department}` : ""}
+              </option>
+            ))}
+          </select>
+        </L>
+      ))}
       <div className="sm:col-span-3 rounded-lg border border-border bg-white/50 p-4">
         <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
           Tramitação deste tipo de oferta

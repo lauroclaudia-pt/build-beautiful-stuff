@@ -112,8 +112,18 @@ export interface Vaga {
   disabilityQuota?: boolean;
   selectionMethods: string[];
   juryPresident: string;
+  /** 1.º Vogal Efetivo do júri. */
+  juryVogal1?: string;
+  /** 2.º Vogal Efetivo do júri. */
+  juryVogal2?: string;
+  /** 1.º Vogal Suplente do júri. */
+  jurySuplente1?: string;
+  /** 2.º Vogal Suplente do júri. */
+  jurySuplente2?: string;
   /** Pessoa (id) responsável pela gestão do procedimento — Gestor de RH. */
   hrManagerId?: string;
+  /** Pessoa (id) com login que gere o procedimento na ausência do gestor (opcional). */
+  hrManagerDeputyId?: string;
   juryMembers: string[];
   bepCode: string;
   publishedAt: string | null;

@@ -944,7 +944,10 @@ function VagaDetalhe() {
                   ["Métodos de seleção", vaga.selectionMethods.join(" · ") || "—"],
                   ["Código BEP", vaga.bepCode || "—"],
                   ["Presidente do júri", vaga.juryPresident || "—"],
-                  ["Vogais", vaga.juryMembers.join(", ") || "—"],
+                  ["1.º Vogal Efetivo", vaga.juryVogal1 || "—"],
+                  ["2.º Vogal Efetivo", vaga.juryVogal2 || "—"],
+                  ["1.º Vogal Suplente", vaga.jurySuplente1 || "—"],
+                  ["2.º Vogal Suplente", vaga.jurySuplente2 || "—"],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-3 border-b border-border pb-2 last:border-0">
                     <span className="text-muted-foreground">{k}</span>
