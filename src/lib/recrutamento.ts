@@ -104,7 +104,9 @@ export interface Vaga {
   educationDescription?: string;
   requirements: string;
   description: string;
-  /** Descrição do procedimento (memo). */
+  /** N.º do aviso / edital (máx. 500 caracteres). */
+  noticeNumber?: string;
+  /** Texto do aviso / edital (memo). */
   procedureDescription?: string;
   /** Lista de consulta de legislação/documentos para a prova de conhecimentos (memo). */
   knowledgeReadings?: string;
@@ -221,8 +223,9 @@ export interface CandidateDocument {
 export const DEFAULT_DOCUMENTS: CandidateDocument[] = [
   { id: "cv", label: "Curriculum vitae", state: "PENDING" },
   { id: "habilit", label: "Certificado de habilitações", state: "PENDING" },
-  { id: "bi", label: "Documento de identificação", state: "PENDING" },
+  { id: "bi", label: "Documento de identificação", state: "RECEIVED", optional: true },
   { id: "decservico", label: "Declaração da entidade empregadora", state: "PENDING" },
+  { id: "comprovativos", label: "Comprovativo(s) de formação", state: "RECEIVED", optional: true },
   { id: "outros", label: "Outros documentos", state: "RECEIVED", optional: true },
 ];
 
@@ -281,6 +284,22 @@ export interface Applicant {
   performanceEvaluation?: string;
   otherExperience?: string;
   alternativeQualification?: string;
+  /** Distrito de residência. */
+  district?: string;
+  /** Área de formação profissional. */
+  professionalTraining?: string;
+  /** Outras formações académicas e profissionais relevantes. */
+  otherTraining?: string;
+  /** Modalidade de vínculo de emprego público. */
+  publicEmploymentType?: string;
+  /** Carreira e categoria detidas. */
+  careerCategory?: string;
+  /** Posição e nível remuneratórios detidos. */
+  salaryPosition?: string;
+  /** Grau de incapacidade (0–100). */
+  disabilityDegree?: number | null;
+  /** Tipo de incapacidade. */
+  disabilityType?: string;
   /** Secção C — métodos de seleção pretendidos. */
   selectionMethodsWanted?: string[];
   /** Secção E — declarações condicionais. */
@@ -832,6 +851,23 @@ export function ageFrom(birthISO: string): number {
 export function daysUntil(dateISO: string): number {
   const diff = new Date(dateISO).getTime() - Date.now();
   return Math.ceil(diff / 86_400_000);
+}
+
+// Estado público derivado do estado privado e do prazo de candidatura:
+// Aberta — Publicada com prazo por terminar; Em análise — prazo terminado
+// (Publicada/Em curso); Concluído — Concluída, Cancelada ou Deserta.
+export type PublicJobState = "ABERTA" | "EM_ANALISE" | "CONCLUIDA";
+
+export const PUBLIC_JOB_STATE_LABEL: Record<PublicJobState, string> = {
+  ABERTA: "Aberta",
+  EM_ANALISE: "Em análise",
+  CONCLUIDA: "Concluído",
+};
+
+export function estadoPublicoVaga(v: Vaga): PublicJobState {
+  if (v.state === "FINISHED" || v.state === "CANCELLED" || v.state === "DESERT") return "CONCLUIDA";
+  if (daysUntil(v.deadline) < 0) return "EM_ANALISE";
+  return "ABERTA";
 }
 
 export function formatDate(dateISO: string | null): string {

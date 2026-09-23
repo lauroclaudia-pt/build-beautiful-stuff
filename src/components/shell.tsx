@@ -7,8 +7,12 @@ import { BACKOFFICE_ROLES, ROLE_LABEL, activeRoles, hasActiveRole, type Role } f
 import {
   APPLICANT_STATE_LABEL,
   JOB_STATE_LABEL,
+  PUBLIC_JOB_STATE_LABEL,
+  estadoPublicoVaga,
   type ApplicantState,
   type JobState,
+  type PublicJobState,
+  type Vaga,
 } from "@/lib/recrutamento";
 
 const ADMIN_ROLES: Role[] = ["ADMIN", "GESTOR_RH", "GESTAO"];
@@ -25,6 +29,7 @@ function SiteTheme() {
     root.style.setProperty("--accent", site.accentColor);
     root.style.setProperty("--atmosfera", site.accentColor);
     root.style.setProperty("--heading", site.titleColor);
+    root.style.setProperty("--background", site.backgroundColor);
     if (site.faviconUrl) {
       let link = document.querySelector<HTMLLinkElement>("link[rel='icon']");
       if (!link) {
@@ -82,21 +87,25 @@ export function SiteHeader() {
               Dashboard
             </Link>
           )}
-          <Link
-            to="/backoffice"
-            activeOptions={{ exact: true }}
-            activeProps={{ className: "bg-foreground/5 text-foreground" }}
-            className="rounded-md px-3 py-2 hover:bg-secondary hover:text-foreground"
-          >
-            Procedimentos
-          </Link>
-          <Link
-            to="/candidato"
-            activeProps={{ className: "bg-foreground/5 text-foreground" }}
-            className="rounded-md px-3 py-2 hover:bg-secondary hover:text-foreground"
-          >
-            Candidato
-          </Link>
+          {currentUser && (
+            <>
+              <Link
+                to="/backoffice"
+                activeOptions={{ exact: true }}
+                activeProps={{ className: "bg-foreground/5 text-foreground" }}
+                className="rounded-md px-3 py-2 hover:bg-secondary hover:text-foreground"
+              >
+                Procedimentos
+              </Link>
+              <Link
+                to="/candidato"
+                activeProps={{ className: "bg-foreground/5 text-foreground" }}
+                className="rounded-md px-3 py-2 hover:bg-secondary hover:text-foreground"
+              >
+                Candidato
+              </Link>
+            </>
+          )}
           {podeAdministrar && (
             <Link
               to="/backoffice/admin"
@@ -196,17 +205,18 @@ export function RequireRole({
 }
 
 export function SiteFooter() {
+  const { site } = useStore();
   return (
     <footer className="border-t border-border/60 print:hidden">
       <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-4 px-6 py-6">
         <p className="font-mono text-[11px] text-muted-foreground">
-          IPMA, I.P. · Divisão de Recursos Humanos · Rua C do Aeroporto, Lisboa
+          {site.footerEntityName}
         </p>
         <div className="flex gap-5 font-mono text-[11px] text-muted-foreground">
-          <Link to="/apoio" className="hover:text-foreground">
+          <Link to="/acessibilidade" className="hover:text-foreground">
             Acessibilidade
           </Link>
-          <Link to="/apoio" className="hover:text-foreground">
+          <Link to="/dados-pessoais" className="hover:text-foreground">
             Dados pessoais
           </Link>
           <Link to="/apoio" className="hover:text-foreground">
@@ -245,6 +255,24 @@ export function JobStateBadge({ state }: { state: JobState }) {
       className={`rounded px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] ${jobTone[state]}`}
     >
       {JOB_STATE_LABEL[state]}
+    </span>
+  );
+}
+
+const publicJobTone: Record<PublicJobState, string> = {
+  ABERTA: "bg-success/10 text-success",
+  EM_ANALISE: "bg-subsolo/20 text-[oklch(0.55_0.13_70)]",
+  CONCLUIDA: "bg-neutral/15 text-neutral",
+};
+
+// Selo do estado público (Aberta / Em análise / Concluído), derivado do prazo e do estado privado.
+export function PublicJobStateBadge({ vaga }: { vaga: Vaga }) {
+  const estado = estadoPublicoVaga(vaga);
+  return (
+    <span
+      className={`rounded px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] ${publicJobTone[estado]}`}
+    >
+      {PUBLIC_JOB_STATE_LABEL[estado]}
     </span>
   );
 }

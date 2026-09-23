@@ -289,6 +289,7 @@ function NovaVaga({
     educationDescription: "",
     requirements: DEFAULT_REQUIREMENTS,
     description: "",
+    noticeNumber: "",
     procedureDescription: "",
     knowledgeReadings: "",
     allowNoDegree: false,
@@ -398,6 +399,17 @@ function NovaVaga({
           className="input-ipma bg-surface-2 text-muted-foreground"
         />
       </L>
+      <L label="Prazo de candidatura">
+        <input
+          type="date"
+          value={f.deadline}
+          onChange={(e) => setF({ ...f, deadline: e.target.value })}
+          className="input-ipma"
+        />
+      </L>
+      <L label="Código BEP/Edital">
+        <input value={f.bepCode} onChange={(e) => setF({ ...f, bepCode: e.target.value })} className="input-ipma" />
+      </L>
       <div className="sm:col-span-2">
         <L label="Título">
           <input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} className="input-ipma" />
@@ -416,45 +428,58 @@ function NovaVaga({
           ))}
         </select>
       </L>
+      <div className="sm:col-span-3 rounded-lg border border-border bg-white/50 p-4">
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          Tramitação deste tipo de oferta
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {fases.map((c, i) => (
+            <span key={c} className="flex items-center gap-1.5">
+              {i > 0 && <span className="text-muted-foreground">›</span>}
+              <span className="rounded-md bg-primary/10 px-2 py-1 text-[12px] text-primary">
+                {STAGE_LABEL[c]}
+              </span>
+            </span>
+          ))}
+        </div>
+        <p className="mt-2 text-[12px] text-muted-foreground">{rules.nota}</p>
+        <div className="mt-3 flex flex-wrap gap-4">
+          {([
+            ["Prova de conhecimentos (PC)", hasPc, rules.pc !== null, (v: boolean) => setF({ ...f, hasPc: v })],
+            ["Avaliação curricular (AC)", hasAc, rules.ac !== null, (v: boolean) => setF({ ...f, hasAc: v })],
+            ["Entrevista (EAC)", hasEac, rules.eac !== null, (v: boolean) => setF({ ...f, hasEac: v })],
+          ] as const).map(([label, val, locked, set]) => (
+            <label key={label} className="flex items-center gap-2 text-[13px]">
+              <input
+                type="checkbox"
+                checked={val}
+                disabled={locked}
+                onChange={(e) => set(e.target.checked)}
+              />
+              <span className={locked ? "text-muted-foreground" : ""}>
+                {label}
+                {locked ? " (imposto)" : ""}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
       <div className="sm:col-span-3">
-        <L label="Unidade(s) orgânica(s)">
+        <L label="Métodos de seleção (definidos pela tramitação)">
           <div className="flex flex-wrap gap-2">
-            {departamentos.map((d) => {
-              const on = f.departments.includes(d);
-              return (
-                <button
-                  type="button"
-                  key={d}
-                  onClick={() =>
-                    setF({
-                      ...f,
-                      departments: on
-                        ? f.departments.filter((x) => x !== d)
-                        : [...f.departments, d],
-                    })
-                  }
-                  className={`rounded-md px-3 py-1.5 text-[12px] ${
-                    on ? "bg-primary text-primary-foreground" : "border border-border bg-white/60"
-                  }`}
-                >
-                  {d}
-                </button>
-              );
-            })}
+            {metodosSelecionados.length === 0 && (
+              <span className="text-[12px] text-muted-foreground">
+                Selecione acima as fases de avaliação (PC, AC, EAC).
+              </span>
+            )}
+            {metodosSelecionados.map((m) => (
+              <span key={m} className="rounded-md bg-primary px-3 py-1.5 text-[12px] text-primary-foreground">
+                {m}
+              </span>
+            ))}
           </div>
         </L>
       </div>
-      <L label="Cargo / carreira">
-        <select
-          value={f.career}
-          onChange={(e) => setF({ ...f, career: e.target.value })}
-          className="input-ipma"
-        >
-          {carreiras.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-      </L>
       <L label="Vínculo">
         <select
           value={f.bond}
@@ -477,45 +502,64 @@ function NovaVaga({
           ))}
         </select>
       </L>
-      <div className="sm:col-span-3 rounded-lg border border-border bg-white/50 p-4">
-        <L label={`Local de trabalho (máx. ${maxLocais} — n.º de postos)`}>
-          <div className="flex flex-wrap gap-2">
-            {locais.map((d) => {
-              const on = f.locations.includes(d);
-              const cheio = !on && f.locations.length >= maxLocais;
-              return (
-                <button
-                  type="button"
-                  key={d}
-                  disabled={cheio}
-                  onClick={() => alternarLocal(d)}
-                  className={`rounded-md px-3 py-1.5 text-[12px] disabled:opacity-40 ${
-                    on ? "bg-primary text-primary-foreground" : "border border-border bg-white/60"
-                  }`}
-                >
-                  {d}
-                </button>
-              );
-            })}
-          </div>
-        </L>
-        <p className="mt-2 text-[12px] text-muted-foreground">
-          Selecionados {f.locations.length} de {maxLocais} locais permitidos.
-        </p>
-      </div>
-      <L label="Postos">
+      <L label="Cargo / carreira">
+        <select
+          value={f.career}
+          onChange={(e) => setF({ ...f, career: e.target.value })}
+          className="input-ipma"
+        >
+          {carreiras.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+        </select>
+      </L>
+      <L label="Remuneração">
         <input
-          type="number"
-          min={1}
-          value={rules.singlePosition ? 1 : f.positions}
-          disabled={rules.singlePosition}
-          onChange={(e) => {
-            const n = Math.max(1, Number(e.target.value) || 1);
-            setF((prev) => ({ ...prev, positions: n, locations: prev.locations.slice(0, n) }));
-          }}
-          className="input-ipma disabled:opacity-60"
+          value={f.remuneration}
+          onChange={(e) => setF({ ...f, remuneration: e.target.value })}
+          className="input-ipma"
         />
       </L>
+      <L label={<>Suplemento mensal{dirigente && <Req />}</>}>
+        <input
+          inputMode="decimal"
+          placeholder="0,00 €"
+          value={f.monthlySupplement}
+          onChange={(e) => setF({ ...f, monthlySupplement: e.target.value })}
+          className="input-ipma"
+        />
+      </L>
+      <div className="sm:col-span-3">
+        <L label="Características da remuneração">
+          <textarea
+            rows={3}
+            value={f.remunerationNotes}
+            onChange={(e) => setF({ ...f, remunerationNotes: e.target.value })}
+            placeholder="Posição e nível remuneratório, suplementos, subsídios e outras condições."
+            className="input-ipma"
+          />
+        </L>
+      </div>
+      <div className="sm:col-span-3">
+        <L label="Caracterização do posto">
+          <textarea
+            rows={3}
+            value={f.description}
+            onChange={(e) => setF({ ...f, description: e.target.value })}
+            className="input-ipma"
+          />
+        </L>
+      </div>
+      <div className="sm:col-span-3">
+        <L label="Requisitos">
+          <textarea
+            rows={8}
+            value={f.requirements}
+            onChange={(e) => setF({ ...f, requirements: e.target.value })}
+            className="input-ipma"
+          />
+        </L>
+      </div>
       <L label="Habilitação mínima">
         <select
           value={f.educationLevel}
@@ -579,33 +623,83 @@ function NovaVaga({
           </div>
         </L>
       </div>
-      <L label="Prazo de candidatura">
+      <div className="sm:col-span-3">
+        <L label="Unidade(s) orgânica(s)">
+          <div className="flex flex-wrap gap-2">
+            {departamentos.map((d) => {
+              const on = f.departments.includes(d);
+              return (
+                <button
+                  type="button"
+                  key={d}
+                  onClick={() =>
+                    setF({
+                      ...f,
+                      departments: on
+                        ? f.departments.filter((x) => x !== d)
+                        : [...f.departments, d],
+                    })
+                  }
+                  className={`rounded-md px-3 py-1.5 text-[12px] ${
+                    on ? "bg-primary text-primary-foreground" : "border border-border bg-white/60"
+                  }`}
+                >
+                  {d}
+                </button>
+              );
+            })}
+          </div>
+        </L>
+      </div>
+      <L label="Postos">
         <input
-          type="date"
-          value={f.deadline}
-          onChange={(e) => setF({ ...f, deadline: e.target.value })}
-          className="input-ipma"
+          type="number"
+          min={1}
+          value={rules.singlePosition ? 1 : f.positions}
+          disabled={rules.singlePosition}
+          onChange={(e) => {
+            const n = Math.max(1, Number(e.target.value) || 1);
+            setF((prev) => ({ ...prev, positions: n, locations: prev.locations.slice(0, n) }));
+          }}
+          className="input-ipma disabled:opacity-60"
         />
       </L>
-      <L label="Remuneração">
-        <input
-          value={f.remuneration}
-          onChange={(e) => setF({ ...f, remuneration: e.target.value })}
-          className="input-ipma"
-        />
-      </L>
-      <L label={<>Suplemento mensal{dirigente && <Req />}</>}>
-        <input
-          inputMode="decimal"
-          placeholder="0,00 €"
-          value={f.monthlySupplement}
-          onChange={(e) => setF({ ...f, monthlySupplement: e.target.value })}
-          className="input-ipma"
-        />
-      </L>
-      <L label="Código BEP/Edital">
-        <input value={f.bepCode} onChange={(e) => setF({ ...f, bepCode: e.target.value })} className="input-ipma" />
-      </L>
+      <div className="sm:col-span-3 rounded-lg border border-border bg-white/50 p-4">
+        <L label={`Local de trabalho (máx. ${maxLocais} — n.º de postos)`}>
+          <div className="flex flex-wrap gap-2">
+            {locais.map((d) => {
+              const on = f.locations.includes(d);
+              const cheio = !on && f.locations.length >= maxLocais;
+              return (
+                <button
+                  type="button"
+                  key={d}
+                  disabled={cheio}
+                  onClick={() => alternarLocal(d)}
+                  className={`rounded-md px-3 py-1.5 text-[12px] disabled:opacity-40 ${
+                    on ? "bg-primary text-primary-foreground" : "border border-border bg-white/60"
+                  }`}
+                >
+                  {d}
+                </button>
+              );
+            })}
+          </div>
+        </L>
+        <p className="mt-2 text-[12px] text-muted-foreground">
+          Selecionados {f.locations.length} de {maxLocais} locais permitidos.
+        </p>
+      </div>
+      <div className="sm:col-span-3">
+        <L label="Lista de consulta de legislação/documentos para Prova de Conhecimentos">
+          <textarea
+            rows={4}
+            value={f.knowledgeReadings}
+            onChange={(e) => setF({ ...f, knowledgeReadings: e.target.value })}
+            className="input-ipma"
+          />
+        </L>
+      </div>
       <L label="Gestor de RH responsável">
         <select
           value={f.hrManagerId}
@@ -660,105 +754,25 @@ function NovaVaga({
           </select>
         </L>
       ))}
-      <div className="sm:col-span-3 rounded-lg border border-border bg-white/50 p-4">
-        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-          Tramitação deste tipo de oferta
+      <div className="sm:col-span-3">
+        <L label="N.º Aviso / Edital">
+          <input
+            maxLength={500}
+            value={f.noticeNumber}
+            onChange={(e) => setF({ ...f, noticeNumber: e.target.value })}
+            className="input-ipma"
+          />
+        </L>
+        <p className="mt-1 text-[12px] text-muted-foreground">
+          {f.noticeNumber.length}/500 caracteres.
         </p>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {fases.map((c, i) => (
-            <span key={c} className="flex items-center gap-1.5">
-              {i > 0 && <span className="text-muted-foreground">›</span>}
-              <span className="rounded-md bg-primary/10 px-2 py-1 text-[12px] text-primary">
-                {STAGE_LABEL[c]}
-              </span>
-            </span>
-          ))}
-        </div>
-        <p className="mt-2 text-[12px] text-muted-foreground">{rules.nota}</p>
-        <div className="mt-3 flex flex-wrap gap-4">
-          {([
-            ["Prova de conhecimentos (PC)", hasPc, rules.pc !== null, (v: boolean) => setF({ ...f, hasPc: v })],
-            ["Avaliação curricular (AC)", hasAc, rules.ac !== null, (v: boolean) => setF({ ...f, hasAc: v })],
-            ["Entrevista (EAC)", hasEac, rules.eac !== null, (v: boolean) => setF({ ...f, hasEac: v })],
-          ] as const).map(([label, val, locked, set]) => (
-            <label key={label} className="flex items-center gap-2 text-[13px]">
-              <input
-                type="checkbox"
-                checked={val}
-                disabled={locked}
-                onChange={(e) => set(e.target.checked)}
-              />
-              <span className={locked ? "text-muted-foreground" : ""}>
-                {label}
-                {locked ? " (imposto)" : ""}
-              </span>
-            </label>
-          ))}
-        </div>
       </div>
       <div className="sm:col-span-3">
-        <L label="Métodos de seleção (definidos pela tramitação)">
-          <div className="flex flex-wrap gap-2">
-            {metodosSelecionados.length === 0 && (
-              <span className="text-[12px] text-muted-foreground">
-                Selecione acima as fases de avaliação (PC, AC, EAC).
-              </span>
-            )}
-            {metodosSelecionados.map((m) => (
-              <span key={m} className="rounded-md bg-primary px-3 py-1.5 text-[12px] text-primary-foreground">
-                {m}
-              </span>
-            ))}
-          </div>
-        </L>
-      </div>
-      <div className="sm:col-span-3">
-        <L label="Características da remuneração">
-          <textarea
-            rows={3}
-            value={f.remunerationNotes}
-            onChange={(e) => setF({ ...f, remunerationNotes: e.target.value })}
-            placeholder="Posição e nível remuneratório, suplementos, subsídios e outras condições."
-            className="input-ipma"
-          />
-        </L>
-      </div>
-      <div className="sm:col-span-3">
-        <L label="Caracterização do posto">
-          <textarea
-            rows={3}
-            value={f.description}
-            onChange={(e) => setF({ ...f, description: e.target.value })}
-            className="input-ipma"
-          />
-        </L>
-      </div>
-      <div className="sm:col-span-3">
-        <L label="Descrição do procedimento">
+        <L label="Texto do aviso / edital">
           <textarea
             rows={4}
             value={f.procedureDescription}
             onChange={(e) => setF({ ...f, procedureDescription: e.target.value })}
-            className="input-ipma"
-          />
-        </L>
-      </div>
-      <div className="sm:col-span-3">
-        <L label="Requisitos">
-          <textarea
-            rows={8}
-            value={f.requirements}
-            onChange={(e) => setF({ ...f, requirements: e.target.value })}
-            className="input-ipma"
-          />
-        </L>
-      </div>
-      <div className="sm:col-span-3">
-        <L label="Lista de consulta de legislação/documentos para Prova de Conhecimentos">
-          <textarea
-            rows={4}
-            value={f.knowledgeReadings}
-            onChange={(e) => setF({ ...f, knowledgeReadings: e.target.value })}
             className="input-ipma"
           />
         </L>

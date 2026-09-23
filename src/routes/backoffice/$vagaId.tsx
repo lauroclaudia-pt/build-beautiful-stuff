@@ -6,6 +6,7 @@ import { ApplicantStateBadge, JobStateBadge, PageShell, RequireRole } from "@/co
 import { finalGrade, useStore } from "@/lib/store";
 import { hasActiveRole } from "@/lib/pessoas";
 import { FilePickButton } from "@/components/file-upload";
+import { docEstado } from "@/lib/site";
 import {
   AC_CRITERIA,
   APPLICANT_STATE_LABEL,
@@ -280,7 +281,9 @@ function GestaoVaga() {
       );
       return;
     }
-    const modelo = (site.emailTemplates ?? []).find((t) => t.stage === code && t.enabled);
+    const modelo = (site.emailTemplates ?? []).find(
+      (t) => t.stage === code && t.enabled && docEstado(t.startDate ?? "2000-01-01", t.endDate ?? null) === "ATIVO",
+    );
     if (!modelo) {
       toast.error(
         `Não há notificação ativa para a fase “${STAGE_LABEL[code]}”. Configure-a em Administração → Notificações.`,
@@ -298,6 +301,7 @@ function GestaoVaga() {
         txt
           .replaceAll("{{candidato}}", a.name)
           .replaceAll("{{email}}", a.email)
+          .replaceAll("{{emaildocandidato}}", a.email)
           .replaceAll("{{procedimento}}", v.title)
           .replaceAll("{{referencia}}", v.ref)
           .replaceAll("{{fase}}", STAGE_LABEL[code])
@@ -463,31 +467,31 @@ function GestaoVaga() {
             <dl className="mt-4 grid gap-4 text-[13px] sm:grid-cols-2 lg:grid-cols-3">
               {[
                 ["Referência", vaga.ref],
-                ["Tipo de oferta", OFFER_TYPE_LABEL[vaga.offerType]],
-                ["Estado", JOB_STATE_LABEL[vaga.state]],
                 ["Data de publicação", vaga.publishedAt ? formatDate(vaga.publishedAt) : "Por publicar"],
                 ["Prazo de candidatura", formatDate(vaga.deadline)],
-                ["Unidade(s) orgânica(s)", departmentsOf(vaga).join(" · ")],
-                ["Local(is) de trabalho", locationsOf(vaga).join(" · ")],
-                ["Postos", String(vaga.positions)],
-                ["Cargo / carreira", vaga.career],
+                ["Código BEP/Edital", vaga.bepCode || "Por atribuir"],
+                ["Tipo de oferta", OFFER_TYPE_LABEL[vaga.offerType]],
+                ["Métodos de seleção", vaga.selectionMethods.join(" · ")],
                 ["Vínculo", vaga.bond],
                 ["Regime", vaga.regime],
-                ["Habilitação mínima", vaga.educationLevel],
+                ["Cargo / carreira", vaga.career],
                 ["Remuneração", vaga.remuneration],
                 ["Suplemento mensal", vaga.monthlySupplement || "—"],
-                ["Características da remuneração", vaga.remunerationNotes || "—"],
-                ["Código BEP/Edital", vaga.bepCode || "Por atribuir"],
-                ["Métodos de seleção", vaga.selectionMethods.join(" · ")],
+                ["Habilitação mínima", vaga.educationLevel],
+                ["Unidade(s) orgânica(s)", departmentsOf(vaga).join(" · ")],
+                ["Postos", String(vaga.positions)],
+                ["Local(is) de trabalho", locationsOf(vaga).join(" · ")],
+                [
+                  "Gestor de RH suplente",
+                  pessoas.find((p) => p.id === vaga.hrManagerDeputyId)?.name || "—",
+                ],
                 ["Presidente do júri", vaga.juryPresident || "Por designar"],
                 ["1.º Vogal Efetivo", vaga.juryVogal1 || "Por designar"],
                 ["2.º Vogal Efetivo", vaga.juryVogal2 || "Por designar"],
                 ["1.º Vogal Suplente", vaga.jurySuplente1 || "Por designar"],
                 ["2.º Vogal Suplente", vaga.jurySuplente2 || "Por designar"],
-                [
-                  "Gestor de RH suplente",
-                  pessoas.find((p) => p.id === vaga.hrManagerDeputyId)?.name || "—",
-                ],
+                ["N.º Aviso / Edital", vaga.noticeNumber || "—"],
+                ["Estado", JOB_STATE_LABEL[vaga.state]],
               ].map(([k, v]) => (
                 <div key={k}>
                   <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
@@ -497,24 +501,32 @@ function GestaoVaga() {
                 </div>
               ))}
             </dl>
-            {(vaga.description || vaga.requirements) && (
+            {([
+              ["Características da remuneração", vaga.remunerationNotes],
+              ["Caracterização do posto", vaga.description],
+              ["Requisitos", vaga.requirements],
+              ["Descrição da habilitação literária", vaga.educationDescription],
+              ["Lista de consulta de legislação/documentos para Prova de Conhecimentos", vaga.knowledgeReadings],
+              ["Texto do aviso / edital", vaga.procedureDescription],
+            ] as const).some(([, value]) => Boolean(value)) && (
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                {vaga.description && (
-                  <div>
+                {([
+                  ["Características da remuneração", vaga.remunerationNotes],
+                  ["Caracterização do posto", vaga.description],
+                  ["Requisitos", vaga.requirements],
+                  ["Descrição da habilitação literária", vaga.educationDescription],
+                  ["Lista de consulta de legislação/documentos para Prova de Conhecimentos", vaga.knowledgeReadings],
+                  ["Texto do aviso / edital", vaga.procedureDescription],
+                ] as const)
+                  .filter(([, value]) => Boolean(value))
+                  .map(([label, value]) => (
+                  <div key={label}>
                     <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                      Caracterização do posto
+                      {label}
                     </p>
-                    <p className="mt-1 text-[13px] whitespace-pre-wrap">{vaga.description}</p>
+                    <p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed">{value}</p>
                   </div>
-                )}
-                {vaga.requirements && (
-                  <div>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                      Requisitos
-                    </p>
-                    <p className="mt-1 text-[13px] whitespace-pre-wrap">{vaga.requirements}</p>
-                  </div>
-                )}
+                ))}
               </div>
             )}
           </section>
@@ -529,6 +541,24 @@ function GestaoVaga() {
                 className="input-ipma"
               />
             </Campo>
+            <Campo label="N.º Aviso / Edital">
+              <input
+                maxLength={500}
+                value={vaga.noticeNumber ?? ""}
+                onChange={(e) => updateVaga(vaga.id, { noticeNumber: e.target.value })}
+                className="input-ipma"
+              />
+            </Campo>
+            <div className="sm:col-span-3">
+              <Campo label="Texto do aviso / edital">
+                <textarea
+                  rows={5}
+                  value={vaga.procedureDescription ?? ""}
+                  onChange={(e) => updateVaga(vaga.id, { procedureDescription: e.target.value })}
+                  className="input-ipma"
+                />
+              </Campo>
+            </div>
             <Campo label="Gestor de RH suplente (opcional)">
               <select
                 value={vaga.hrManagerDeputyId ?? ""}

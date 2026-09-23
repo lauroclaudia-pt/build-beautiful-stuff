@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, Download, Pencil, Trash2 } from "lucide-react";
 import { PageShell, RequireRole } from "@/components/shell";
+import { FilePickButton } from "@/components/file-upload";
 import { Req, hojeISO } from "@/components/req";
 import { useStore } from "@/lib/store";
 import type { Role } from "@/lib/pessoas";
@@ -10,6 +11,7 @@ import {
   OPTION_CATEGORIES,
   OPTION_CATEGORY_FORMS,
   OPTION_CATEGORY_LABEL,
+  compararPorValor,
   isOpcaoAtiva,
   type OptionCategory,
   type OptionValue,
@@ -48,6 +50,10 @@ function Dados() {
   const { opcoes, addOpcao, updateOpcao, removeOpcao } = useStore();
   const [categoria, setCategoria] = useState<OptionCategory>("DEPARTAMENTO");
   const [editando, setEditando] = useState<string | null>(null);
+  const [ordenacao, setOrdenacao] = useState<{
+    chave: "valor" | "inicio" | "fim";
+    direcao: "asc" | "desc";
+  }>({ chave: "valor", direcao: "asc" });
   const [novo, setNovo] = useState({
     label: "",
     startDate: hoje(),
@@ -58,21 +64,129 @@ function Dados() {
   });
 
   const distritos = useMemo(
-    () => opcoes.filter((o) => o.category === "DISTRITO" && isOpcaoAtiva(o)),
+    () => opcoes.filter((o) => o.category === "DISTRITO" && isOpcaoAtiva(o)).sort(compararPorValor),
     [opcoes],
   );
   const concelhos = useMemo(
-    () => opcoes.filter((o) => o.category === "CONCELHO" && isOpcaoAtiva(o)),
+    () => opcoes.filter((o) => o.category === "CONCELHO" && isOpcaoAtiva(o)).sort(compararPorValor),
     [opcoes],
   );
   const nomeDe = (id?: string | null) => opcoes.find((o) => o.id === id)?.label ?? "—";
   const isLocal = categoria === "LOCAL";
   const isConcelho = categoria === "CONCELHO";
 
-  const lista = useMemo(
-    () => opcoes.filter((o) => o.category === categoria),
-    [opcoes, categoria],
-  );
+  const lista = useMemo(() => {
+    const itens = opcoes.filter((o) => o.category === categoria);
+    const fator = ordenacao.direcao === "asc" ? 1 : -1;
+    return [...itens].sort((a, b) => {
+      if (ordenacao.chave === "valor") return fator * compararPorValor(a, b);
+      const va = ordenacao.chave === "inicio" ? a.startDate : a.endDate ?? "";
+      const vb = ordenacao.chave === "inicio" ? b.startDate : b.endDate ?? "";
+      if (va === vb) return compararPorValor(a, b);
+      return fator * (va < vb ? -1 : 1);
+    });
+  }, [opcoes, categoria, ordenacao]);
+
+  function mudarOrdenacao(chave: "valor" | "inicio" | "fim") {
+    setOrdenacao((atual) =>
+      atual.chave === chave
+        ? { chave, direcao: atual.direcao === "asc" ? "desc" : "asc" }
+        : { chave, direcao: "asc" },
+    );
+  }
+
+  /** Descarrega os valores da categoria atual num ficheiro CSV (Excel-friendly). */
+  function descarregar() {
+    const cab = ["Valor", "Data de início", "Data de fim", "Morada", "Distrito", "Concelho", "Estado"];
+    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const linhas = lista.map((o) =>
+      [
+        o.label,
+        o.startDate,
+        o.endDate ?? "",
+        o.address ?? "",
+        o.distritoId ? nomeDe(o.distritoId) : "",
+        o.concelhoId ? nomeDe(o.concelhoId) : "",
+        isOpcaoAtiva(o) ? "ATIVO" : "INATIVO",
+      ].map(esc).join(";"),
+    );
+    const csv = "\uFEFF" + [cab.map(esc).join(";"), ...linhas].join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${categoria.toLowerCase()}-${hoje()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${lista.length} valor(es) descarregado(s).`);
+  }
+
+  /** Carrega valores para a categoria atual a partir de um ficheiro Excel ou CSV. */
+  async function importar(file: File) {
+    const XLSX = await import("xlsx");
+    const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+    const sheetName = wb.SheetNames[0];
+    const sheet = sheetName ? wb.Sheets[sheetName] : undefined;
+    if (!sheet) {
+      toast.error("O ficheiro não tem dados.");
+      return;
+    }
+    const linhas = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+    const valor = (l: Record<string, unknown>, ...chaves: string[]) => {
+      for (const [k, v] of Object.entries(l)) {
+        const key = k.trim().toLowerCase();
+        if (chaves.some((c) => key === c || key.startsWith(c))) return String(v ?? "").trim();
+      }
+      return "";
+    };
+    const dataISO = (v: string) => {
+      if (!v) return "";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+      const m = v.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+      if (m) return `${m[3]}-${m[2]!.padStart(2, "0")}-${m[1]!.padStart(2, "0")}`;
+      const d = new Date(v);
+      return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+    };
+    const porNome = (nome: string, cat: OptionCategory) =>
+      opcoes.find(
+        (o) => o.category === cat && o.label.localeCompare(nome, "pt", { sensitivity: "base" }) === 0,
+      )?.id ?? null;
+
+    let criados = 0;
+    let ignorados = 0;
+    for (const l of linhas) {
+      const label = valor(l, "valor", "designação", "designacao", "nome", "label");
+      if (!label) {
+        ignorados += 1;
+        continue;
+      }
+      if (
+        opcoes.some(
+          (o) =>
+            o.category === categoria &&
+            o.label.localeCompare(label, "pt", { sensitivity: "base" }) === 0,
+        )
+      ) {
+        ignorados += 1;
+        continue;
+      }
+      const distritoNome = valor(l, "distrito");
+      const concelhoNome = valor(l, "concelho");
+      addOpcao({
+        category: categoria,
+        label,
+        startDate: dataISO(valor(l, "data de início", "data de inicio", "início", "inicio")) || hoje(),
+        endDate: dataISO(valor(l, "data de fim", "fim")) || null,
+        endedAt: null,
+        address: isLocal ? valor(l, "morada", "endereço", "endereco") || null : null,
+        distritoId: isLocal || isConcelho ? (distritoNome ? porNome(distritoNome, "DISTRITO") : null) : null,
+        concelhoId: isLocal ? (concelhoNome ? porNome(concelhoNome, "CONCELHO") : null) : null,
+      });
+      criados += 1;
+    }
+    toast.success(
+      `${criados} valor(es) importado(s).${ignorados ? ` ${ignorados} ignorado(s).` : ""}`,
+    );
+  }
 
   function criar(e: React.FormEvent) {
     e.preventDefault();
@@ -117,9 +231,10 @@ function Dados() {
           <p className="mt-3 max-w-[68ch] text-[15px] text-muted-foreground text-pretty">
             Valores das listas de escolha de todos os formulários. Cada valor tem data de início,
             data de fim e estado: fica ativo quando a data de início já passou e a data de fim está
-            vazia ou ainda não chegou. Só os valores ativos aparecem nas listas dos formulários. O
-            botão Remover não apaga o registo: fixa a data e a hora de fim no momento atual e o
-            valor passa a inativo.
+            vazia ou ainda não chegou. Só os valores ativos aparecem nas listas dos formulários, por
+            ordem alfabética do valor. O botão Remover não apaga o registo: fixa a data e a hora de
+            fim no momento atual e o valor passa a inativo. As colunas Valor, Data de início e Data
+            de fim podem ser ordenadas clicando no respetivo título.
           </p>
         </section>
 
@@ -144,8 +259,34 @@ function Dados() {
           })}
         </div>
 
-        <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
-          Usado em: {OPTION_CATEGORY_FORMS[categoria]}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+            Usado em: {OPTION_CATEGORY_FORMS[categoria]}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <FilePickButton
+              accept=".xlsx,.xls,.csv"
+              label="Importar de Excel ou CSV"
+              small
+              onPick={(fs) => {
+                const f = fs[0];
+                if (f) void importar(f);
+              }}
+            />
+            <button
+              type="button"
+              onClick={descarregar}
+              className="inline-flex items-center gap-2 rounded-md border border-border bg-white/60 px-3 py-1.5 text-[11px] font-medium transition-colors hover:bg-foreground/5"
+            >
+              <Download size={13} />
+              Descarregar valores (CSV)
+            </button>
+          </div>
+        </div>
+        <p className="mt-2 text-[12px] text-muted-foreground">
+          O ficheiro a importar deve ter as colunas <strong>Valor</strong>,{" "}
+          <strong>Data de início</strong> e <strong>Data de fim</strong> (e ainda Morada, Distrito e
+          Concelho nos locais e concelhos). Valores repetidos são ignorados.
         </p>
 
         <form
@@ -256,12 +397,42 @@ function Dados() {
           <table className="w-full min-w-[760px] text-left text-[13px]">
             <thead>
               <tr className="border-b border-border font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                <th className="px-4 py-3">Valor</th>
+                <th className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => mudarOrdenacao("valor")}
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    title="Ordenar por valor"
+                  >
+                    Valor
+                    <SortIcon ativo={ordenacao.chave === "valor"} direcao={ordenacao.direcao} />
+                  </button>
+                </th>
                 {isLocal && <th className="px-4 py-3">Morada completa</th>}
                 {(isLocal || isConcelho) && <th className="px-4 py-3">Distrito</th>}
                 {isLocal && <th className="px-4 py-3">Concelho</th>}
-                <th className="px-4 py-3">Data de início</th>
-                <th className="px-4 py-3">Data de fim</th>
+                <th className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => mudarOrdenacao("inicio")}
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    title="Ordenar por data de início"
+                  >
+                    Data de início
+                    <SortIcon ativo={ordenacao.chave === "inicio"} direcao={ordenacao.direcao} />
+                  </button>
+                </th>
+                <th className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => mudarOrdenacao("fim")}
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    title="Ordenar por data de fim"
+                  >
+                    Data de fim
+                    <SortIcon ativo={ordenacao.chave === "fim"} direcao={ordenacao.direcao} />
+                  </button>
+                </th>
                 <th className="px-4 py-3">Estado</th>
                 <th className="px-4 py-3 text-right">Ações</th>
               </tr>
@@ -414,4 +585,9 @@ function Dados() {
       </main>
     </PageShell>
   );
+}
+
+function SortIcon({ ativo, direcao }: { ativo: boolean; direcao: "asc" | "desc" }) {
+  if (!ativo) return <ArrowUpDown size={11} className="opacity-50" />;
+  return direcao === "asc" ? <ArrowUp size={11} /> : <ArrowDown size={11} />;
 }

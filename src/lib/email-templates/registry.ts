@@ -1,5 +1,7 @@
 import type { ComponentType } from 'react'
 import { template as candidaturaConfirmada } from './candidatura-confirmada'
+import { template as recuperarPassword } from './recuperar-password'
+import { template as codigoAcesso } from './codigo-acesso'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -16,4 +18,6 @@ export interface TemplateEntry {
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'candidatura-confirmada': candidaturaConfirmada,
+  'recuperar-password': recuperarPassword,
+  'codigo-acesso': codigoAcesso,
 }

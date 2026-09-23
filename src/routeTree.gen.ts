@@ -10,9 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AcessibilidadeRouteImport } from './routes/acessibilidade'
 import { Route as ApoioRouteImport } from './routes/apoio'
 import { Route as CandidatoRouteImport } from './routes/candidato'
+import { Route as DadosPessoaisRouteImport } from './routes/dados-pessoais'
+import { Route as DefinirPasswordRouteImport } from './routes/definir-password'
 import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as RecuperarRouteImport } from './routes/recuperar'
 import { Route as BackofficeIndexRouteImport } from './routes/backoffice/index'
 import { Route as BackofficeVagaIdRouteImport } from './routes/backoffice/$vagaId'
 import { Route as BackofficeAdminRouteImport } from './routes/backoffice/admin'
@@ -35,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AcessibilidadeRoute = AcessibilidadeRouteImport.update({
+  id: '/acessibilidade',
+  path: '/acessibilidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApoioRoute = ApoioRouteImport.update({
   id: '/apoio',
   path: '/apoio',
@@ -45,9 +54,24 @@ const CandidatoRoute = CandidatoRouteImport.update({
   path: '/candidato',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DadosPessoaisRoute = DadosPessoaisRouteImport.update({
+  id: '/dados-pessoais',
+  path: '/dados-pessoais',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DefinirPasswordRoute = DefinirPasswordRouteImport.update({
+  id: '/definir-password',
+  path: '/definir-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EntrarRoute = EntrarRouteImport.update({
   id: '/entrar',
   path: '/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarRoute = RecuperarRouteImport.update({
+  id: '/recuperar',
+  path: '/recuperar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BackofficeIndexRoute = BackofficeIndexRouteImport.update({
@@ -135,9 +159,13 @@ const LovableEmailTransactionalPreviewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/acessibilidade': typeof AcessibilidadeRoute
   '/apoio': typeof ApoioRoute
   '/candidato': typeof CandidatoRoute
+  '/dados-pessoais': typeof DadosPessoaisRoute
+  '/definir-password': typeof DefinirPasswordRoute
   '/entrar': typeof EntrarRoute
+  '/recuperar': typeof RecuperarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/contactos': typeof BackofficeContactosRoute
@@ -157,9 +185,13 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/acessibilidade': typeof AcessibilidadeRoute
   '/apoio': typeof ApoioRoute
   '/candidato': typeof CandidatoRoute
+  '/dados-pessoais': typeof DadosPessoaisRoute
+  '/definir-password': typeof DefinirPasswordRoute
   '/entrar': typeof EntrarRoute
+  '/recuperar': typeof RecuperarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/contactos': typeof BackofficeContactosRoute
@@ -180,9 +212,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/acessibilidade': typeof AcessibilidadeRoute
   '/apoio': typeof ApoioRoute
   '/candidato': typeof CandidatoRoute
+  '/dados-pessoais': typeof DadosPessoaisRoute
+  '/definir-password': typeof DefinirPasswordRoute
   '/entrar': typeof EntrarRoute
+  '/recuperar': typeof RecuperarRoute
   '/backoffice/$vagaId': typeof BackofficeVagaIdRoute
   '/backoffice/admin': typeof BackofficeAdminRoute
   '/backoffice/contactos': typeof BackofficeContactosRoute
@@ -204,9 +240,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/acessibilidade'
     | '/apoio'
     | '/candidato'
+    | '/dados-pessoais'
+    | '/definir-password'
     | '/entrar'
+    | '/recuperar'
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
     | '/backoffice/contactos'
@@ -226,9 +266,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/acessibilidade'
     | '/apoio'
     | '/candidato'
+    | '/dados-pessoais'
+    | '/definir-password'
     | '/entrar'
+    | '/recuperar'
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
     | '/backoffice/contactos'
@@ -248,9 +292,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/acessibilidade'
     | '/apoio'
     | '/candidato'
+    | '/dados-pessoais'
+    | '/definir-password'
     | '/entrar'
+    | '/recuperar'
     | '/backoffice/$vagaId'
     | '/backoffice/admin'
     | '/backoffice/contactos'
@@ -271,9 +319,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcessibilidadeRoute: typeof AcessibilidadeRoute
   ApoioRoute: typeof ApoioRoute
   CandidatoRoute: typeof CandidatoRoute
+  DadosPessoaisRoute: typeof DadosPessoaisRoute
+  DefinirPasswordRoute: typeof DefinirPasswordRoute
   EntrarRoute: typeof EntrarRoute
+  RecuperarRoute: typeof RecuperarRoute
   BackofficeVagaIdRoute: typeof BackofficeVagaIdRoute
   BackofficeAdminRoute: typeof BackofficeAdminRoute
   BackofficeContactosRoute: typeof BackofficeContactosRoute
@@ -301,6 +353,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/acessibilidade': {
+      id: '/acessibilidade'
+      path: '/acessibilidade'
+      fullPath: '/acessibilidade'
+      preLoaderRoute: typeof AcessibilidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/apoio': {
       id: '/apoio'
       path: '/apoio'
@@ -315,11 +374,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CandidatoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dados-pessoais': {
+      id: '/dados-pessoais'
+      path: '/dados-pessoais'
+      fullPath: '/dados-pessoais'
+      preLoaderRoute: typeof DadosPessoaisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/definir-password': {
+      id: '/definir-password'
+      path: '/definir-password'
+      fullPath: '/definir-password'
+      preLoaderRoute: typeof DefinirPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/entrar': {
       id: '/entrar'
       path: '/entrar'
       fullPath: '/entrar'
       preLoaderRoute: typeof EntrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar': {
+      id: '/recuperar'
+      path: '/recuperar'
+      fullPath: '/recuperar'
+      preLoaderRoute: typeof RecuperarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/backoffice/': {
@@ -439,9 +519,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcessibilidadeRoute: AcessibilidadeRoute,
   ApoioRoute: ApoioRoute,
   CandidatoRoute: CandidatoRoute,
+  DadosPessoaisRoute: DadosPessoaisRoute,
+  DefinirPasswordRoute: DefinirPasswordRoute,
   EntrarRoute: EntrarRoute,
+  RecuperarRoute: RecuperarRoute,
   BackofficeVagaIdRoute: BackofficeVagaIdRoute,
   BackofficeAdminRoute: BackofficeAdminRoute,
   BackofficeContactosRoute: BackofficeContactosRoute,

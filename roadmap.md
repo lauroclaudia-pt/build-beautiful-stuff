@@ -80,3 +80,26 @@
 - [x] Memo "Lista de consulta de legislação/documentos para Prova de Conhecimentos"
 - [x] Radio "Admissão sem habilitação exigida" e "Vagas para candidatos com deficiência"
 - [x] Síntese do procedimento com todos os campos; mostrar/ocultar no site público e no portal do candidato (Gestão do site)
+
+## Júri, suplente e departamentos (2026-09-22)
+- [x] Cinco lugares do júri por seleção de pessoas (Presidente, 1.º/2.º Vogal Efetivo, 1.º/2.º Vogal Suplente)
+- [x] Gestor de RH suplente (facultativo, pessoa com login)
+- [x] Departamento por pessoa e importação de pessoas por Excel/CSV
+- [x] Pacote de instalação de raiz atualizado (ipma-recrutamento-v2.zip)
+
+## Partilha nas redes sociais (2026-09-22)
+- [x] Página pública da vaga: botões Partilhar — Facebook, LinkedIn e Instagram (copia a ligação)
+- [x] Imagem de partilha (og:image/twitter:image) = logótipo IPMA
+
+## Aviso / Edital e formatação (2026-09-22)
+- [x] Campo "N.º Aviso / Edital" com limite de 500 caracteres, antes do texto do aviso
+- [x] "Descrição do procedimento" renomeada para "Texto do aviso / edital"
+- [x] Parágrafos e quebras de linha preservados nos campos de texto/memo no backoffice
+
+- [x] Gestão de dados: ordenação dos critérios — listas alfabéticas (valor, pt) e tabela ordenável por Valor / Data de início / Data de fim (asc/desc). (2026-09-23)
+
+## Navegação e páginas institucionais (2026-09-23)
+- [x] Ocultar «Procedimentos» e «Candidato» no menu sem sessão iniciada
+- [x] Gestão do site: nome completo da entidade no rodapé e textos de Acessibilidade e Dados pessoais
+- [x] Páginas públicas próprias de Acessibilidade e Dados pessoais
+- [x] Gestão do site: permitir alterar a cor de fundo das páginas

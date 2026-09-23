@@ -31,6 +31,19 @@ import {
   diasUteisEntre,
 } from "./recrutamento";
 import { SEED_PESSOAS, type Pessoa, type Responsabilidade, type Role } from "./pessoas";
+import {
+  CODE_MAX_ATTEMPTS,
+  CODE_TTL_MIN,
+  TOKEN_TTL_MIN,
+  emMinutos,
+  expirado,
+  gerarCodigo,
+  gerarToken,
+  validarPassword,
+  type LoginCode,
+  type PasswordToken,
+  type TokenPurpose,
+} from "./auth";
 import { DEFAULT_SITE, type SiteConfig } from "./site";
 import {
   SEED_OPCOES,
@@ -49,6 +62,16 @@ interface Data {
   site: SiteConfig;
   opcoes: OptionValue[];
   notificacoes: Notificacao[];
+  passwordTokens: PasswordToken[];
+  loginCodes: LoginCode[];
+}
+
+export interface ResultadoAuth {
+  ok: boolean;
+  message: string;
+  pessoa?: Pessoa;
+  /** Código gerado (mostrado apenas quando o envio de email falha). */
+  codigo?: string;
 }
 
 export interface StoreValue extends Data {
@@ -75,6 +98,27 @@ export interface StoreValue extends Data {
     uploads: DocumentUpload[],
   ) => void;
   login: (email: string, password: string) => { ok: boolean; message: string; pessoa?: Pessoa };
+  /** Valida credenciais e emite o código de confirmação (2.º nível). Não inicia sessão. */
+  iniciarAutenticacao: (
+    email: string,
+    password: string,
+  ) => { ok: boolean; message: string; pessoa?: Pessoa; codigo?: string };
+  /** Emite novo código de confirmação para a pessoa. */
+  novoCodigoAcesso: (pessoaId: string) => { ok: boolean; message: string; codigo?: string };
+  /** Confirma o código e inicia a sessão. */
+  confirmarCodigo: (
+    pessoaId: string,
+    codigo: string,
+  ) => { ok: boolean; message: string; pessoa?: Pessoa };
+  /** Cria um token de definição/recuperação de palavra-passe. */
+  pedirTokenPassword: (
+    email: string,
+    purpose: TokenPurpose,
+  ) => { ok: boolean; message: string; token?: string; pessoa?: Pessoa };
+  /** Devolve a pessoa associada a um token válido. */
+  pessoaDoToken: (token: string) => { ok: boolean; message: string; pessoa?: Pessoa };
+  /** Define a palavra-passe a partir de um token válido. */
+  definirPasswordComToken: (token: string, password: string) => { ok: boolean; message: string };
   /** Define a sessão ativa para uma pessoa existente (ex.: login no servidor de recrutamento). */
   setSession: (pessoaId: string) => void;
   /** Insere vagas sincronizadas do servidor de recrutamento (ignora as que já existem). */
@@ -114,6 +158,8 @@ function seed(): Data {
     site: { ...DEFAULT_SITE },
     opcoes: SEED_OPCOES.map((o) => ({ ...o })),
     notificacoes: [],
+    passwordTokens: [],
+    loginCodes: [],
   };
 }
 
@@ -150,8 +196,18 @@ function load(): Data {
               ? DEFAULT_SITE.apiUrl
               : parsed.site.apiUrl,
         },
-        opcoes: parsed.opcoes?.length ? parsed.opcoes : base.opcoes,
+        // Mantém as listas guardadas, acrescentando categorias novas da semente.
+        opcoes: parsed.opcoes?.length
+          ? [
+              ...parsed.opcoes,
+              ...base.opcoes.filter(
+                (seed) => !parsed.opcoes!.some((o) => o.category === seed.category),
+              ),
+            ]
+          : base.opcoes,
         notificacoes: parsed.notificacoes ?? [],
+        passwordTokens: parsed.passwordTokens ?? [],
+        loginCodes: parsed.loginCodes ?? [],
       };
     }
   } catch {
@@ -416,6 +472,151 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return { ok: true, message: `Bem-vindo(a), ${pessoa.name}.`, pessoa };
     },
     [data.pessoas],
+  );
+
+  const emitirCodigo = useCallback((pessoa: Pessoa) => {
+    const codigo = gerarCodigo();
+    const registo: LoginCode = {
+      id: crypto.randomUUID(),
+      pessoaId: pessoa.id,
+      code: codigo,
+      createdAt: new Date().toISOString(),
+      expiresAt: emMinutos(CODE_TTL_MIN),
+      attempts: 0,
+      usedAt: null,
+    };
+    setData((d) => ({
+      ...d,
+      loginCodes: [registo, ...d.loginCodes.filter((c) => c.pessoaId !== pessoa.id)].slice(0, 50),
+    }));
+    return codigo;
+  }, []);
+
+  const iniciarAutenticacao: StoreValue["iniciarAutenticacao"] = useCallback(
+    (email, password) => {
+      const pessoa = data.pessoas.find(
+        (p) => p.email.trim().toLowerCase() === email.trim().toLowerCase(),
+      );
+      if (!pessoa) return { ok: false, message: "Não existe nenhum utilizador com esse email." };
+      if (!pessoa.hasLogin || !pessoa.password)
+        return { ok: false, message: "Esta pessoa não tem login ativo." };
+      if (pessoa.password !== password) return { ok: false, message: "Palavra-passe incorreta." };
+      const codigo = emitirCodigo(pessoa);
+      return {
+        ok: true,
+        message: "Enviámos um código de confirmação para o seu email.",
+        pessoa,
+        codigo,
+      };
+    },
+    [data.pessoas, emitirCodigo],
+  );
+
+  const novoCodigoAcesso: StoreValue["novoCodigoAcesso"] = useCallback(
+    (pessoaId) => {
+      const pessoa = data.pessoas.find((p) => p.id === pessoaId);
+      if (!pessoa) return { ok: false, message: "Utilizador não encontrado." };
+      return { ok: true, message: "Novo código enviado.", codigo: emitirCodigo(pessoa) };
+    },
+    [data.pessoas, emitirCodigo],
+  );
+
+  const confirmarCodigo: StoreValue["confirmarCodigo"] = useCallback(
+    (pessoaId, codigo) => {
+      const registo = data.loginCodes.find((c) => c.pessoaId === pessoaId && !c.usedAt);
+      const pessoa = data.pessoas.find((p) => p.id === pessoaId);
+      if (!registo || !pessoa)
+        return { ok: false, message: "Não há nenhum código pendente. Volte a autenticar-se." };
+      if (expirado(registo.expiresAt))
+        return { ok: false, message: "O código expirou. Peça um novo código." };
+      if (registo.attempts >= CODE_MAX_ATTEMPTS)
+        return { ok: false, message: "Excedeu as tentativas permitidas. Peça um novo código." };
+      if (registo.code !== codigo.trim()) {
+        setData((d) => ({
+          ...d,
+          loginCodes: d.loginCodes.map((c) =>
+            c.id === registo.id ? { ...c, attempts: c.attempts + 1 } : c,
+          ),
+        }));
+        const restantes = CODE_MAX_ATTEMPTS - registo.attempts - 1;
+        return {
+          ok: false,
+          message: `Código incorreto. Restam ${Math.max(restantes, 0)} tentativas.`,
+        };
+      }
+      setData((d) => ({
+        ...d,
+        sessionId: pessoa.id,
+        loginCodes: d.loginCodes.map((c) =>
+          c.id === registo.id ? { ...c, usedAt: new Date().toISOString() } : c,
+        ),
+      }));
+      return { ok: true, message: `Bem-vindo(a), ${pessoa.name}.`, pessoa };
+    },
+    [data.loginCodes, data.pessoas],
+  );
+
+  const pedirTokenPassword: StoreValue["pedirTokenPassword"] = useCallback(
+    (email, purpose) => {
+      const pessoa = data.pessoas.find(
+        (p) => p.email.trim().toLowerCase() === email.trim().toLowerCase(),
+      );
+      if (!pessoa) return { ok: false, message: "Não existe nenhum utilizador com esse email." };
+      const token = gerarToken();
+      const registo: PasswordToken = {
+        id: crypto.randomUUID(),
+        pessoaId: pessoa.id,
+        email: pessoa.email,
+        token,
+        purpose,
+        createdAt: new Date().toISOString(),
+        expiresAt: emMinutos(TOKEN_TTL_MIN),
+        usedAt: null,
+      };
+      setData((d) => ({
+        ...d,
+        passwordTokens: [
+          registo,
+          ...d.passwordTokens.filter((t) => t.pessoaId !== pessoa.id || t.usedAt),
+        ].slice(0, 100),
+      }));
+      return { ok: true, message: "Enviámos uma ligação para o seu email.", token, pessoa };
+    },
+    [data.pessoas],
+  );
+
+  const pessoaDoToken: StoreValue["pessoaDoToken"] = useCallback(
+    (token) => {
+      const registo = data.passwordTokens.find((t) => t.token === token);
+      if (!registo) return { ok: false, message: "Ligação inválida." };
+      if (registo.usedAt) return { ok: false, message: "Esta ligação já foi utilizada." };
+      if (expirado(registo.expiresAt)) return { ok: false, message: "Esta ligação expirou." };
+      const pessoa = data.pessoas.find((p) => p.id === registo.pessoaId);
+      if (!pessoa) return { ok: false, message: "Utilizador não encontrado." };
+      return { ok: true, message: "Ligação válida.", pessoa };
+    },
+    [data.passwordTokens, data.pessoas],
+  );
+
+  const definirPasswordComToken: StoreValue["definirPasswordComToken"] = useCallback(
+    (token, password) => {
+      const valido = pessoaDoToken(token);
+      if (!valido.ok || !valido.pessoa) return { ok: false, message: valido.message };
+      const forca = validarPassword(password, valido.pessoa.email);
+      if (!forca.ok) return { ok: false, message: forca.erros.join(" ") };
+      const pessoaId = valido.pessoa.id;
+      setData((d) => ({
+        ...d,
+        pessoas: d.pessoas.map((p) =>
+          p.id === pessoaId ? { ...p, hasLogin: true, password } : p,
+        ),
+        passwordTokens: d.passwordTokens.map((t) =>
+          t.token === token ? { ...t, usedAt: new Date().toISOString() } : t,
+        ),
+      }));
+      return { ok: true, message: "Palavra-passe definida. Já pode autenticar-se." };
+    },
+    [pessoaDoToken],
   );
 
   const logout = useCallback(() => setData((d) => ({ ...d, sessionId: null })), []);
@@ -716,6 +917,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setDocumentState,
       addDocumentUploads,
       login,
+      iniciarAutenticacao,
+      novoCodigoAcesso,
+      confirmarCodigo,
+      pedirTokenPassword,
+      pessoaDoToken,
+      definirPasswordComToken,
       logout,
       setSession,
       syncJavaVagas,
@@ -754,6 +961,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setDocumentState,
       addDocumentUploads,
       login,
+      iniciarAutenticacao,
+      novoCodigoAcesso,
+      confirmarCodigo,
+      pedirTokenPassword,
+      pessoaDoToken,
+      definirPasswordComToken,
       logout,
       setSession,
       syncJavaVagas,

@@ -178,7 +178,7 @@ function GestaoSite() {
           <p className="mt-2 text-[13px] text-muted-foreground">
             Estas cores substituem as cores base do site em todas as páginas.
           </p>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {COLOR_FIELDS.map((f) => (
               <div key={f.key} className="rounded-lg border border-border bg-white/50 p-4">
                 <p className="text-[13px] font-medium">{f.label}</p>
@@ -244,6 +244,42 @@ function GestaoSite() {
                 placeholder={DEFAULT_JAVA_API_URL}
                 onChange={(e) => updateSite({ apiUrl: e.target.value })}
                 className="input-ipma font-mono text-[12px]"
+              />
+            </Campo>
+          </div>
+        </section>
+
+        {/* Rodapé e páginas institucionais */}
+        <section className="glass mt-6 animate-rise rounded-xl p-6 [animation-delay:160ms]">
+          <h2 className="text-lg font-semibold tracking-tight">Rodapé e informação institucional</h2>
+          <p className="mt-2 text-[13px] text-muted-foreground">
+            O nome é apresentado no rodapé. Os textos mantêm os parágrafos e as quebras de linha.
+          </p>
+          <div className="mt-5 grid gap-5">
+            <Campo label="Nome completo da entidade">
+              <input
+                value={site.footerEntityName}
+                maxLength={200}
+                onChange={(e) => updateSite({ footerEntityName: e.target.value })}
+                className="input-ipma"
+              />
+            </Campo>
+            <Campo label="Acessibilidade">
+              <textarea
+                value={site.accessibilityText}
+                maxLength={10000}
+                rows={8}
+                onChange={(e) => updateSite({ accessibilityText: e.target.value })}
+                className="input-ipma resize-y"
+              />
+            </Campo>
+            <Campo label="Dados pessoais">
+              <textarea
+                value={site.personalDataText}
+                maxLength={10000}
+                rows={8}
+                onChange={(e) => updateSite({ personalDataText: e.target.value })}
+                className="input-ipma resize-y"
               />
             </Campo>
           </div>

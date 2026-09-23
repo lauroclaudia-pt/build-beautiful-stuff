@@ -18,6 +18,7 @@ export type OptionCategory =
   | "REGIME"
   | "METODO_SELECAO"
   | "SITUACAO_PROFISSIONAL"
+  | "NACIONALIDADE"
   | "DISTRITO"
   | "CONCELHO";
 
@@ -30,6 +31,7 @@ export const OPTION_CATEGORY_LABEL: Record<OptionCategory, string> = {
   REGIME: "Regime",
   METODO_SELECAO: "Método de seleção",
   SITUACAO_PROFISSIONAL: "Situação profissional",
+  NACIONALIDADE: "Nacionalidade",
   DISTRITO: "Distrito",
   CONCELHO: "Concelho",
 };
@@ -43,6 +45,7 @@ export const OPTION_CATEGORY_FORMS: Record<OptionCategory, string> = {
   REGIME: "Novo procedimento",
   METODO_SELECAO: "Novo procedimento",
   SITUACAO_PROFISSIONAL: "Formulário de candidatura",
+  NACIONALIDADE: "Formulário de candidatura",
   DISTRITO: "Locais",
   CONCELHO: "Locais",
 };
@@ -83,14 +86,21 @@ export function opcaoEstado(o: OptionValue): "ATIVO" | "INATIVO" {
   return isOpcaoAtiva(o) ? "ATIVO" : "INATIVO";
 }
 
-/** Registos ativos de uma categoria. */
-export function registosAtivos(opcoes: OptionValue[], category: OptionCategory): OptionValue[] {
-  return opcoes.filter((o) => o.category === category && isOpcaoAtiva(o));
+/** Ordenação alfabética do valor (português, sem distinguir maiúsculas). */
+export function compararPorValor(a: OptionValue, b: OptionValue): number {
+  return a.label.localeCompare(b.label, "pt", { sensitivity: "base", numeric: true });
 }
 
-/** Valores ativos de uma categoria, pela ordem definida. */
+/** Registos ativos de uma categoria, por ordem alfabética do valor. */
+export function registosAtivos(opcoes: OptionValue[], category: OptionCategory): OptionValue[] {
+  return opcoes
+    .filter((o) => o.category === category && isOpcaoAtiva(o))
+    .sort(compararPorValor);
+}
+
+/** Valores ativos de uma categoria, por ordem alfabética do valor. */
 export function opcoesAtivas(opcoes: OptionValue[], category: OptionCategory): string[] {
-  return opcoes.filter((o) => o.category === category && isOpcaoAtiva(o)).map((o) => o.label);
+  return registosAtivos(opcoes, category).map((o) => o.label);
 }
 
 const INICIO = "2020-01-01";
@@ -111,6 +121,19 @@ export const SITUACOES_PROFISSIONAIS = [
   "Trabalhador independente",
   "Desempregado",
   "Estudante",
+];
+
+export const NACIONALIDADES = [
+  "Portuguesa",
+  "Espanhola",
+  "Brasileira",
+  "Francesa",
+  "Alemã",
+  "Italiana",
+  "Cabo-verdiana",
+  "Angolana",
+  "Moçambicana",
+  "Outra",
 ];
 
 export const DISTRITOS_CONCELHOS: Record<string, string[]> = {
@@ -155,4 +178,5 @@ export const SEED_OPCOES: OptionValue[] = [
   ...build("REGIME", REGIMES),
   ...build("METODO_SELECAO", SELECTION_METHODS),
   ...build("SITUACAO_PROFISSIONAL", SITUACOES_PROFISSIONAIS),
+  ...build("NACIONALIDADE", NACIONALIDADES),
 ];

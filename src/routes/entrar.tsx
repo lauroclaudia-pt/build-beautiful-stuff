@@ -10,6 +10,8 @@ import {
   type Pessoa,
 } from "@/lib/pessoas";
 import { loginJava, mapJavaRoles, saveJavaAuth, javaBase } from "@/lib/java-api";
+import { enviarCodigoAcesso } from "@/lib/emails.functions";
+import { CODE_TTL_MIN } from "@/lib/auth";
 
 export const Route = createFileRoute("/entrar")({
   head: () => ({
@@ -18,7 +20,7 @@ export const Route = createFileRoute("/entrar")({
       {
         name: "description",
         content:
-          "Autenticação na plataforma de recrutamento do IPMA, I.P. Cada pessoa tem um login e as responsabilidades ativas determinam o acesso.",
+          "Autenticação em dois passos na plataforma de recrutamento do IPMA, I.P. — palavra-passe e código de confirmação enviado por email.",
       },
       { property: "og:title", content: "Entrar — Recrutamento IPMA" },
       {
@@ -34,16 +36,55 @@ export const Route = createFileRoute("/entrar")({
 
 function Entrar() {
   const navigate = useNavigate();
-  const { pessoas, currentUser, login, logout, hydrated, site, addPessoa, setSession } = useStore();
+  const {
+    pessoas,
+    currentUser,
+    logout,
+    hydrated,
+    site,
+    addPessoa,
+    iniciarAutenticacao,
+    novoCodigoAcesso,
+    confirmarCodigo,
+  } = useStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [aEntrar, setAEntrar] = useState(false);
+  const [pendente, setPendente] = useState<Pessoa | null>(null);
+  const [codigo, setCodigo] = useState("");
+  /** Código mostrado no ecrã apenas quando o envio por email não foi possível. */
+  const [codigoFallback, setCodigoFallback] = useState<string | null>(null);
 
   function destinoPara(p: Pessoa) {
     const roles = activeRoles(p);
     if (roles.some((r) => r !== "CANDIDATO")) return "/backoffice" as const;
     return "/candidato" as const;
+  }
+
+  /** Envia o código de confirmação por email; devolve-o para exibição se o envio falhar. */
+  async function enviarCodigo(pessoa: Pessoa, code: string) {
+    setPendente(pessoa);
+    setCodigo("");
+    setCodigoFallback(null);
+    try {
+      const res = await enviarCodigoAcesso({
+        data: {
+          email: pessoa.email,
+          nome: pessoa.name,
+          codigo: code,
+          minutos: CODE_TTL_MIN,
+        },
+      });
+      if (res.ok) {
+        toast.success(`Código de confirmação enviado para ${pessoa.email}.`);
+        return;
+      }
+    } catch {
+      /* segue para o modo alternativo */
+    }
+    setCodigoFallback(code);
+    toast.warning("Não foi possível enviar o email. O código é apresentado no ecrã.");
   }
 
   async function submeter(e: React.FormEvent) {
@@ -52,11 +93,10 @@ function Entrar() {
     setErro(null);
     setAEntrar(true);
     try {
-      // As contas de demonstração são locais e devem entrar de imediato, sem depender da API.
-      const local = login(email, password);
-      if (local.ok && local.pessoa) {
-        toast.success(local.message);
-        await navigate({ to: destinoPara(local.pessoa) });
+      // As contas locais validam a palavra-passe e passam ao segundo nível de autenticação.
+      const local = iniciarAutenticacao(email, password);
+      if (local.ok && local.pessoa && local.codigo) {
+        await enviarCodigo(local.pessoa, local.codigo);
         return;
       }
 
@@ -83,10 +123,11 @@ function Entrar() {
             })),
           });
         }
-        setSession(pessoa.id);
-        toast.success(java.message);
-        await navigate({ to: destinoPara(pessoa) });
-        return;
+        const emitido = novoCodigoAcesso(pessoa.id);
+        if (emitido.ok && emitido.codigo) {
+          await enviarCodigo(pessoa, emitido.codigo);
+          return;
+        }
       }
 
       const msg =
@@ -100,14 +141,37 @@ function Entrar() {
     }
   }
 
-  function entrarComo(p: Pessoa) {
+  async function confirmar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pendente || aEntrar) return;
+    setAEntrar(true);
+    setErro(null);
+    try {
+      const res = confirmarCodigo(pendente.id, codigo);
+      if (!res.ok || !res.pessoa) {
+        setErro(res.message);
+        toast.error(res.message);
+        return;
+      }
+      toast.success(res.message);
+      await navigate({ to: destinoPara(res.pessoa) });
+    } finally {
+      setAEntrar(false);
+    }
+  }
+
+  async function reenviar() {
+    if (!pendente) return;
+    const res = novoCodigoAcesso(pendente.id);
+    if (res.ok && res.codigo) await enviarCodigo(pendente, res.codigo);
+  }
+
+  async function entrarComo(p: Pessoa) {
     setEmail(p.email);
     setPassword(p.password ?? "");
-    const res = login(p.email, p.password ?? "");
-    if (res.ok && res.pessoa) {
-      toast.success(res.message);
-      navigate({ to: destinoPara(res.pessoa) });
-    }
+    const res = iniciarAutenticacao(p.email, p.password ?? "");
+    if (res.ok && res.pessoa && res.codigo) await enviarCodigo(res.pessoa, res.codigo);
+    else toast.error(res.message);
   }
 
   return (
@@ -121,9 +185,9 @@ function Entrar() {
             Entrar na plataforma de recrutamento
           </h1>
           <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-            Cada pessoa tem um único login. O acesso depende das responsabilidades ativas
-            associadas — Gestor de RH, Gestão, Administrador, Júri ou Candidato — cada uma com
-            data de início, data de fim e estado.
+            O acesso exige autenticação forte em dois passos: palavra-passe e código de
+            confirmação enviado por email. O perfil depende das responsabilidades ativas —
+            Gestor de RH, Gestão, Administrador, Júri ou Candidato.
           </p>
 
           {hydrated && currentUser ? (
@@ -160,6 +224,69 @@ function Entrar() {
                 </button>
               </div>
             </div>
+          ) : pendente ? (
+            <form onSubmit={confirmar} className="mt-8 max-w-md space-y-4">
+              <div className="rounded-xl border border-border bg-white/50 p-4">
+                <p className="text-sm">
+                  Enviámos um código de 6 dígitos para{" "}
+                  <span className="font-mono text-[12px]">{pendente.email}</span>. O código expira
+                  em {CODE_TTL_MIN} minutos.
+                </p>
+                {codigoFallback && (
+                  <p className="mt-2 rounded bg-warning/10 px-3 py-2 font-mono text-sm text-foreground">
+                    Código: <strong>{codigoFallback}</strong>
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                  Código de confirmação
+                </label>
+                <input
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  required
+                  maxLength={6}
+                  value={codigo}
+                  onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  className="input-ipma mt-1 w-full text-center font-mono text-xl tracking-[0.5em]"
+                />
+              </div>
+              {erro && (
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-[13px] text-destructive">
+                  {erro}
+                </p>
+              )}
+              <button
+                type="submit"
+                disabled={aEntrar || codigo.length !== 6}
+                className="w-full rounded-md bg-primary px-4 py-2.5 text-[14px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {aEntrar ? "A confirmar…" : "Confirmar e entrar"}
+              </button>
+              <div className="flex items-center justify-between text-xs">
+                <button
+                  type="button"
+                  onClick={reenviar}
+                  className="text-primary underline underline-offset-4"
+                >
+                  Reenviar código
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendente(null);
+                    setCodigo("");
+                    setCodigoFallback(null);
+                    setErro(null);
+                  }}
+                  className="text-muted-foreground underline underline-offset-4"
+                >
+                  Usar outra conta
+                </button>
+              </div>
+            </form>
           ) : (
             <form onSubmit={submeter} className="mt-8 max-w-md space-y-4">
               <div>
@@ -198,8 +325,14 @@ function Entrar() {
                 disabled={aEntrar}
                 className="w-full rounded-md bg-primary px-4 py-2.5 text-[14px] font-medium text-primary-foreground hover:bg-primary/90"
               >
-                {aEntrar ? "A entrar…" : "Entrar"}
+                {aEntrar ? "A validar…" : "Continuar"}
               </button>
+              <p className="text-xs text-muted-foreground">
+                <Link to="/recuperar" className="text-primary underline underline-offset-4">
+                  Criar ou recuperar palavra-passe
+                </Link>{" "}
+                — enviamos uma ligação segura para o seu email.
+              </p>
               <p className="text-xs text-muted-foreground">
                 Ainda não se candidatou? Consulte as{" "}
                 <Link to="/" className="text-primary underline underline-offset-4">
@@ -216,7 +349,8 @@ function Entrar() {
             Contas de demonstração
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
-            Palavra-passe de todas as contas: <span className="font-mono">ipma</span>
+            Palavra-passe de todas as contas: <span className="font-mono">ipma</span>. O código de
+            confirmação é sempre pedido.
           </p>
           <ul className="mt-4 space-y-3">
             {pessoas.slice(0, 6).map((p) => (

@@ -15,8 +15,16 @@ export interface SiteConfig {
   buttonTextColor: string;
   /** Cor de destaque (etiquetas, realces). */
   accentColor: string;
+  /** Cor de fundo das páginas. */
+  backgroundColor: string;
   heroTitle: string;
   heroLead: string;
+  /** Nome completo da entidade apresentado no rodapé. */
+  footerEntityName: string;
+  /** Conteúdo público da declaração de acessibilidade. */
+  accessibilityText: string;
+  /** Conteúdo público da informação sobre dados pessoais. */
+  personalDataText: string;
   /** Endereço do servidor de recrutamento (backend Java). */
   apiUrl: string;
   showTypeFilter: boolean;
@@ -80,7 +88,19 @@ export interface EmailTemplate {
   subject: string;
   body: string;
   enabled: boolean;
+  /**
+   * Endereço(s) de destino pré-definidos (lista de distribuição, separada por
+   * vírgulas). Quando personalizado por candidato usa-se {{emaildocandidato}}.
+   */
+  recipient?: string;
+  /** Data de início de vigência da versão do texto. */
+  startDate?: string;
+  /** Data de fim; nula enquanto a versão estiver em vigor. */
+  endDate?: string | null;
 }
+
+/** Destinatário personalizado: o email do próprio candidato. */
+export const RECIPIENT_CANDIDATE = "{{emaildocandidato}}";
 
 /** Modelo de documento (ata) associado a uma fase do procedimento. */
 export interface DocTemplate {
@@ -99,6 +119,7 @@ export interface DocTemplate {
 /** Campos substituíveis nos modelos. */
 export const TEMPLATE_FIELDS = [
   "{{candidato}}",
+  "{{emaildocandidato}}",
   "{{email}}",
   "{{procedimento}}",
   "{{referencia}}",
@@ -118,6 +139,9 @@ export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
     body:
       "Caro(a) {{candidato}},\n\nFoi publicado o procedimento {{procedimento}} (ref. {{referencia}}). As candidaturas são aceites até {{prazo}}.\n\nCom os melhores cumprimentos,\nIPMA, I.P. — Recursos Humanos",
     enabled: true,
+    recipient: RECIPIENT_CANDIDATE,
+    startDate: "2026-01-01",
+    endDate: null,
   },
   {
     id: "mail-applications",
@@ -127,6 +151,9 @@ export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
     body:
       "Caro(a) {{candidato}},\n\nConfirmamos a receção da sua candidatura ao procedimento {{procedimento}} (ref. {{referencia}}) em {{data}}.\n\nCom os melhores cumprimentos,\nIPMA, I.P. — Recursos Humanos",
     enabled: true,
+    recipient: RECIPIENT_CANDIDATE,
+    startDate: "2026-01-01",
+    endDate: null,
   },
   {
     id: "mail-admission",
@@ -136,6 +163,9 @@ export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
     body:
       "Caro(a) {{candidato}},\n\nInformamos que, na lista provisória do procedimento {{procedimento}}, a sua candidatura foi apreciada pelo júri.\n{{motivo}}\n\nPode consultar o estado da candidatura no portal do candidato.\n\nIPMA, I.P. — Recursos Humanos",
     enabled: true,
+    recipient: RECIPIENT_CANDIDATE,
+    startDate: "2026-01-01",
+    endDate: null,
   },
   {
     id: "mail-missing",
@@ -145,6 +175,9 @@ export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
     body:
       "Caro(a) {{candidato}},\n\nA sua candidatura ao procedimento {{procedimento}} encontra-se incompleta. Deve juntar os elementos em falta até {{prazo}}, através do portal do candidato.\n\nIPMA, I.P. — Recursos Humanos",
     enabled: true,
+    recipient: RECIPIENT_CANDIDATE,
+    startDate: "2026-01-01",
+    endDate: null,
   },
   {
     id: "mail-evaluation",
@@ -154,6 +187,9 @@ export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
     body:
       "Caro(a) {{candidato}},\n\nFoi convocado(a) para os métodos de seleção do procedimento {{procedimento}} (ref. {{referencia}}), a realizar em {{data}}.\n\nIPMA, I.P. — Recursos Humanos",
     enabled: true,
+    recipient: RECIPIENT_CANDIDATE,
+    startDate: "2026-01-01",
+    endDate: null,
   },
   {
     id: "mail-interview",
@@ -163,6 +199,9 @@ export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
     body:
       "Caro(a) {{candidato}},\n\nFoi convocado(a) para a entrevista de avaliação de competências do procedimento {{procedimento}}, em {{data}}.\n\nIPMA, I.P. — Recursos Humanos",
     enabled: true,
+    recipient: RECIPIENT_CANDIDATE,
+    startDate: "2026-01-01",
+    endDate: null,
   },
   {
     id: "mail-appeal",
@@ -172,6 +211,9 @@ export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
     body:
       "Caro(a) {{candidato}},\n\nNos termos legais, dispõe do prazo até {{prazo}} para se pronunciar sobre a exclusão da sua candidatura ao procedimento {{procedimento}}.\nMotivo: {{motivo}}\n\nIPMA, I.P. — Recursos Humanos",
     enabled: true,
+    recipient: RECIPIENT_CANDIDATE,
+    startDate: "2026-01-01",
+    endDate: null,
   },
   {
     id: "mail-contract",
@@ -181,6 +223,9 @@ export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
     body:
       "Caro(a) {{candidato}},\n\nA sua classificação final no procedimento {{procedimento}} foi de {{classificacao}} valores. Será contactado(a) para os trâmites de contratação.\n\nIPMA, I.P. — Recursos Humanos",
     enabled: true,
+    recipient: RECIPIENT_CANDIDATE,
+    startDate: "2026-01-01",
+    endDate: null,
   },
   {
     id: "mail-mobility",
@@ -190,6 +235,9 @@ export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
     body:
       "Caro(a) {{candidato}},\n\nInformamos que foi selecionado(a) para o acordo de mobilidade relativo a {{procedimento}}. Aguardamos a anuência do serviço de origem.\n\nIPMA, I.P. — Recursos Humanos",
     enabled: true,
+    recipient: RECIPIENT_CANDIDATE,
+    startDate: "2026-01-01",
+    endDate: null,
   },
   {
     id: "mail-appointment",
@@ -199,6 +247,9 @@ export const DEFAULT_EMAIL_TEMPLATES: EmailTemplate[] = [
     body:
       "Caro(a) {{candidato}},\n\nInformamos que foi designado(a) no âmbito do procedimento {{procedimento}}, com efeitos a {{data}}.\n\nIPMA, I.P. — Recursos Humanos",
     enabled: true,
+    recipient: RECIPIENT_CANDIDATE,
+    startDate: "2026-01-01",
+    endDate: null,
   },
 ];
 
@@ -322,9 +373,15 @@ export const DEFAULT_SITE: SiteConfig = {
   buttonColor: "#2C3987",
   buttonTextColor: "#FFFFFF",
   accentColor: "#20C4F4",
+  backgroundColor: "#F4F7FA",
   heroTitle: "Recrutamento de pessoal",
   heroLead:
     "Procedimentos concursais, mobilidades e bolsas de investigação do Instituto Português do Mar e da Atmosfera. Consulte o estado de cada processo e candidate-se dentro do prazo fixado.",
+  footerEntityName: "Instituto Português do Mar e da Atmosfera, I.P.",
+  accessibilityText:
+    "O Instituto Português do Mar e da Atmosfera, I.P. procura garantir que este portal pode ser utilizado pelo maior número possível de pessoas.\n\nSe encontrar uma barreira de acessibilidade ou necessitar de informação num formato alternativo, contacte a Divisão de Recursos Humanos através dos contactos publicados neste portal.",
+  personalDataText:
+    "Os dados pessoais recolhidos neste portal destinam-se exclusivamente à gestão dos procedimentos de recrutamento e das respetivas candidaturas.\n\nPara esclarecer dúvidas sobre o tratamento dos seus dados ou exercer os seus direitos, utilize os contactos publicados neste portal.",
   apiUrl: DEFAULT_JAVA_API_URL,
   showTypeFilter: true,
   showDepartmentFilter: true,
@@ -348,7 +405,7 @@ export const DEFAULT_SITE: SiteConfig = {
 export const COLOR_FIELDS: {
   key: keyof Pick<
     SiteConfig,
-    "titleColor" | "buttonColor" | "buttonTextColor" | "accentColor"
+    "titleColor" | "buttonColor" | "buttonTextColor" | "accentColor" | "backgroundColor"
   >;
   label: string;
   hint: string;
@@ -357,4 +414,5 @@ export const COLOR_FIELDS: {
   { key: "buttonColor", label: "Botões", hint: "Fundo dos botões de ação" },
   { key: "buttonTextColor", label: "Texto dos botões", hint: "Cor do texto dentro dos botões" },
   { key: "accentColor", label: "Realce", hint: "Etiquetas e elementos de destaque" },
+  { key: "backgroundColor", label: "Fundo da página", hint: "Cor de fundo de todas as páginas" },
 ];

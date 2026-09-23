@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { listJavaVagas, javaBase } from "@/lib/java-api";
-import { PageShell, JobStateBadge } from "@/components/shell";
+import { PageShell, PublicJobStateBadge } from "@/components/shell";
 import { useStore } from "@/lib/store";
 import {
   OFFER_TYPE_LABEL,
   daysUntil,
+  estadoPublicoVaga,
   formatDate,
   type OfferType,
 } from "@/lib/recrutamento";
@@ -30,11 +31,12 @@ export const Route = createFileRoute("/")({
 });
 
 function Portal() {
-  const { vagas, applicants, site, opcoesDe, hydrated, syncJavaVagas } = useStore();
+  const { vagas, site, opcoesDe, hydrated, syncJavaVagas } = useStore();
   const [servidor, setServidor] = useState<"ok" | "indisponivel" | null>(null);
   const departamentos = opcoesDe("DEPARTAMENTO");
   const locaisDisponiveis = opcoesDe("LOCAL");
   const carreirasAtivas = opcoesDe("CARREIRA");
+  const [estado, setEstado] = useState<string>("");
   const [tipo, setTipo] = useState<string>("");
   const [unidade, setUnidade] = useState<string>("");
   const [carreira, setCarreira] = useState<string>("");
@@ -61,13 +63,16 @@ function Portal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated]);
 
+  // Procedimentos visíveis ao público: abertos, em análise e concluídos
+  // (inclui cancelados, que contam como «Concluído»).
   const publicas = useMemo(
-    () => vagas.filter((v) => v.state === "PUBLISHED" || v.state === "RUNNING"),
+    () => vagas.filter((v) => v.state !== "DRAFT"),
     [vagas],
   );
 
-  const algumFiltro =
-    site.showTypeFilter || site.showDepartmentFilter || site.showCareerFilter || site.showLocationFilter;
+  const emAnalise = publicas.filter((v) => estadoPublicoVaga(v) === "EM_ANALISE").length;
+
+  const algumFiltro = true;
 
   const carreiras = useMemo(
     () =>
@@ -77,6 +82,7 @@ function Portal() {
 
   const lista = useMemo(() => {
     return publicas.filter((v) => {
+      if (estado && estadoPublicoVaga(v) !== estado) return false;
       if (site.showTypeFilter && tipo && v.offerType !== tipo) return false;
       if (site.showDepartmentFilter && unidade && v.department !== unidade) return false;
       if (site.showCareerFilter && carreira && v.career !== carreira) return false;
@@ -84,24 +90,21 @@ function Portal() {
       if (prazo && daysUntil(v.deadline) > prazo) return false;
       return true;
     });
-  }, [publicas, tipo, unidade, carreira, locais, prazo, site]);
+  }, [publicas, estado, tipo, unidade, carreira, locais, prazo, site]);
 
   const detalhe = lista.find((v) => v.id === selected) ?? lista[0];
-  const aEncerrar = publicas.filter((v) => daysUntil(v.deadline) <= 7).length;
-  const concluidos = vagas.filter((v) => v.state === "FINISHED").length;
-  const emAnalise = vagas.filter(
-    (v) =>
-      v.state !== "PUBLISHED" &&
-      v.state !== "RUNNING" &&
-      v.state !== "FINISHED" &&
-      v.state !== "CANCELLED",
+  const aEncerrar = publicas.filter(
+    (v) => estadoPublicoVaga(v) === "ABERTA" && daysUntil(v.deadline) <= 7,
   ).length;
+  const concluidos = publicas.filter((v) => estadoPublicoVaga(v) === "CONCLUIDA").length;
+  const abertas = publicas.filter((v) => estadoPublicoVaga(v) === "ABERTA").length;
 
   function toggleLocal(local: string) {
     setLocais((l) => (l.includes(local) ? l.filter((x) => x !== local) : [...l, local]));
   }
 
   function limpar() {
+    setEstado("");
     setTipo("");
     setUnidade("");
     setCarreira("");
@@ -135,7 +138,7 @@ function Portal() {
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
                   Abertas
                 </p>
-                <p className="mt-1 text-2xl font-bold tracking-tight">{publicas.length}</p>
+                <p className="mt-1 text-2xl font-bold tracking-tight">{abertas}</p>
               </div>
               <div className="glass min-w-0 rounded-lg border-l-4 border-l-subsolo px-4 py-3 sm:min-w-[120px] sm:px-5">
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -167,6 +170,25 @@ function Portal() {
                 Filtros
               </p>
               <div className="mt-4 space-y-5">
+                <div>
+                  <label
+                    htmlFor="estado"
+                    className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground"
+                  >
+                    Estado da vaga
+                  </label>
+                  <select
+                    id="estado"
+                    value={estado}
+                    onChange={(e) => setEstado(e.target.value)}
+                    className="mt-2 w-full rounded-md border border-border bg-white/50 px-3 py-2 text-[13px]"
+                  >
+                    <option value="">Todos</option>
+                    <option value="ABERTA">Aberta</option>
+                    <option value="EM_ANALISE">Em análise</option>
+                    <option value="CONCLUIDA">Concluídos</option>
+                  </select>
+                </div>
                 {site.showTypeFilter && (
                 <div>
                   <label
@@ -306,7 +328,6 @@ function Portal() {
 
             {lista.map((v, i) => {
               const dias = daysUntil(v.deadline);
-              const n = applicants.filter((a) => a.vagaId === v.id).length;
               return (
                 <article
                   key={v.id}
@@ -320,7 +341,7 @@ function Portal() {
                         <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-primary">
                           {OFFER_TYPE_LABEL[v.offerType]}
                         </span>
-                        <JobStateBadge state={v.state} />
+                        <PublicJobStateBadge vaga={v} />
                       </div>
                       <h2 className="mt-3 text-lg font-semibold tracking-tight">{v.title}</h2>
                       <p className="mt-1 font-mono text-[11px] text-muted-foreground">
@@ -343,7 +364,7 @@ function Portal() {
                   </div>
                   <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
                     <p className="font-mono text-[11px] text-muted-foreground">
-                      {n} {n === 1 ? "candidatura" : "candidaturas"} · {v.positions}{" "}
+                      {v.positions}{" "}
                       {v.positions === 1 ? "posto" : "postos"}
                     </p>
                     <Link
